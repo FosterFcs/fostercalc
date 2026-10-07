@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d5c8f">
+<title>Foster Calc · Cálculo estrutural NBR 6118</title>
+<meta name="description" content="Dimensionamento de vigas contínuas e lajes maciças de concreto armado pela NBR 6118, com memória de cálculo em PDF e detalhamento em DXF.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: capa de prancha — título forte com selo de norma, módulos como folhas lado a lado, projetos em lista */
+:root{
+  --paper:#eef0ec; --sheet:#fbfcfa; --ink:#1c2321; --muted:#5d6763; --line:#cfd5d1;
+  --accent:#1d5c8f; --accent-soft:#e1ebf3; --concrete:#d9dcd6; --steel:#b23b2b; --steel2:#7a4fa3;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --bad:#b0302a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141917; --sheet:#1b211f; --ink:#e4e8e5; --muted:#9aa49f; --line:#2f3835;
+  --accent:#6fa9d9; --accent-soft:#1d2d3a; --concrete:#3a423f; --steel:#e0705f; --steel2:#b893dd;
+  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ec7b72; --bad-soft:#321b19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141917; --sheet:#1b211f; --ink:#e4e8e5; --muted:#9aa49f; --line:#2f3835;
+  --accent:#6fa9d9; --accent-soft:#1d2d3a; --concrete:#3a423f; --steel:#e0705f; --steel2:#b893dd;
+  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ec7b72; --bad-soft:#321b19; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--f-body)}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:6px 56px}
+.hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:center;padding-block:36px 40px;border-bottom:2px solid var(--ink)}
+@media (max-width:820px){.hero{grid-template-columns:minmax(0,1fr)}}
+.selo{display:inline-flex;gap:8px;align-items:center;font:600 .74rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:3px 8px}
+.hero h1{font:700 clamp(2.4rem,6vw,4.2rem)/.95 var(--f-display);letter-spacing:.005em;margin:14px 0 14px;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{font-size:1.05rem;color:var(--muted);max-width:52ch;margin:0 0 22px}
+.ctas{display:flex;flex-wrap:wrap;gap:10px}
+.bt{display:inline-block;font:600 .95rem var(--f-body);border-radius:4px;padding:11px 18px;text-decoration:none;border:1px solid var(--accent);background:var(--accent);color:var(--sheet);cursor:pointer}
+.bt.ghost{background:transparent;color:var(--accent)}
+.bt:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.prancha{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:14px}
+.prancha svg{width:100%;height:auto;display:block}
+.prancha small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:8px}
+svg .conc{fill:var(--concrete);stroke:var(--ink);stroke-width:1}
+svg .stir{stroke:var(--accent);stroke-width:1}
+svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round}
+svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round}
+svg .mpos{fill:var(--steel);fill-opacity:.15;stroke:var(--steel);stroke-width:1.3}
+svg .mneg{fill:var(--accent);fill-opacity:.15;stroke:var(--accent);stroke-width:1.3}
+svg .sup{fill:var(--muted)}
+svg text{fill:var(--muted);font:11px var(--f-mono)}
+h2{font:600 1.7rem/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:0 0 6px}
+.sec{padding-block:36px 4px}
+.sec > p{color:var(--muted);margin:0 0 18px;max-width:62ch}
+.mods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:820px){.mods{grid-template-columns:minmax(0,1fr)}}
+.mod{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.mod h3{font:600 1.35rem/1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0}
+.mod ul{margin:0;padding-left:18px;color:var(--muted);font-size:.9rem;flex:1}
+.mod ul li+li{margin-top:3px}
+.mod.breve{background:transparent;border-style:dashed}
+.mod .tag{font:600 .66rem var(--f-body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.lista{background:var(--sheet);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.lista table{width:100%;border-collapse:collapse;font-size:.9rem}
+.lista th,.lista td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)}
+.lista th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.lista tr:last-child td{border-bottom:0}
+.lista td.acoes{white-space:nowrap;text-align:right}
+.lista a{color:var(--accent);font-weight:600;text-decoration:none}
+.lista button{background:none;border:0;color:var(--muted);cursor:pointer;font:500 .85rem var(--f-body);margin-left:12px}
+.lista button:hover{color:var(--bad)}
+.vazio{padding:22px 18px;color:var(--muted)}
+.tbl{overflow-x:auto}
+.planos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:760px}
+@media (max-width:620px){.planos{grid-template-columns:minmax(0,1fr)}}
+.plano{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px}
+.plano.pro{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.plano h3{font:600 1.3rem var(--f-display);text-transform:uppercase;margin:0}
+.plano .preco{font:700 1.9rem/1.1 var(--f-display);margin:4px 0 8px}
+.plano ul{margin:0 0 14px;padding-left:18px;color:var(--muted);font-size:.9rem}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;font-size:.82rem;color:var(--muted)}
+footer p{margin:0;max-width:70ch}
+</style>
+</head>
+<body data-pagina="inicio">
+<div class="wrap">
+<div id="fc-bar"></div>
+
+<section class="hero">
+  <div>
+    <span class="selo">ABNT NBR 6118:2023 · concreto armado</span>
+    <h1>Cálculo estrutural <em>com memória pronta</em> para assinar.</h1>
+    <p>Dimensione vigas contínuas e lajes maciças no navegador, sem instalar nada. Cada resultado vem com a memória de cálculo citando os itens da norma e o detalhamento das armaduras.</p>
+    <div class="ctas"><a class="bt" href="viga.html">Calcular uma viga</a><a class="bt ghost" href="laje.html">Calcular uma laje</a></div>
+  </div>
+  <figure class="prancha" style="margin:0" aria-label="Exemplo de diagrama de momentos e detalhamento de viga contínua">
+    <svg viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg">
+      <rect class="conc" x="10" y="20" width="400" height="34"/>
+      <g class="stir">
+        <line x1="22" y1="24" x2="22" y2="50"/><line x1="42" y1="24" x2="42" y2="50"/><line x1="62" y1="24" x2="62" y2="50"/><line x1="82" y1="24" x2="82" y2="50"/><line x1="102" y1="24" x2="102" y2="50"/><line x1="122" y1="24" x2="122" y2="50"/><line x1="142" y1="24" x2="142" y2="50"/><line x1="162" y1="24" x2="162" y2="50"/><line x1="182" y1="24" x2="182" y2="50"/><line x1="202" y1="24" x2="202" y2="50"/><line x1="222" y1="24" x2="222" y2="50"/><line x1="242" y1="24" x2="242" y2="50"/><line x1="262" y1="24" x2="262" y2="50"/><line x1="282" y1="24" x2="282" y2="50"/><line x1="302" y1="24" x2="302" y2="50"/><line x1="322" y1="24" x2="322" y2="50"/><line x1="342" y1="24" x2="342" y2="50"/><line x1="362" y1="24" x2="362" y2="50"/><line x1="382" y1="24" x2="382" y2="50"/><line x1="398" y1="24" x2="398" y2="50"/>
+      </g>
+      <path class="bar" d="M14 44 V49 H206"/><path class="bar" d="M196 49 H406 V44"/>
+      <path class="bar2" d="M150 26 H262"/>
+      <path class="sup" d="M14 54 l-6 9 h12z M210 54 l-6 9 h12z M406 54 l-6 9 h12z"/>
+      <line x1="10" y1="128" x2="410" y2="128" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1"/>
+      <path class="mpos" d="M14 128 Q 90 178 150 128 Z"/><path class="mpos" d="M270 128 Q 330 178 406 128 Z"/>
+      <path class="mneg" d="M150 128 Q 210 72 270 128 Z"/>
+      <text x="82" y="170">+49,7</text><text x="192" y="94">−73,4</text><text x="320" y="170">+32,0</text>
+      <text x="10" y="12">N5 · 4 Ø12,5 · C=477</text>
+    </svg>
+    <small>Envoltória de momentos e armaduras de uma viga de 2 vãos · kN·m</small>
+  </figure>
+</section>
+
+<section class="sec">
+  <h2>Módulos</h2>
+  <p>O cálculo é livre e roda no seu aparelho. Entre para salvar projetos; assine o Pro para baixar memória e desenho.</p>
+  <div class="mods">
+    <article class="mod">
+      <span class="tag">Disponível</span><h3>Vigas</h3>
+      <ul><li>1 a 5 vãos, com balanços</li><li>Envoltória com alternância da acidental</li><li>Flexão, cisalhamento, decalagem e ancoragem</li><li>Fissuração e flecha por vão</li><li>Corte das negativas e relação do aço</li></ul>
+      <a class="bt" href="viga.html">Abrir módulo</a>
+    </article>
+    <article class="mod">
+      <span class="tag">Disponível</span><h3>Lajes maciças</h3>
+      <ul><li>Bordas apoiadas ou engastadas</li><li>Teoria de placas, sem tabelas</li><li>Armaduras por faixa, mínimas da Tab. 19.1</li><li>Cisalhamento, fissuração e flecha</li><li>Reações nas vigas, em g e q</li></ul>
+      <a class="bt" href="laje.html">Abrir módulo</a>
+    </article>
+    <article class="mod breve">
+      <span class="tag">Em breve</span><h3>Pilares e sapatas</h3>
+      <ul><li>Pilares com efeitos de 2ª ordem</li><li>Sapatas isoladas</li><li>Integração com as reações das vigas</li></ul>
+    </article>
+  </div>
+</section>
+
+<section class="sec" id="projetos">
+  <h2>Meus projetos</h2>
+  <p id="projMsg">Entre na sua conta para ver os projetos salvos.</p>
+  <div class="lista tbl" id="projLista" hidden></div>
+  <button class="bt ghost" type="button" id="projEntrar">Entrar ou criar conta</button>
+</section>
+
+<section class="sec" id="planos">
+  <h2>Planos</h2>
+  <p>Sem fidelidade. A assinatura Pro é ativada pelo nosso atendimento.</p>
+  <div class="planos">
+    <div class="plano"><h3>Grátis</h3><div class="preco">R$ 0</div>
+      <ul><li>Todos os módulos de cálculo</li><li>Resultados e verificações na tela</li><li>Projetos salvos na conta</li></ul>
+      <a class="bt ghost" href="viga.html">Começar</a></div>
+    <div class="plano pro"><h3>Pro</h3><div class="preco" id="precoPro">R$ 29,90/mês</div>
+      <ul><li>Tudo do Grátis</li><li>Memória de cálculo em PDF</li><li>Detalhamento em DXF por camadas</li><li>Novos módulos antes</li></ul>
+      <button class="bt" type="button" id="assinar">Assinar o Pro</button></div>
+  </div>
+</section>
+
+<footer>
+  <p><b>Foster Calc</b> é um produto da Foster Engenharia &amp; Construção. Ferramenta de apoio ao dimensionamento: os resultados devem ser conferidos por profissional habilitado, responsável técnico pela ART/RRT.</p>
+  <p>comercial@fosterconstrucoes.com.br · WhatsApp (24) 99209-6103</p>
+</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+$('precoPro').textContent = FC.CONFIG.precoPro;
+$('assinar').addEventListener('click', async () => {
+  if (!FC.sessao && !(await FC.entrar('Crie sua conta ou entre para assinar o Pro.'))) return;
+  if (FC.pro) FC.toast('Sua conta já é Pro.'); else FC.telaPlanos('Libere a memória em PDF e o desenho em DXF.');
+});
+$('projEntrar').addEventListener('click', () => FC.entrar());
+async function listar() {
+  const logado = !!FC.sessao;
+  $('projEntrar').hidden = logado;
+  if (!logado) { $('projLista').hidden = true; $('projMsg').textContent = 'Entre na sua conta para ver os projetos salvos.'; return; }
+  const ps = await FC.listarProjetos();
+  $('projMsg').textContent = ps.length ? 'Abra um projeto para continuar de onde parou.' : 'Nenhum projeto salvo ainda. Use "Salvar projeto" em qualquer módulo.';
+  $('projLista').hidden = !ps.length;
+  $('projLista').innerHTML = `<table><thead><tr><th>Projeto</th><th>Módulo</th><th>Atualizado</th><th></th></tr></thead><tbody>${ps.map(p => `<tr>
+    <td>${esc(p.nome)}</td><td>${p.modulo === 'viga' ? 'Viga' : 'Laje'}</td><td>${new Date(p.atualizado_em).toLocaleDateString('pt-BR')}</td>
+    <td class="acoes"><a href="${p.modulo}.html?p=${p.id}">Abrir</a><button type="button" data-apagar="${p.id}" data-nome="${esc(p.nome)}">Apagar</button></td></tr>`).join('')}</tbody></table>`;
+}
+$('projLista').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-apagar]'); if (!b) return;
+  const d = FC.dialogo(`<div class="fc-in"><h3>Apagar projeto</h3><p>Apagar "${esc(b.dataset.nome)}"? Essa ação não pode ser desfeita.</p>
+    <div class="fc-row"><button class="fc-btn" data-sim style="background:var(--bad);border-color:var(--bad)">Apagar</button><button class="fc-btn ghost" data-nao>Cancelar</button></div></div>`);
+  d.querySelector('[data-nao]').onclick = () => d.close();
+  d.querySelector('[data-sim]').onclick = async () => { const ok = await FC.apagarProjeto(b.dataset.apagar); d.close(); FC.toast(ok ? 'Projeto apagado.' : 'Não foi possível apagar.'); listar(); };
+});
+FC.aoMudar(listar);
+</script>
+</body>
+</html>

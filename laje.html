@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d5c8f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="description" content="Dimensionamento de lajes maciças pela NBR 6118 com memória de cálculo e detalhamento. Foster Calc.">
+<title>Lajes · Foster Calc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: prancheta técnica — entrada à esquerda com croqui das bordas, folha de resultados à direita */
+:root{
+  --paper:#eef0ec; --sheet:#fbfcfa; --ink:#1c2321; --muted:#5d6763; --line:#cfd5d1;
+  --accent:#1d5c8f; --accent-soft:#e1ebf3; --concrete:#d9dcd6; --beam:#b9beb7; --steel:#b23b2b; --steel2:#7a4fa3;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#b0302a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141917; --sheet:#1b211f; --ink:#e4e8e5; --muted:#9aa49f; --line:#2f3835;
+  --accent:#6fa9d9; --accent-soft:#1d2d3a; --concrete:#2b3230; --beam:#47504c; --steel:#e0705f; --steel2:#b893dd;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ec7b72; --bad-soft:#321b19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141917; --sheet:#1b211f; --ink:#e4e8e5; --muted:#9aa49f; --line:#2f3835;
+  --accent:#6fa9d9; --accent-soft:#1d2d3a; --concrete:#2b3230; --beam:#47504c; --steel:#e0705f; --steel2:#b893dd;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ec7b72; --bad-soft:#321b19; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:20px}
+header.top h1{font:700 2rem/1 var(--f-display);letter-spacing:.01em;margin:0}
+header.top h1 span{color:var(--accent)}
+header.top p{margin:0;color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+aside.inputs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside.inputs{position:static}}
+fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+legend{font:600 .78rem/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 0 8px;grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+label.full{grid-column:1/-1}
+input,select{font:500 .95rem var(--f-mono);color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.unit{position:relative}.unit input{padding-right:52px}
+.unit i{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:400 .75rem var(--f-mono);color:var(--muted);font-style:normal;pointer-events:none}
+.bordas{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;gap:6px;align-items:center;justify-items:center}
+.bordas select{padding:5px 4px;font-size:.8rem;width:100%;max-width:110px}
+.bordas .b-sup{grid-column:2;grid-row:1}.bordas .b-esq{grid-column:1;grid-row:2;justify-self:end}
+.bordas .b-dir{grid-column:3;grid-row:2;justify-self:start}.bordas .b-inf{grid-column:2;grid-row:3}
+.croqui{grid-column:2;grid-row:2;width:100%;max-width:120px}
+.croqui svg{width:100%;height:auto;display:block}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+h2{font:600 1.35rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 12px}
+.status{padding:12px 16px;border-radius:6px;font-weight:500}
+.status.ok{background:var(--ok-soft);color:var(--ok)}.status.warn{background:var(--warn-soft);color:var(--warn)}.status.bad{background:var(--bad-soft);color:var(--bad)}
+.status b{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.msgs{margin:8px 0 0;padding-left:18px;font-size:.88rem;color:var(--ink);font-weight:400}
+.pill{display:inline-block;font:600 .66rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.duo{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+@media (max-width:700px){.duo{grid-template-columns:minmax(0,1fr)}}
+.planta svg{width:100%;height:auto;display:block}
+svg .conc{fill:var(--concrete);stroke:none}
+svg .viga{fill:var(--beam);stroke:var(--ink);stroke-width:.8}
+svg .eng{stroke:var(--ink);stroke-width:3;fill:none}
+svg .hatch{stroke:var(--muted);stroke-width:.8}
+svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .dist{stroke:var(--steel2);stroke-width:1.2;fill:none;stroke-dasharray:6 4}
+svg .dim{stroke:var(--muted);stroke-width:.8;fill:none}
+svg text{fill:var(--ink);font-family:var(--f-mono)}
+svg text.mut{fill:var(--muted)}
+.reac{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.reac div{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.reac dt{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.reac dd{margin:2px 0 0;font:600 1.3rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.reac dd small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:3px}
+details.memo{border-top:1px solid var(--line)}
+details.memo:last-of-type{border-bottom:1px solid var(--line)}
+details.memo summary{cursor:pointer;padding:10px 2px;font:600 1.05rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.memo summary::-webkit-details-marker{display:none}
+details.memo summary::after{content:"+";font-family:var(--f-mono);color:var(--muted)}
+details.memo[open] summary::after{content:"–"}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+th.v{text-align:right}
+td.f{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);min-width:170px}
+td.v{font-family:var(--f-mono);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+td.v.alerta{color:var(--bad);font-weight:600}
+td.r{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.memo .tbl{padding-bottom:12px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.pri{font:600 .9rem var(--f-body);border-radius:4px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--sheet)}
+button.pri.ghost{background:transparent;color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted)}
+.disclaimer{font-size:.8rem;color:var(--muted);border-left:3px solid var(--line);padding:4px 0 4px 12px;max-width:72ch}
+ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
+</style>
+</head>
+<body data-pagina="laje">
+
+
+<div class="wrap">
+<div id="fc-bar"></div>
+<header class="top">
+  <h1>Laje CA <span>· NBR 6118</span></h1>
+  <p>Laje maciça retangular, bordas apoiadas ou engastadas · NBR 6118:2023</p>
+</header>
+
+<div class="grid">
+<aside class="inputs" aria-label="Dados de entrada">
+  <form id="f" class="sheet" style="display:flex;flex-direction:column;gap:18px" autocomplete="off">
+    <fieldset>
+      <legend>Geometria (entre eixos das vigas)</legend>
+      <label>Vão lx<span class="unit"><input id="lx" type="number" step="0.05" min="1" value="4.00"><i>m</i></span></label>
+      <label>Vão ly<span class="unit"><input id="ly" type="number" step="0.05" min="1" value="5.00"><i>m</i></span></label>
+      <label>Espessura h<span class="unit"><input id="h" type="number" step="0.5" min="7" value="10"><i>cm</i></span></label>
+      <label>Largura vigas<span class="unit"><input id="apoio" type="number" step="1" min="10" value="15"><i>cm</i></span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Condição das bordas</legend>
+      <div class="bordas">
+        <select id="b_sup" class="b-sup" aria-label="Borda superior"><option value="A" selected>Apoiada</option><option value="E">Engaste</option></select>
+        <select id="b_esq" class="b-esq" aria-label="Borda esquerda"><option value="A">Apoiada</option><option value="E" selected>Engaste</option></select>
+        <div class="croqui" id="croqui" aria-hidden="true"></div>
+        <select id="b_dir" class="b-dir" aria-label="Borda direita"><option value="A" selected>Apoiada</option><option value="E">Engaste</option></select>
+        <select id="b_inf" class="b-inf" aria-label="Borda inferior"><option value="A">Apoiada</option><option value="E" selected>Engaste</option></select>
+      </div>
+      <p class="note" style="grid-column:1/-1;margin:0">Engaste quando há laje contínua do outro lado da viga, com espessura parecida.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Cargas (além do peso próprio)</legend>
+      <label>Permanente g<span class="unit"><input id="g" type="number" step="0.1" min="0" value="1.0"><i>kN/m²</i></span></label>
+      <label>Acidental q<span class="unit"><input id="q" type="number" step="0.1" min="0" value="1.5"><i>kN/m²</i></span></label>
+      <label class="full">Uso<select id="psi2"><option value="0.3">Residencial (q = 1,5 kN/m² típico)</option><option value="0.4">Comercial / escritórios (2,0 a 3,0)</option><option value="0.6">Garagem / biblioteca</option></select></label>
+      <p class="note" style="grid-column:1/-1;margin:0">g: revestimento, contrapiso, forro e paredes distribuídas. Cargas de uso pela NBR 6120.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Materiais</legend>
+      <label>Concreto<select id="fck"><option>20</option><option selected>25</option><option>30</option><option>35</option><option>40</option></select></label>
+      <label>Agressividade<select id="caa"><option value="I">CAA I · c=2,0</option><option value="II" selected>CAA II · c=2,5</option><option value="III">CAA III · c=3,5</option><option value="IV">CAA IV · c=4,5</option></select></label>
+    </fieldset>
+    <p class="note" style="margin:0">Aço CA-50 (Ø5,0 em CA-60 também atende). O exemplo pré-preenchido é ilustrativo.</p>
+  </form>
+</aside>
+
+<main>
+  <section id="status" class="status ok" aria-live="polite"></section>
+
+  <section class="sheet">
+    <h2>Resultado</h2>
+    <div class="tbl"><table id="resumo"></table></div>
+  </section>
+
+  <section class="sheet duo">
+    <div class="planta" style="min-width:0">
+      <h2>Planta de armação</h2>
+      <div id="planta"></div>
+      <p class="note" style="margin:6px 0 0">Positivas em vermelho, negativas em roxo e distribuição tracejada. Linha grossa com hachura indica borda engastada.</p>
+    </div>
+    <div style="min-width:0">
+      <h2>Reações nas vigas</h2>
+      <dl class="reac" id="reac"></dl>
+      <p class="note" style="margin:8px 0 0">Valores característicos por metro de viga, pelo processo das charneiras (45°, ou 60° a partir da borda engastada). Use g e q direto no módulo de viga.</p>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>Memória de cálculo</h2>
+    <div id="memoria"></div>
+    <p class="note" style="margin:12px 0 4px"><b>Hipóteses e limites deste protótipo:</b></p>
+    <ul class="todo note">
+      <li>Esforços pela teoria de placas (Kirchhoff, ν = 0,2) resolvida por diferenças finitas; laje isolada, sem compatibilização de momentos com as lajes vizinhas</li>
+      <li>Negativas com extensão de 0,25·lx para cada lado da viga (prática usual); confira com a laje vizinha</li>
+      <li>Não inclui armadura de canto em bordas apoiadas, aberturas, cargas concentradas nem paredes apoiadas diretamente sobre a laje</li>
+    </ul>
+  </section>
+
+  <section class="sheet">
+    <h2>Quantitativos</h2>
+    <div class="tbl"><table id="quant"></table></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Projeto e exportação</h2>
+    <div class="actions">
+      <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
+      <button type="button" class="pri ghost" id="btnAbrir">Meus projetos</button>
+      <button type="button" class="pri" id="btnPdf">Baixar memória (PDF)</button>
+      <button type="button" class="pri ghost" id="btnDxf">Baixar planta (DXF em .zip)</button>
+      <span class="note" id="expMsg" role="status"></span>
+    </div>
+    <p class="note" style="margin:10px 0 0">O cálculo é livre. Memória em PDF e desenho em DXF fazem parte do plano Pro.</p>
+  </section>
+
+  <p class="disclaimer">Ferramenta de apoio ao dimensionamento. Os resultados devem ser conferidos por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT. Coeficientes adotados: γc = 1,4; γs = 1,15; γf = 1,4; Ecs com αE = 1,0.</p>
+</main>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// Motor de cálculo — Laje maciça retangular (NBR 6118:2023)
+// Placa de Kirchhoff por diferenças finitas; bordas apoiadas (A) ou engastadas (E).
+// Unidades internas: cm, kN. Momentos por unidade de largura: kN·cm/cm = kN·m/m.
+
+const L_ES = 21000, L_FYK = 50;
+const COB_LAJE = { I: 2.0, II: 2.5, III: 3.5, IV: 4.5 };          // Tab. 7.2 (lajes, Δc = 10 mm)
+const L_WK = { I: 0.4, II: 0.3, III: 0.3, IV: 0.2 };
+const L_RHO = { 20: 0.150, 25: 0.150, 30: 0.150, 35: 0.164, 40: 0.179, 45: 0.194, 50: 0.208 };
+const L_PSI = { 0.3: { psi1: 0.4, psi2: 0.3 }, 0.4: { psi1: 0.6, psi2: 0.4 }, 0.6: { psi1: 0.7, psi2: 0.6 } };
+const BITOLAS = [5, 6.3, 8, 10, 12.5, 16];
+
+const aBar = phi => Math.PI * (phi / 10) ** 2 / 4;
+const mLin = phi => aBar(phi) * 0.785;
+function lRhoMin(fck) {
+  const ks = Object.keys(L_RHO).map(Number);
+  const lo = Math.max(...ks.filter(v => v <= fck)), hi = Math.min(...ks.filter(v => v >= fck));
+  return (lo === hi ? L_RHO[lo] : L_RHO[lo] + (L_RHO[hi] - L_RHO[lo]) * (fck - lo) / (hi - lo)) / 100;
+}
+
+// ---------- Placa por diferenças finitas ----------
+// bordas: { esq, dir, inf, sup } cada uma 'A' ou 'E'
+function resolverPlaca(lx, ly, bordas, p, D, nu, nBase = 24) {
+  const hg = Math.min(lx, ly) / nBase;
+  const nx = Math.max(6, Math.round(lx / hg)), ny = Math.max(6, Math.round(ly / hg));
+  const hx = lx / nx, hy = ly / ny;
+  const sg = t => (t === 'E' ? 1 : -1);
+  const sL = sg(bordas.esq), sR = sg(bordas.dir), sB = sg(bordas.inf), sT = sg(bordas.sup);
+  const porX = nx <= ny;
+  const mx1 = nx - 1, my1 = ny - 1, N = mx1 * my1;
+  const idx = (i, j) => (porX ? (j - 1) * mx1 + (i - 1) : (i - 1) * my1 + (j - 1));
+  const bw = porX ? 2 * mx1 + 2 : 2 * my1 + 2;
+  const ref = (i, j) => {                            // -> [índice, sinal] ou null (w = 0)
+    let s = 1;
+    if (i < 0) { i = -i; s *= sL; } else if (i > nx) { i = 2 * nx - i; s *= sR; }
+    if (j < 0) { j = -j; s *= sB; } else if (j > ny) { j = 2 * ny - j; s *= sT; }
+    if (i <= 0 || i >= nx || j <= 0 || j >= ny) return null;
+    return [idx(i, j), s];
+  };
+  // matriz em banda: B[r][c - r + bw]
+  const W2 = 2 * bw + 1;
+  const B = Array.from({ length: N }, () => new Float64Array(W2));
+  const F = new Float64Array(N);
+  const a = 1 / hx ** 4, b = 1 / hy ** 4, c2 = 2 / (hx * hx * hy * hy);
+  const k5 = [1, -4, 6, -4, 1], k3 = [1, -2, 1];
+  for (let j = 1; j < ny; j++) for (let i = 1; i < nx; i++) {
+    const r = idx(i, j);
+    const put = (ii, jj, v) => { const q = ref(ii, jj); if (q) B[r][q[0] - r + bw] += v * q[1]; };
+    for (let t = 0; t < 5; t++) { put(i + t - 2, j, a * k5[t]); put(i, j + t - 2, b * k5[t]); }
+    for (let u = 0; u < 3; u++) for (let v = 0; v < 3; v++) put(i + u - 1, j + v - 1, c2 * k3[u] * k3[v]);
+    F[r] = p / D;
+  }
+  // eliminação de Gauss em banda (sem pivotamento; matriz diagonal dominante por blocos)
+  for (let k = 0; k < N; k++) {
+    const piv = B[k][bw];
+    for (let i = k + 1; i <= Math.min(N - 1, k + bw); i++) {
+      const f = B[i][k - i + bw]; if (!f) continue; const m = f / piv;
+      for (let jj = k; jj <= Math.min(N - 1, k + bw); jj++) B[i][jj - i + bw] -= m * B[k][jj - k + bw];
+      F[i] -= m * F[k];
+    }
+  }
+  const x = new Float64Array(N);
+  for (let i = N - 1; i >= 0; i--) {
+    let s = F[i];
+    for (let jj = i + 1; jj <= Math.min(N - 1, i + bw); jj++) s -= B[i][jj - i + bw] * x[jj];
+    x[i] = s / B[i][bw];
+  }
+  const W = (i, j) => { const q = ref(i, j); return q ? x[q[0]] * q[1] : 0; };
+  const grade = [];
+  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+    const wxx = (W(i - 1, j) - 2 * W(i, j) + W(i + 1, j)) / hx ** 2;
+    const wyy = (W(i, j - 1) - 2 * W(i, j) + W(i, j + 1)) / hy ** 2;
+    grade.push({ i, j, x: i * hx, y: j * hy, w: W(i, j), mx: -D * (wxx + nu * wyy), my: -D * (wyy + nu * wxx) });
+  }
+  return { nx, ny, hx, hy, grade };
+}
+
+// Reações pelo processo das charneiras (14.7.6.1): 45° entre bordas iguais, 60° a partir da engastada
+function reacoes(lx, ly, bordas, p) {
+  const n = 240, dx = lx / n, dy = ly / n, f = t => (t === 'E' ? 1 / Math.sqrt(3) : 1);
+  const area = { esq: 0, dir: 0, inf: 0, sup: 0 };
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = (i + 0.5) * dx, y = (j + 0.5) * dy;
+    const d = { esq: x * f(bordas.esq), dir: (lx - x) * f(bordas.dir), inf: y * f(bordas.inf), sup: (ly - y) * f(bordas.sup) };
+    let m = 'esq'; for (const k in d) if (d[k] < d[m]) m = k;
+    area[m] += dx * dy;
+  }
+  const comp = { esq: ly, dir: ly, inf: lx, sup: lx };
+  const r = {}; for (const k in area) r[k] = { area: area[k] / 1e4, v: p * area[k] / comp[k] }; // area m², v kN/cm
+  return r;
+}
+
+// ---------- Dimensionamento por faixa de 1 m ----------
+function dimFaixa(Mk, d, h, fck, mat, minimo, direcao) {
+  const bw = 100, Md = 1.4 * Math.max(0, Mk) * 100;           // kN·cm por metro
+  const xlim = 0.45 * d, Mlim = 0.68 * bw * xlim * mat.fcd * (d - 0.4 * xlim);
+  const erros = [];
+  let x = 0, As = 0;
+  if (Md > Mlim) { erros.push(`Momento ${direcao} excede o limite de ductilidade (x/d > 0,45): aumente a espessura da laje.`); x = xlim; As = Md / (mat.fyd * (d - 0.4 * x)); }
+  else if (Md > 0) { x = 1.25 * d * (1 - Math.sqrt(1 - Md / (0.425 * bw * d * d * mat.fcd))); As = Md / (mat.fyd * (d - 0.4 * x)); }
+  const AsAdot = Math.max(As, minimo);
+  // escolha da bitola: menor bitola com espaçamento >= 10 cm; s <= min(2h, 20)
+  const smax = Math.min(2 * h, 20);
+  let esc = null;
+  for (const phi of BITOLAS) {
+    if (phi / 10 > h / 8) break;                               // 20.1: Ø ≤ h/8
+    let s = Math.floor(aBar(phi) / AsAdot * 100 * 2) / 2;      // múltiplo de 0,5 cm
+    s = Math.min(s, smax);
+    if (s >= 10 || phi === BITOLAS[BITOLAS.length - 1]) { esc = { phi, s: Math.floor(s) }; break; }
+  }
+  if (!esc) { esc = { phi: 5, s: Math.floor(Math.min(aBar(5) / AsAdot * 100, smax)) }; }
+  if (esc.s < 7) erros.push(`Espaçamento da armadura ${direcao} muito pequeno: aumente a espessura da laje.`);
+  return { Mk, Md: Md / 100, d, x, xd: d ? x / d : 0, As, Asmin: minimo, AsAdot, phi: esc.phi, s: esc.s, AsEf: aBar(esc.phi) * 100 / esc.s, smax, erros };
+}
+
+function fissFaixa(Mfreq, reg, h, c, mat) {
+  if (Mfreq <= 0) return { wk: 0, sigma: 0 };
+  const ae = L_ES / mat.Ecs, As = reg.AsEf, d = reg.d, bw = 100;
+  const xII = (-ae * As + Math.sqrt((ae * As) ** 2 + 2 * bw * ae * As * d)) / bw;
+  const III = bw * xII ** 3 / 3 + ae * As * (d - xII) ** 2;
+  const sig = ae * Mfreq * 100 * (d - xII) / III;
+  const phi = reg.phi / 10;
+  const larg = Math.min(15 * phi, reg.s), alt = Math.min(c + phi / 2 + 7.5 * phi, (h - xII) / 2);
+  const rho = aBar(reg.phi) / (larg * alt);
+  const k = reg.phi / (12.5 * 2.25) * (sig / L_ES);
+  return { wk: Math.min(k * 3 * sig / mat.fctm, k * (4 / rho + 45)), sigma: sig, xII, III };
+}
+
+function calcularLaje(e0) {
+  const e = { ...e0 };
+  const erros = [], avisos = [];
+  const lx = e.lx * 100, ly = e.ly * 100, h = e.h;
+  const c = e.cobrimento ?? COB_LAJE[e.caa];
+  e.c = c;
+  const fcd = e.fck / 14, fyd = L_FYK / 1.15, fctm = 0.03 * e.fck ** (2 / 3), fctd = 0.7 * fctm / 1.4;
+  const Ecs = Math.min(1, 0.8 + 0.2 * e.fck / 80) * 560 * Math.sqrt(e.fck);
+  const mat = { fcd, fyd, fctm, fctd, Ecs };
+  const ps = L_PSI[e.psi2] || { psi1: 0.4, psi2: e.psi2 };
+  if (h < 8) erros.push('Espessura mínima de laje de piso: 8 cm (13.2.4.1).');
+  if (e.fck < 20 || e.fck > 50) erros.push('Este módulo cobre concretos C20 a C50.');
+  const pp = 25 * h / 100;                                   // kN/m²
+  const gk = pp + e.g, qk = e.q, pk = gk + qk;
+  const lam = Math.max(lx, ly) / Math.min(lx, ly);
+  const armadaEmCruz = lam <= 2;
+  const nu = 0.2, D = Ecs * h ** 3 / (12 * (1 - nu * nu));
+
+  // solução para carga unitária (1 kN/m²) — esforços escalam linearmente
+  const sol = resolverPlaca(lx, ly, e.bordas, 1 / 1e4, D, nu, 30);
+  const G = sol.grade;
+  const maxPos = k => Math.max(0, ...G.map(n => n[k]));
+  const bordaMin = (lado) => {
+    const sel = { esq: n => n.i === 0, dir: n => n.i === sol.nx, inf: n => n.j === 0, sup: n => n.j === sol.ny }[lado];
+    const k = lado === 'esq' || lado === 'dir' ? 'mx' : 'my';
+    return Math.max(0, ...G.filter(sel).map(n => -n[k]));
+  };
+  const u = { mx: maxPos('mx'), my: maxPos('my'), w: Math.max(...G.map(n => n.w)) };
+  const uNeg = {}; for (const l of ['esq', 'dir', 'inf', 'sup']) uNeg[l] = e.bordas[l] === 'E' ? bordaMin(l) : 0;
+  const coef = { mx: u.mx / (e.lx < e.ly ? e.lx : e.ly) ** 2, my: u.my / (e.lx < e.ly ? e.lx : e.ly) ** 2 };
+
+  // ---- flexão
+  const phiEst = 8 / 10;                                       // estimativa para d
+  const xExterna = lx <= ly;                                   // barras do menor vão por fora
+  const dX0 = h - c - (xExterna ? phiEst / 2 : phiEst * 1.5);
+  const dY0 = h - c - (xExterna ? phiEst * 1.5 : phiEst / 2);
+  const dNeg0 = h - c - phiEst / 2;
+  const rmin = lRhoMin(e.fck), Ac = 100 * h;
+  // mínimas (Tab. 19.1)
+  const minPrinc = armadaEmCruz ? 0.67 * rmin * Ac : rmin * Ac;
+  const xPrincipal = lx <= ly;
+  const minX = armadaEmCruz ? 0.67 * rmin * Ac : (xPrincipal ? rmin * Ac : 0);
+  const minY = armadaEmCruz ? 0.67 * rmin * Ac : (!xPrincipal ? rmin * Ac : 0);
+  const reg = {};
+  const dim = (Mk, d0, min, nome) => {
+    let r = dimFaixa(Mk, d0, h, e.fck, mat, min, nome);
+    return r;
+  };
+  reg.x = dim(u.mx * pk, dX0, minX, 'positiva em x');
+  reg.y = dim(u.my * pk, dY0, minY, 'positiva em y');
+  // secundária de laje armada em uma direção (Tab. 19.1)
+  if (!armadaEmCruz) {
+    const princ = xPrincipal ? reg.x : reg.y;
+    const minSec = Math.max(0.2 * princ.AsEf, 0.9, 0.5 * rmin * Ac);
+    if (xPrincipal) reg.y = dim(u.my * pk, dY0, minSec, 'secundária em y'); else reg.x = dim(u.mx * pk, dX0, minSec, 'secundária em x');
+  }
+  // recalcula d com a bitola adotada
+  const ajustaD = () => {
+    const fx = reg.x.phi / 10, fy = reg.y.phi / 10;
+    const dX = h - c - (xExterna ? fx / 2 : fy + fx / 2), dY = h - c - (xExterna ? fx + fy / 2 : fy / 2);
+    reg.x = dim(u.mx * pk, dX, reg.x.Asmin, armadaEmCruz || xPrincipal ? 'positiva em x' : 'secundária em x');
+    reg.y = dim(u.my * pk, dY, reg.y.Asmin, armadaEmCruz || !xPrincipal ? 'positiva em y' : 'secundária em y');
+  };
+  ajustaD(); ajustaD();
+  const neg = {};
+  for (const l of ['esq', 'dir', 'inf', 'sup']) if (e.bordas[l] === 'E') {
+    let r = dim(uNeg[l] * pk, dNeg0, rmin * Ac, `negativa na borda ${nomeBorda(l)}`);
+    r = dim(uNeg[l] * pk, h - c - r.phi / 20, rmin * Ac, `negativa na borda ${nomeBorda(l)}`);
+    neg[l] = r;
+  }
+  [reg.x, reg.y, ...Object.values(neg)].forEach(r => erros.push(...r.erros));
+
+  // ---- reações e cisalhamento (19.4.1)
+  const rea = reacoes(lx, ly, e.bordas, pk / 1e4);
+  const cis = {};
+  for (const l of ['esq', 'dir', 'inf', 'sup']) {
+    const Vk = rea[l].v * 100;                                 // kN/m
+    const Vd = 1.4 * Vk;
+    const r = neg[l] || (l === 'esq' || l === 'dir' ? reg.x : reg.y);
+    const dm = r.d / 100;
+    const kk = Math.max(1, 1.6 - dm), rho1 = Math.min(r.AsEf / (100 * r.d), 0.02);
+    const tauRd = 0.25 * fctd;
+    const VRd1 = tauRd * kk * (1.2 + 40 * rho1) * 100 * r.d;   // kN por metro
+    cis[l] = { Vk, Vd, VRd1, k: kk, rho1, tauRd, ok: Vd <= VRd1, area: rea[l].area };
+    if (Vd > VRd1) erros.push(`Cisalhamento na borda ${nomeBorda(l)}: Vd = ${Vd.toFixed(1)} kN/m > VRd1 = ${VRd1.toFixed(1)} kN/m. Aumente a espessura.`);
+  }
+
+  // ---- fissuração (frequente)
+  const pf = gk + ps.psi1 * qk, pqp = gk + ps.psi2 * qk;
+  const wlim = L_WK[e.caa];
+  const fiss = { x: fissFaixa(u.mx * pf, reg.x, h, c, mat), y: fissFaixa(u.my * pf, reg.y, h, c, mat) };
+  for (const l in neg) fiss[l] = fissFaixa(uNeg[l] * pf, neg[l], h, c, mat);
+  for (const k in fiss) if (fiss[k].wk > wlim) avisos.push(`Fissuração ${k === 'x' || k === 'y' ? 'na armadura positiva em ' + k : 'na borda ' + nomeBorda(k)}: wk = ${fiss[k].wk.toFixed(2)} mm > ${wlim} mm. Reduza o espaçamento ou a bitola.`);
+
+  // ---- flecha (ELS-DEF): placa elástica com Ic, corrigida por Branson na faixa do menor vão
+  const Ic = 100 * h ** 3 / 12;
+  const Mr = 1.5 * fctm * Ic / (h / 2);                        // kN·cm por metro
+  const rp = xPrincipal ? reg.x : reg.y;
+  const Ma = (xPrincipal ? u.mx : u.my) * pqp * 100;
+  const ae = L_ES / Ecs;
+  const xII = (-ae * rp.AsEf + Math.sqrt((ae * rp.AsEf) ** 2 + 200 * ae * rp.AsEf * rp.d)) / 100;
+  const III = 100 * xII ** 3 / 3 + ae * rp.AsEf * (rp.d - xII) ** 2;
+  const Ieq = Ma <= Mr ? Ic : Math.min(Ic, (Mr / Ma) ** 3 * Ic + (1 - (Mr / Ma) ** 3) * III);
+  const a0 = u.w * pqp * Ic / Ieq;
+  const alfaF = 2 - 0.68 * 0.996;
+  const aTot = a0 * (1 + alfaF), aLim = Math.min(lx, ly) / 250;
+  if (aTot > aLim) avisos.push(`Flecha total ${aTot.toFixed(2)} cm excede ${aLim.toFixed(2)} cm (menor vão / 250). Aumente a espessura ou use contraflecha.`);
+  const flecha = { pqp, Ma, Mr, xII, III, Ic, Ieq, a0, alfaF, aTot, aLim, w1: u.w };
+
+  // ---- detalhamento e quantitativos (barras com ponta em gancho de 90°)
+  const vg = e.apoio;                                          // largura das vigas de borda
+  const pos = []; let N = 1;
+  const add = o => { const p = { N: N++, ...o }; p.massa = p.qtd * p.comp / 100 * mLin(p.phi); pos.push(p); return p; };
+  const gancho = phi => Math.max(8 * phi / 10, 5);
+  // positivas: atravessam o vão e entram na viga até a face oposta menos o cobrimento
+  const compPos = (L, phi) => L + vg - 2 * c + 2 * gancho(phi);
+  const nX = Math.floor((ly - vg) / reg.x.s) + 1, nY = Math.floor((lx - vg) / reg.y.s) + 1;
+  reg.x.pos = add({ desc: 'positiva · direção x', phi: reg.x.phi, s: reg.x.s, qtd: nX, comp: compPos(lx, reg.x.phi), dir: 'x' });
+  reg.y.pos = add({ desc: 'positiva · direção y', phi: reg.y.phi, s: reg.y.s, qtd: nY, comp: compPos(ly, reg.y.phi), dir: 'y' });
+  for (const l in neg) {
+    const r = neg[l], paralela = l === 'esq' || l === 'dir' ? ly : lx;
+    const Lm = Math.min(lx, ly);
+    const ext = 0.25 * Lm;                                      // prática usual: 0,25·lx para cada lado
+    const comp = 2 * ext + vg + 2 * Math.max(h - 2 * c, 5);
+    r.ext = ext;
+    r.pos = add({ desc: `negativa · borda ${nomeBorda(l)}`, phi: r.phi, s: r.s, qtd: Math.floor((paralela - vg) / r.s) + 1, comp, borda: l });
+    // armadura de distribuição sob a negativa (20.1): 20% As, ≥ 0,9 cm²/m, s ≤ 33 cm
+    const AsDist = Math.max(0.2 * r.AsEf, 0.9);
+    const sDist = Math.min(33, Math.floor(aBar(5) / AsDist * 100));
+    r.dist = add({ desc: `distribuição · borda ${nomeBorda(l)}`, phi: 5, s: sDist, qtd: Math.floor((ext + vg / 2) / sDist) + 1, comp: paralela - vg + 2 * 10, borda: l, distrib: true });
+  }
+  const pesoAco = pos.reduce((t, p) => t + p.massa, 0);
+  const area = (lx + vg) * (ly + vg) / 1e4;                    // m² (até o eixo... + meia viga em cada lado)
+  const vol = (lx - vg) * (ly - vg) / 1e4 * h / 100;           // concreto entre faces das vigas
+  const forma = (lx - vg) * (ly - vg) / 1e4;
+
+  return { ok: erros.length === 0, erros: [...new Set(erros)], avisos: [...new Set(avisos)], entrada: e, mat, psi: ps,
+    cargas: { pp, gk, qk, pk, pf, pqp }, lam, armadaEmCruz, xPrincipal, xExterna, sol, u, uNeg, coef,
+    reg, neg, rea, cis, fiss, wlim, flecha, pos,
+    quant: { pesoAco, vol, forma, taxa: pesoAco / vol, area } };
+}
+function nomeBorda(l) { return { esq: 'esquerda', dir: 'direita', inf: 'inferior', sup: 'superior' }[l]; }
+
+
+
+</script>
+<script>
+const $ = id => document.getElementById(id);
+const nf = (v, d = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const bit = p => nf(p, 1);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const LADOS = ['esq', 'dir', 'inf', 'sup'];
+
+function lerEntrada() {
+  return { lx: +$('lx').value, ly: +$('ly').value, h: +$('h').value, apoio: +$('apoio').value,
+    g: +$('g').value, q: +$('q').value, psi2: +$('psi2').value, fck: +$('fck').value, caa: $('caa').value,
+    bordas: { esq: $('b_esq').value, dir: $('b_dir').value, inf: $('b_inf').value, sup: $('b_sup').value } };
+}
+
+function croqui(b) {
+  const L = (x1, y1, x2, y2, e) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--ink)" stroke-width="${e ? 4 : 1.2}" ${e ? '' : 'stroke-dasharray="4 3"'}/>`;
+  return `<svg viewBox="0 0 100 80"><rect x="10" y="10" width="80" height="60" fill="var(--concrete)"/>
+    ${L(10, 10, 90, 10, b.sup === 'E')}${L(10, 70, 90, 70, b.inf === 'E')}${L(10, 10, 10, 70, b.esq === 'E')}${L(90, 10, 90, 70, b.dir === 'E')}
+    <text x="50" y="44" font-size="10" text-anchor="middle" class="mut">lx →</text></svg>`;
+}
+
+const regNome = { x: 'Positiva x', y: 'Positiva y', esq: 'Negativa esq.', dir: 'Negativa dir.', inf: 'Negativa inf.', sup: 'Negativa sup.' };
+function regioes(r) {
+  const out = [['x', r.reg.x], ['y', r.reg.y]];
+  LADOS.forEach(l => { if (r.neg[l]) out.push([l, r.neg[l]]); });
+  return out;
+}
+
+function memoria(r) {
+  const e = r.entrada, m = r.mat, c = r.cargas, R = regioes(r), F = r.flecha;
+  const out = [];
+  out.push({ t: 'Dados e cargas', cols: ['Valor'], l: [
+    ['Vãos', 'lx × ly', [`${nf(e.lx)} × ${nf(e.ly)} m`], ''],
+    ['Relação entre vãos', 'λ = l_maior / l_menor', [`${nf(r.lam)} → ${r.armadaEmCruz ? 'armada em cruz' : 'armada em uma direção'}`], '14.7.6'],
+    ['Espessura', 'h', [`${nf(e.h, 1)} cm`], '13.2.4.1'],
+    ['Cobrimento', `CAA ${e.caa} (lajes)`, [`${nf(e.c, 1)} cm`], 'Tab. 7.2'],
+    ['Bordas', 'esq / dir / inf / sup', [LADOS.map(l => e.bordas[l]).join(' / ')], 'A apoiada · E engastada'],
+    ['Peso próprio', '25 · h', [`${nf(c.pp)} kN/m²`], ''],
+    ['Permanente total', 'gk = pp + g', [`${nf(c.gk)} kN/m²`], ''],
+    ['Acidental', 'qk', [`${nf(c.qk)} kN/m²`], 'NBR 6120'],
+    ['Carga total', 'pk = gk + qk', [`${nf(c.pk)} kN/m²`], ''],
+    ['Materiais', 'fcd / fyd / Ecs', [`${nf(m.fcd * 10, 1)} / ${nf(m.fyd * 10, 0)} / ${nf(m.Ecs * 10, 0)} MPa`], ''],
+  ]});
+  out.push({ t: 'Flexão (faixa de 1 m)', cols: R.map(([k]) => regNome[k]), l: [
+    ['Momento característico', 'placa de Kirchhoff', R.map(([, g]) => nf(g.Mk)), 'kN·m/m'],
+    ['Momento de cálculo', 'Md = 1,4 · Mk', R.map(([, g]) => nf(g.Md)), 'kN·m/m'],
+    ['Altura útil', 'd', R.map(([, g]) => nf(g.d)), 'cm'],
+    ['Linha neutra', 'x/d ≤ 0,45', R.map(([, g]) => ({ v: nf(g.xd, 3), alerta: g.xd > 0.45 })), '14.6.4.3'],
+    ['Armadura calculada', 'As = Md / [fyd · (d − 0,4x)]', R.map(([, g]) => nf(g.As)), 'cm²/m'],
+    ['Armadura mínima', r.armadaEmCruz ? 'positiva 0,67ρmín · negativa ρmín' : 'principal ρmín · secundária ≥ 20%', R.map(([, g]) => nf(g.Asmin)), 'Tab. 19.1'],
+    ['Adotado', 's ≤ mín(2h; 20 cm), Ø ≤ h/8', R.map(([, g]) => `Ø${bit(g.phi)} c/${g.s}`), '20.1'],
+    ['Área efetiva', '', R.map(([, g]) => nf(g.AsEf)), 'cm²/m'],
+    ['Abertura de fissuras', `wk ≤ ${nf(r.wlim, 1)} mm (freq.)`, R.map(([k]) => ({ v: nf(r.fiss[k].wk, 3), alerta: r.fiss[k].wk > r.wlim })), '17.3.3.2'],
+  ]});
+  out.push({ t: 'Reações e cisalhamento (sem estribos)', cols: LADOS.map(l => 'Borda ' + nomeBorda(l)), l: [
+    ['Área de influência', 'charneiras 45° / 60°', LADOS.map(l => nf(r.cis[l].area)), 'm²'],
+    ['Reação característica', 'pk · área / comprimento', LADOS.map(l => nf(r.cis[l].Vk)), 'kN/m'],
+    ['Cortante de cálculo', 'Vd = 1,4 · Vk', LADOS.map(l => nf(r.cis[l].Vd)), 'kN/m'],
+    ['Resistência', 'VRd1 = τRd·k·(1,2 + 40ρ₁)·bw·d', LADOS.map(l => ({ v: nf(r.cis[l].VRd1), alerta: !r.cis[l].ok })), '19.4.1'],
+  ]});
+  out.push({ t: 'Flecha (ELS-DEF)', cols: ['Valor'], l: [
+    ['Carga quase permanente', 'gk + ψ₂ · qk', [`${nf(F.pqp)} kN/m²`], '11.8.3.2'],
+    ['Momento atuante', `Ma (faixa ${r.xPrincipal ? 'x' : 'y'})`, [`${nf(F.Ma / 100)} kN·m/m`], ''],
+    ['Momento de fissuração', 'Mr = 1,5 · fctm · Ic / yt', [`${nf(F.Mr / 100)} kN·m/m`], '17.3.1'],
+    ['Inércia equivalente', 'Branson, Ieq / Ic', [nf(F.Ieq / F.Ic, 3)], '17.3.2.1.1'],
+    ['Flecha imediata', 'placa elástica · Ic / Ieq', [`${nf(F.a0, 3)} cm`], ''],
+    ['Flecha total', 'a = a₀ · (1 + αf), αf = 1,32', [{ v: `${nf(F.aTot, 2)} cm`, alerta: F.aTot > F.aLim }], '17.3.2.1.2'],
+    ['Limite', 'menor vão / 250', [`${nf(F.aLim, 2)} cm`], 'Tab. 13.3'],
+  ]});
+  return out;
+}
+
+// ---------- Planta (rotina única para SVG, PDF e DXF) ----------
+function layoutPlanta(r, pen) {
+  const e = r.entrada, lx = e.lx * 100, ly = e.ly * 100, vg = e.apoio, c = e.c;
+  pen.rect(-vg / 2, -vg / 2, lx + vg, ly + vg, 'viga');
+  pen.rect(vg / 2, vg / 2, lx - vg, ly - vg, 'conc');
+  // engastes: linha grossa na face interna e hachura do lado de fora
+  const H = 18;
+  const eng = { esq: [-vg / 2, -vg / 2, -vg / 2, ly + vg / 2, -1, 0], dir: [lx + vg / 2, -vg / 2, lx + vg / 2, ly + vg / 2, 1, 0], inf: [-vg / 2, -vg / 2, lx + vg / 2, -vg / 2, 0, -1], sup: [-vg / 2, ly + vg / 2, lx + vg / 2, ly + vg / 2, 0, 1] };
+  LADOS.forEach(l => { if (e.bordas[l] !== 'E') return; const [x1, y1, x2, y2, dx, dy] = eng[l];
+    pen.line(x1, y1, x2, y2, 'eng'); const n = Math.floor(Math.hypot(x2 - x1, y2 - y1) / 22);
+    for (let k = 0; k <= n; k++) { const t = k / n, x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t; pen.line(x, y, x + dx * H + (dy ? 10 : 0), y + dy * H + (dx ? 10 : 0), 'hatch'); } });
+  const g = p => Math.max(8 * p / 10, 5);
+  // positiva x
+  const yX = ly * 0.38, xA = -vg / 2 + c, xB = lx + vg / 2 - c, px = r.reg.x;
+  pen.poly([[xA, yX + g(px.phi) * 0], [xA, yX], [xB, yX], [xB, yX]], 'bar');
+  pen.text((xA + xB) / 2, yX, `N${px.pos.N} · ${px.pos.qtd} Ø${bit(px.phi)} c/${px.s} · C=${nf(px.pos.comp, 0)}`, 'mid', '', 'acima');
+  pen.line(lx * 0.12, vg / 2, lx * 0.12, ly - vg / 2, 'dim'); pen.tick(lx * 0.12, vg / 2); pen.tick(lx * 0.12, ly - vg / 2);
+  // positiva y
+  const xY = lx * 0.68, yA = -vg / 2 + c, yB = ly + vg / 2 - c, py = r.reg.y;
+  pen.line(xY, yA, xY, yB, 'bar');
+  pen.textV(xY, (yA + yB) / 2, `N${py.pos.N} · ${py.pos.qtd} Ø${bit(py.phi)} c/${py.s} · C=${nf(py.pos.comp, 0)}`);
+  pen.line(vg / 2, ly * 0.88, lx - vg / 2, ly * 0.88, 'dim'); pen.tick(vg / 2, ly * 0.88, true); pen.tick(lx - vg / 2, ly * 0.88, true);
+  // negativas
+  LADOS.forEach(l => {
+    const n = r.neg[l]; if (!n) return;
+    const ext = n.ext, dob = Math.max(e.h - 2 * c, 5) * 0.6;
+    let a, b, lbl, ld;
+    if (l === 'esq' || l === 'dir') { const x0 = l === 'esq' ? 0 : lx, y = l === 'esq' ? ly * 0.62 : ly * 0.22; a = [x0 - ext - vg / 2, y]; b = [x0 + ext + vg / 2, y];
+      pen.poly([[a[0], y - dob], a, b, [b[0], y - dob]], 'bar2');
+      pen.text(x0 + (l === 'esq' ? 6 : -6), y, `N${n.pos.N} · ${n.pos.qtd} Ø${bit(n.phi)} c/${n.s} · C=${nf(n.pos.comp, 0)}`, l === 'esq' ? 'start' : 'end', '', 'acima');
+      const xd = x0 + (l === 'esq' ? 1 : -1) * (ext * 0.55); pen.line(xd, vg / 2, xd, ly - vg / 2, 'dist');
+      pen.text(xd + (l === 'esq' ? 4 : -4), ly * 0.08, `N${n.dist.N} · ${n.dist.qtd} Ø${bit(n.dist.phi)} c/${n.dist.s}`, l === 'esq' ? 'start' : 'end', 'mut');
+    } else { const y0 = l === 'inf' ? 0 : ly, x = l === 'inf' ? lx * 0.3 : lx * 0.82; a = [x, y0 - ext - vg / 2]; b = [x, y0 + ext + vg / 2];
+      pen.poly([[x - dob, a[1]], a, b, [x - dob, b[1]]], 'bar2');
+      pen.textV(x, y0 + (l === 'inf' ? ext * 0.5 + 4 : -ext * 0.5 - 4), `N${n.pos.N} · ${n.pos.qtd} Ø${bit(n.phi)} c/${n.s}`);
+      const yd = y0 + (l === 'inf' ? 1 : -1) * (ext * 0.55); pen.line(vg / 2, yd, lx - vg / 2, yd, 'dist');
+      pen.text(lx * 0.5, yd, `N${n.dist.N} · ${n.dist.qtd} Ø${bit(n.dist.phi)} c/${n.dist.s}`, 'mid', 'mut', l === 'inf' ? 'acima' : 'abaixo'); }
+  });
+  // cotas gerais
+  pen.line(0, -vg / 2 - 40, lx, -vg / 2 - 40, 'dim'); pen.tick(0, -vg / 2 - 40, true); pen.tick(lx, -vg / 2 - 40, true);
+  pen.text(lx / 2, -vg / 2 - 40, `lx = ${nf(lx, 0)}`, 'mid', 'mut', 'abaixo');
+  pen.line(-vg / 2 - 40, 0, -vg / 2 - 40, ly, 'dim'); pen.tick(-vg / 2 - 40, 0); pen.tick(-vg / 2 - 40, ly);
+  pen.textV(-vg / 2 - 40, ly / 2, `ly = ${nf(ly, 0)}`, 'mut');
+  pen.text(lx / 2, ly / 2, `h = ${nf(e.h, 1)} cm`, 'mid', 'mut');
+  return { x0: -vg / 2 - 70, y0: -vg / 2 - 70, x1: lx + vg / 2 + 30, y1: ly + vg / 2 + 30 };
+}
+
+function svgPen(s, ox, oyTop) {
+  const els = [];
+  const X = x => ((x - ox) * s).toFixed(1), Y = y => ((oyTop - y) * s).toFixed(1);
+  const cls = { viga: 'viga', conc: 'conc', eng: 'eng', hatch: 'hatch', bar: 'bar', bar2: 'bar2', dist: 'dist', dim: 'dim' };
+  const off = { acima: -5, abaixo: 13 };
+  return { els,
+    rect: (x, y, w, h, k) => els.push(`<rect class="${cls[k]}" x="${X(x)}" y="${Y(y + h)}" width="${(w * s).toFixed(1)}" height="${(h * s).toFixed(1)}"/>`),
+    line: (x1, y1, x2, y2, k) => els.push(`<line class="${cls[k]}" x1="${X(x1)}" y1="${Y(y1)}" x2="${X(x2)}" y2="${Y(y2)}"/>`),
+    poly: (pts, k) => els.push(`<polyline class="${cls[k]}" points="${pts.map(p => X(p[0]) + ',' + Y(p[1])).join(' ')}"/>`),
+    tick: (x, y, vert) => els.push(`<line class="dim" x1="${(+X(x) - 4).toFixed(1)}" y1="${(+Y(y) + 4).toFixed(1)}" x2="${(+X(x) + 4).toFixed(1)}" y2="${(+Y(y) - 4).toFixed(1)}"/>`),
+    text: (x, y, t, anc, k, pos) => els.push(`<text class="${k || ''}" x="${X(x)}" y="${(+Y(y) + (off[pos] || 4)).toFixed(1)}" font-size="12" text-anchor="${anc === 'mid' ? 'middle' : anc === 'end' ? 'end' : 'start'}">${esc(t)}</text>`),
+    textV: (x, y, t, k) => els.push(`<text class="${k || ''}" font-size="12" text-anchor="middle" transform="translate(${(+X(x) - 6).toFixed(1)},${Y(y)}) rotate(-90)">${esc(t)}</text>`),
+  };
+}
+function desenharPlanta(r) {
+  const medir = { rect() {}, line() {}, poly() {}, tick() {}, text() {}, textV() {} };
+  const b = layoutPlanta(r, medir);
+  const W = 760, s = W / (b.x1 - b.x0);
+  const pen = svgPen(s, b.x0, b.y1); layoutPlanta(r, pen);
+  return `<svg viewBox="0 0 ${W} ${((b.y1 - b.y0) * s).toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Planta de armação da laje">${pen.els.join('')}</svg>`;
+}
+
+function render() {
+  const e = lerEntrada();
+  $('croqui').innerHTML = croqui(e.bordas);
+  if (!(e.lx >= 1) || !(e.ly >= 1) || !(e.h >= 5) || !(e.apoio > 0)) return;
+  const r = calcularLaje(e); window.__r = r;
+  const msgs = [...r.erros, ...r.avisos];
+  $('status').className = 'status ' + (r.erros.length ? 'bad' : r.avisos.length ? 'warn' : 'ok');
+  $('status').innerHTML = `<b>${r.erros.length ? 'Laje inadequada' : r.avisos.length ? 'Atenção' : 'Verificações atendidas'}</b>
+    ${msgs.length ? `<ul class="msgs">${msgs.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '<span style="margin-left:8px;color:var(--ink);font-weight:400">Flexão, cisalhamento, fissuração e flecha dentro dos limites da NBR 6118.</span>'}`;
+  const pill = ok => `<span class="pill ${ok ? 'ok' : 'bad'}">${ok ? 'ok' : 'revisar'}</span>`;
+  $('resumo').innerHTML = `<thead><tr><th>Região</th><th class="v">Mk (kN·m/m)</th><th class="v">As calc. (cm²/m)</th><th class="v">Armadura</th><th class="v">wk (mm)</th><th></th></tr></thead><tbody>
+    ${regioes(r).map(([k, g]) => `<tr><td><b>${regNome[k]}</b></td><td class="v">${nf(g.Mk)}</td><td class="v">${nf(Math.max(g.As, g.Asmin))}</td><td class="v">Ø${bit(g.phi)} c/${g.s}</td><td class="v">${nf(r.fiss[k].wk, 3)}</td><td>${pill(g.erros.length === 0 && r.fiss[k].wk <= r.wlim)}</td></tr>`).join('')}
+    <tr><td><b>Flecha total</b></td><td class="v">—</td><td class="v">—</td><td class="v">${nf(r.flecha.aTot)} cm</td><td class="v">lim. ${nf(r.flecha.aLim)}</td><td>${pill(r.flecha.aTot <= r.flecha.aLim)}</td></tr></tbody>`;
+  $('planta').innerHTML = desenharPlanta(r);
+  $('reac').innerHTML = LADOS.map(l => { const v = r.cis[l].Vk, fg = r.cargas.gk / r.cargas.pk;
+    return `<div><dt>Viga ${nomeBorda(l)}</dt><dd>${nf(v, 1)} kN/m<small>g ${nf(v * fg, 2)} · q ${nf(v * (1 - fg), 2)}</small></dd></div>`; }).join('');
+  const abertos = new Set([...document.querySelectorAll('details.memo[open]')].map(d => d.dataset.k));
+  if (!document.querySelector('details.memo')) abertos.add('Flexão (faixa de 1 m)');
+  $('memoria').innerHTML = memoria(r).map(sec => `<details class="memo" data-k="${esc(sec.t)}" ${abertos.has(sec.t) ? 'open' : ''}><summary>${esc(sec.t)}</summary>
+    <div class="tbl"><table><thead><tr><th>Item</th><th>Expressão</th>${sec.cols.map(c => `<th class="v">${esc(c)}</th>`).join('')}<th>Ref.</th></tr></thead><tbody>
+    ${sec.l.map(l => `<tr><td>${l[0]}</td><td class="f">${l[1]}</td>${l[2].map(v => typeof v === 'object' ? `<td class="v${v.alerta ? ' alerta' : ''}">${v.v}</td>` : `<td class="v">${v}</td>`).join('')}<td class="r">${l[3]}</td></tr>`).join('')}
+    </tbody></table></div></details>`).join('');
+  const q = r.quant;
+  $('quant').innerHTML = `<thead><tr><th>Pos.</th><th>Descrição</th><th class="v">Qtd.</th><th class="v">Ø (mm)</th><th class="v">Espaç.</th><th class="v">Compr. unit.</th><th class="v">Massa</th></tr></thead><tbody>
+    ${r.pos.map(p => `<tr><td>N${p.N}</td><td>${esc(p.desc)}</td><td class="v">${p.qtd}</td><td class="v">${bit(p.phi)}</td><td class="v">c/${p.s}</td><td class="v">${nf(p.comp / 100)} m</td><td class="v">${nf(p.massa, 1)} kg</td></tr>`).join('')}
+    <tr><td></td><td><b>Aço total</b> (sem perdas)</td><td></td><td></td><td></td><td></td><td class="v"><b>${nf(q.pesoAco, 1)} kg</b></td></tr>
+    <tr><td></td><td>Concreto C${e.fck} (entre faces das vigas)</td><td></td><td></td><td></td><td></td><td class="v">${nf(q.vol, 3)} m³</td></tr>
+    <tr><td></td><td>Fôrma de fundo</td><td></td><td></td><td></td><td></td><td class="v">${nf(q.forma)} m²</td></tr>
+    <tr><td></td><td>Taxa de armadura</td><td></td><td></td><td></td><td></td><td class="v">${nf(q.taxa, 0)} kg/m³</td></tr></tbody>`;
+}
+
+// ---------- Exportação ----------
+const asciiPdf = t => String(t).replace(/ρmín/g, 'rho_min').replace(/ρ₁/g, 'rho1').replace(/ρ/g, 'rho').replace(/αf/g, 'alfa_f').replace(/α/g, 'alfa')
+  .replace(/ψ₂/g, 'psi2').replace(/τRd/g, 'tauRd').replace(/λ/g, 'lambda').replace(/ν/g, 'nu').replace(/γ/g, 'gama').replace(/≤/g, '<=').replace(/≥/g, '>=')
+  .replace(/[−–—]/g, '-').replace(/→/g, '->').replace(/₀/g, '0');
+function msg(t) { $('expMsg').textContent = t; }
+async function salvar(filename, data) { FC.baixar(filename, data); msg('Arquivo baixado.'); }
+function gerarPdf() {
+  const r = window.__r; if (!r || !window.jspdf) { msg('Gerador de PDF não carregou. Recarregue a página.'); return null; }
+  const doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, HP = 297, M = 14; let y = M; const e = r.entrada;
+  const novaPag = n => { if (y + n > HP - 14) { doc.addPage(); y = M; } };
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.text('Memória de cálculo · Laje maciça', M, y + 4); y += 9;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90);
+  doc.text(asciiPdf(`lx × ly = ${nf(e.lx)} × ${nf(e.ly)} m · h = ${nf(e.h, 1)} cm · C${e.fck} / CA-50 · NBR 6118:2023 · ${new Date().toLocaleDateString('pt-BR')}`), M, y); y += 3;
+  doc.setDrawColor(30); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 6;
+  doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(r.erros.length ? 'LAJE INADEQUADA' : r.avisos.length ? 'ATENÇÃO' : 'VERIFICAÇÕES ATENDIDAS', M, y); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  [...r.erros, ...r.avisos].forEach(m => { const ls = doc.splitTextToSize('• ' + asciiPdf(m), W - 2 * M); novaPag(ls.length * 4); doc.text(ls, M, y); y += ls.length * 4; });
+  y += 2;
+  for (const sec of memoria(r)) {
+    const nC = sec.cols.length, xExpr = M + 40, xVal0 = M + 40 + 52, xRef = W - M, larg = (xRef - 16 - xVal0) / nC;
+    novaPag(16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text(asciiPdf(sec.t).toUpperCase(), M, y);
+    doc.setFontSize(6.6); doc.setTextColor(110); sec.cols.forEach((c, i) => doc.text(asciiPdf(c), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }));
+    y += 1.6; doc.setLineWidth(0.2); doc.setDrawColor(150); doc.line(M, y, W - M, y); y += 3.6;
+    for (const l of sec.l) {
+      const ex = doc.splitTextToSize(asciiPdf(l[1]), 50); const hh = Math.max(1, ex.length) * 3.3 + 0.6; novaPag(hh);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(20); doc.text(doc.splitTextToSize(asciiPdf(l[0]), 38)[0], M, y);
+      doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(90); doc.text(ex, xExpr, y);
+      l[2].forEach((v, i) => { const o = typeof v === 'object' ? v : { v }; doc.setFont('courier', 'bold'); doc.setFontSize(nC > 3 ? 6.8 : 7.6); o.alerta ? doc.setTextColor(176, 48, 42) : doc.setTextColor(20); doc.text(asciiPdf(o.v), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }); });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.6); doc.setTextColor(110); doc.text(asciiPdf(l[3]), xRef, y, { align: 'right' });
+      y += hh;
+    }
+    y += 3;
+  }
+  // planta
+  doc.addPage(); y = M;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(20); doc.text('PLANTA DE ARMAÇÃO', M, y + 3); y += 8;
+  const medir = { rect() {}, line() {}, poly() {}, tick() {}, text() {}, textV() {} };
+  const b = layoutPlanta(r, medir);
+  const s = Math.min((W - 2 * M) / (b.x1 - b.x0), 170 / (b.y1 - b.y0));
+  const X = x => M + (x - b.x0) * s, Y = yy => y + (b.y1 - yy) * s;
+  const cor = { viga: [120, 120, 120], conc: [200, 200, 200], eng: [20, 20, 20], hatch: [130, 130, 130], bar: [178, 59, 43], bar2: [122, 79, 163], dist: [122, 79, 163], dim: [120, 120, 120] };
+  const lw = { eng: 0.8, bar: 0.5, bar2: 0.5, dist: 0.25, hatch: 0.15, dim: 0.15, viga: 0.2 };
+  const pen = {
+    rect: (x, yy, w, h, k) => { if (k === 'conc') { doc.setFillColor(238, 238, 236); doc.rect(X(x), Y(yy + h), w * s, h * s, 'F'); } else { doc.setFillColor(205, 208, 203); doc.setDrawColor(90); doc.setLineWidth(0.2); doc.rect(X(x), Y(yy + h), w * s, h * s, 'FD'); } },
+    line: (x1, y1, x2, y2, k) => { doc.setDrawColor(...cor[k]); doc.setLineWidth(lw[k] || 0.2); if (k === 'dist') doc.setLineDashPattern([1.5, 1], 0); doc.line(X(x1), Y(y1), X(x2), Y(y2)); doc.setLineDashPattern([], 0); },
+    poly: (pts, k) => { for (let i = 1; i < pts.length; i++) pen.line(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], k); },
+    tick: (x, yy) => { doc.setDrawColor(120); doc.setLineWidth(0.15); doc.line(X(x) - 1, Y(yy) + 1, X(x) + 1, Y(yy) - 1); },
+    text: (x, yy, t, anc, k, pos) => { doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(k === 'mut' ? 110 : 20); doc.text(asciiPdf(t), X(x), Y(yy) + (pos === 'acima' ? -1 : pos === 'abaixo' ? 2.8 : 1), { align: anc === 'mid' ? 'center' : anc === 'end' ? 'right' : 'left' }); },
+    textV: (x, yy, t, k) => { doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(k === 'mut' ? 110 : 20); doc.text(asciiPdf(t), X(x) - 1.2, Y(yy), { angle: 90, align: 'center' }); },
+  };
+  layoutPlanta(r, pen);
+  y += (b.y1 - b.y0) * s + 8;
+  novaPag(10 + r.pos.length * 3.6);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(20); doc.text('RELAÇÃO DO AÇO', M, y); y += 4;
+  doc.setFont('courier', 'normal'); doc.setFontSize(7.4);
+  r.pos.forEach(p => { doc.text(asciiPdf(`N${String(p.N).padEnd(3)} ${String(p.qtd).padStart(3)} Ø${bit(p.phi).padEnd(5)} c/${String(p.s).padEnd(3)} C=${nf(p.comp, 0).padStart(5)} cm ${nf(p.massa, 1).padStart(7)} kg  ${p.desc}`), M, y); y += 3.4; });
+  y += 1; doc.setFont('courier', 'bold');
+  doc.text(asciiPdf(`Aço ${nf(r.quant.pesoAco, 1)} kg · Concreto ${nf(r.quant.vol, 3)} m³ · Fôrma ${nf(r.quant.forma)} m²`), M, y); y += 6;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(20);
+  doc.text(asciiPdf(`Reações características nas vigas (kN/m): ` + LADOS.map(l => `${nomeBorda(l)} ${nf(r.cis[l].Vk, 1)}`).join(' · ')), M, y);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(7); doc.setTextColor(110);
+  doc.text(doc.splitTextToSize('Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos por profissional habilitado, responsável técnico pela ART/RRT. Laje isolada, sem compatibilização de momentos com lajes vizinhas.', W - 2 * M), M, HP - 10);
+  return doc.output('arraybuffer');
+}
+function gerarDxf() {
+  const r = window.__r, e = r.entrada; const L = []; const p = (...a) => L.push(...a.map(String));
+  const lay = { viga: 'VIGA', conc: 'LAJE', eng: 'ENGASTE', hatch: 'ENGASTE', bar: 'ARMADURA_POS', bar2: 'ARMADURA_NEG', dist: 'DISTRIBUICAO', dim: 'COTA' };
+  const cores = { VIGA: 8, LAJE: 7, ENGASTE: 7, ARMADURA_POS: 1, ARMADURA_NEG: 6, DISTRIBUICAO: 4, COTA: 9, TEXTO: 3 };
+  p(0, 'SECTION', 2, 'TABLES', 0, 'TABLE', 2, 'LAYER', 70, Object.keys(cores).length);
+  for (const [n, c] of Object.entries(cores)) p(0, 'LAYER', 2, n, 70, 0, 62, c, 6, 'CONTINUOUS');
+  p(0, 'ENDTAB', 0, 'ENDSEC', 0, 'SECTION', 2, 'ENTITIES');
+  const f = v => (+v).toFixed(3);
+  const ln = (x1, y1, x2, y2, l) => p(0, 'LINE', 8, l, 10, f(x1), 20, f(y1), 30, 0, 11, f(x2), 21, f(y2), 31, 0);
+  const txt = t => asciiPdf(t).replace(/Ø/g, '%%c').replace(/·/g, '-').replace(/[^\x20-\x7E]/g, ch => ({ 'á': 'a', 'ã': 'a', 'é': 'e', 'ê': 'e', 'í': 'i', 'ó': 'o', 'õ': 'o', 'ú': 'u', 'ç': 'c', '×': 'x' }[ch] || ''));
+  const T = (x, y, t, anc, rot) => p(0, 'TEXT', 8, 'TEXTO', 10, f(x), 20, f(y), 30, 0, 40, f(6), 1, txt(t), ...(rot ? [50, 90] : []), ...(anc ? [72, anc, 11, f(x), 21, f(y), 31, 0] : []));
+  const pen = {
+    rect: (x, y, w, h, k) => { const a = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]; a.forEach((pt, i) => { const q = a[(i + 1) % 4]; ln(pt[0], pt[1], q[0], q[1], lay[k]); }); },
+    line: (x1, y1, x2, y2, k) => ln(x1, y1, x2, y2, lay[k]),
+    poly: (pts, k) => { for (let i = 1; i < pts.length; i++) ln(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], lay[k]); },
+    tick: (x, y) => ln(x - 3, y - 3, x + 3, y + 3, 'COTA'),
+    text: (x, y, t, anc, k, pos) => T(x, y + (pos === 'acima' ? 3 : pos === 'abaixo' ? -9 : -3), t, anc === 'mid' ? 1 : anc === 'end' ? 2 : 0),
+    textV: (x, y, t) => T(x - 3, y, t, 1, true),
+  };
+  layoutPlanta(r, pen);
+  T(-e.apoio / 2, e.ly * 100 + e.apoio / 2 + 30, `LAJE ${nf(e.lx)} x ${nf(e.ly)} m - h=${nf(e.h, 1)} cm - C${e.fck} / CA-50 - cotas em cm`);
+  p(0, 'ENDSEC', 0, 'EOF'); return L.join('\r\n');
+}
+$('btnPdf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar a memória de cálculo em PDF'))) return; FC.registrarExport('laje', 'pdf'); msg('Gerando PDF…'); const buf = gerarPdf(); if (buf) await salvar(`memoria-laje-${window.__r.entrada.lx}x${window.__r.entrada.ly}.pdf`, buf); });
+$('btnDxf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar o desenho em DXF'))) return; FC.registrarExport('laje', 'dxf');
+  if (!window.JSZip) { msg('Compactador não carregou. Recarregue a página.'); return; }
+  msg('Gerando DXF…'); const e = window.__r.entrada, nome = `laje-${e.lx}x${e.ly}`;
+  const zip = new JSZip(); zip.file(nome + '.dxf', gerarDxf()); await salvar(nome + '-dxf.zip', await zip.generateAsync({ type: 'blob' }));
+});
+let pend = 0; const agendar = () => { cancelAnimationFrame(pend); pend = requestAnimationFrame(render); };
+$('f').addEventListener('input', agendar); $('f').addEventListener('change', agendar); $('f').addEventListener('submit', ev => ev.preventDefault());
+render();
+</script>
+<script>
+// ---------- Projetos salvos ----------
+let projetoId = null;
+function aplicarEntrada(e) {
+  for (const k of ['lx', 'ly', 'h', 'apoio', 'g', 'q', 'psi2', 'fck', 'caa']) if (e[k] != null) $(k).value = String(e[k]);
+  if (e.bordas) for (const l of ['esq', 'dir', 'inf', 'sup']) $('b_' + l).value = e.bordas[l];
+  render();
+}
+$('btnSalvar').addEventListener('click', async () => {
+  const r = await FC.salvarProjeto('laje', lerEntrada(), `Laje ${$('lx').value} × ${$('ly').value} m · h=${$('h').value}`, projetoId);
+  if (r) projetoId = r.id;
+});
+$('btnAbrir').addEventListener('click', async () => {
+  const p = await FC.abrirProjeto('laje');
+  if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+});
+(async () => {
+  const id = new URLSearchParams(location.search).get('p');
+  if (!id) return;
+  const espera = () => new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
+  await espera();
+  const p = FC.sessao && await FC.lerProjeto(id);
+  if (p && p.modulo === 'laje') { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+})();
+</script>
+</body>
+</html>

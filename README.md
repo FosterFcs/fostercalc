@@ -1,0 +1,65 @@
+# Foster Calc
+
+Cálculo de vigas contínuas e lajes maciças de concreto armado pela ABNT NBR 6118:2023, no navegador.
+PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
+
+## Arquivos
+
+| Arquivo | Função |
+|---|---|
+| `index.html` | Página inicial, meus projetos e planos |
+| `viga.html` | Módulo de vigas (1 a 5 vãos, balanços) |
+| `laje.html` | Módulo de lajes maciças |
+| `app.js` | Login, plano, projetos salvos, barra superior e downloads |
+| `manifest.json`, `sw.js`, `icon-*.png` | Instalação como app e uso offline |
+
+## Publicar no GitHub Pages
+
+1. Crie o repositório `fostercalc` em github.com/FosterFcs (público).
+2. Envie todos os arquivos desta pasta para a raiz do repositório.
+3. Em **Settings → Pages**, escolha *Deploy from a branch*, branch `main`, pasta `/ (root)`.
+4. O site fica em `https://fosterfcs.github.io/fostercalc/`.
+
+## Configurar o login no Supabase (uma vez)
+
+Projeto: **foster-calc** (`fvsdlpnvqfvjdxmfgbjx`, São Paulo).
+
+Em **Authentication → URL Configuration**:
+- *Site URL*: `https://fosterfcs.github.io/fostercalc/`
+- *Redirect URLs*: adicione `https://fosterfcs.github.io/fostercalc/**`
+  (e depois `https://fostercalc.com.br/**` quando o domínio estiver apontado)
+
+Sem isso, os links de confirmação de e-mail e de recuperação de senha voltam para o endereço errado.
+
+O envio de e-mails do Supabase gratuito tem limite baixo por hora. Para produção, configure um SMTP próprio
+em **Authentication → Emails → SMTP Settings** (ex.: Resend, Brevo ou o e-mail da Foster).
+
+## Ativar o plano Pro de um cliente
+
+No **SQL Editor** do Supabase:
+
+```sql
+update public.perfis
+set plano = 'pro', plano_ate = now() + interval '30 days'
+where id = (select id from auth.users where email = 'cliente@exemplo.com');
+```
+
+Para cancelar: `set plano = 'gratis', plano_ate = null`.
+Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automaticamente.
+
+## Banco de dados
+
+- `perfis`: nome, CREA/CAU, empresa, plano e validade. O usuário edita só os dados cadastrais; o plano só muda pelo painel/SQL.
+- `projetos`: entradas de cada cálculo salvo (`modulo` = viga ou laje). Cada usuário vê apenas os seus.
+- `exportacoes`: registro de cada PDF/DXF baixado (só aceita inserção de quem é Pro).
+
+Todas as tabelas com RLS; o verificador de segurança do Supabase está sem alertas.
+
+## Limitações conhecidas
+
+- O cálculo e a geração de PDF/DXF rodam no navegador. O bloqueio do Pro impede o uso normal,
+  mas um usuário técnico consegue contorná-lo lendo o código. Próximo passo: gerar a memória em
+  PDF numa Edge Function, que só responde a assinantes.
+- Cobrança manual (WhatsApp). Próximo passo: integrar Asaas ou Mercado Pago com webhook que
+  atualiza `perfis.plano` sozinho.
+- Preço exibido: `R$ 29,90/mês`, em `app.js` (`CONFIG.precoPro`).
