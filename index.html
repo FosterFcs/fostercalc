@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1d5c8f">
+<meta name="theme-color" content="#141414">
 <title>Foster Calc · Cálculo estrutural NBR 6118</title>
 <meta name="description" content="Dimensionamento de vigas contínuas e lajes maciças de concreto armado pela NBR 6118, com memória de cálculo em PDF e detalhamento em DXF.">
 <link rel="manifest" href="manifest.json">
@@ -15,21 +15,21 @@
 <style>
 /* Layout: capa de prancha — título forte com selo de norma, módulos como folhas lado a lado, projetos em lista */
 :root{
-  --paper:#eef0ec; --sheet:#fbfcfa; --ink:#1c2321; --muted:#5d6763; --line:#cfd5d1;
-  --accent:#1d5c8f; --accent-soft:#e1ebf3; --concrete:#d9dcd6; --steel:#b23b2b; --steel2:#7a4fa3;
-  --ok:#2f7a4d; --ok-soft:#e2f1e7; --bad:#b0302a; --bad-soft:#f6e1df;
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --steel:#c4161c; --steel2:#3a3d42;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --bad:#a3121a; --bad-soft:#f6e1df;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#141917; --sheet:#1b211f; --ink:#e4e8e5; --muted:#9aa49f; --line:#2f3835;
-  --accent:#6fa9d9; --accent-soft:#1d2d3a; --concrete:#3a423f; --steel:#e0705f; --steel2:#b893dd;
-  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ec7b72; --bad-soft:#321b19; color-scheme:dark}}
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --paper:#141917; --sheet:#1b211f; --ink:#e4e8e5; --muted:#9aa49f; --line:#2f3835;
-  --accent:#6fa9d9; --accent-soft:#1d2d3a; --concrete:#3a423f; --steel:#e0705f; --steel2:#b893dd;
-  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ec7b72; --bad-soft:#321b19; color-scheme:dark}
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -50,11 +50,11 @@ body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--f-body)}
 .prancha svg{width:100%;height:auto;display:block}
 .prancha small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:8px}
 svg .conc{fill:var(--concrete);stroke:var(--ink);stroke-width:1}
-svg .stir{stroke:var(--accent);stroke-width:1}
+svg .stir{stroke:var(--muted);stroke-width:1}
 svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round}
 svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round}
 svg .mpos{fill:var(--steel);fill-opacity:.15;stroke:var(--steel);stroke-width:1.3}
-svg .mneg{fill:var(--accent);fill-opacity:.15;stroke:var(--accent);stroke-width:1.3}
+svg .mneg{fill:var(--steel2);fill-opacity:.15;stroke:var(--steel2);stroke-width:1.3}
 svg .sup{fill:var(--muted)}
 svg text{fill:var(--muted);font:11px var(--f-mono)}
 h2{font:600 1.7rem/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:0 0 6px}

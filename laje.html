@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1d5c8f">
+<meta name="theme-color" content="#141414">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -15,21 +15,21 @@
 <style>
 /* Layout: prancheta técnica — entrada à esquerda com croqui das bordas, folha de resultados à direita */
 :root{
-  --paper:#eef0ec; --sheet:#fbfcfa; --ink:#1c2321; --muted:#5d6763; --line:#cfd5d1;
-  --accent:#1d5c8f; --accent-soft:#e1ebf3; --concrete:#d9dcd6; --beam:#b9beb7; --steel:#b23b2b; --steel2:#7a4fa3;
-  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#b0302a; --bad-soft:#f6e1df;
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --beam:#b8babd; --steel:#c4161c; --steel2:#3a3d42;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#a3121a; --bad-soft:#f6e1df;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#141917; --sheet:#1b211f; --ink:#e4e8e5; --muted:#9aa49f; --line:#2f3835;
-  --accent:#6fa9d9; --accent-soft:#1d2d3a; --concrete:#2b3230; --beam:#47504c; --steel:#e0705f; --steel2:#b893dd;
-  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ec7b72; --bad-soft:#321b19; color-scheme:dark}}
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --paper:#141917; --sheet:#1b211f; --ink:#e4e8e5; --muted:#9aa49f; --line:#2f3835;
-  --accent:#6fa9d9; --accent-soft:#1d2d3a; --concrete:#2b3230; --beam:#47504c; --steel:#e0705f; --steel2:#b893dd;
-  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ec7b72; --bad-soft:#321b19; color-scheme:dark}
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -703,7 +703,7 @@ function gerarPdf() {
   const b = layoutPlanta(r, medir);
   const s = Math.min((W - 2 * M) / (b.x1 - b.x0), 170 / (b.y1 - b.y0));
   const X = x => M + (x - b.x0) * s, Y = yy => y + (b.y1 - yy) * s;
-  const cor = { viga: [120, 120, 120], conc: [200, 200, 200], eng: [20, 20, 20], hatch: [130, 130, 130], bar: [178, 59, 43], bar2: [122, 79, 163], dist: [122, 79, 163], dim: [120, 120, 120] };
+  const cor = { viga: [120, 120, 120], conc: [200, 200, 200], eng: [20, 20, 20], hatch: [130, 130, 130], bar: [196, 22, 28], bar2: [58, 61, 66], dist: [58, 61, 66], dim: [120, 120, 120] };
   const lw = { eng: 0.8, bar: 0.5, bar2: 0.5, dist: 0.25, hatch: 0.15, dim: 0.15, viga: 0.2 };
   const pen = {
     rect: (x, yy, w, h, k) => { if (k === 'conc') { doc.setFillColor(238, 238, 236); doc.rect(X(x), Y(yy + h), w * s, h * s, 'F'); } else { doc.setFillColor(205, 208, 203); doc.setDrawColor(90); doc.setLineWidth(0.2); doc.rect(X(x), Y(yy + h), w * s, h * s, 'FD'); } },
