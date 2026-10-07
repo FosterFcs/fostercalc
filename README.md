@@ -1,6 +1,6 @@
 # Foster Calc
 
-Cálculo de vigas contínuas e lajes maciças de concreto armado pela ABNT NBR 6118:2023, no navegador.
+Cálculo de lajes maciças, vigas contínuas, pilares retangulares e sapatas isoladas de concreto armado pela ABNT NBR 6118:2023, no navegador.
 PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 
 ## Arquivos
@@ -10,6 +10,8 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `index.html` | Página inicial, meus projetos e planos |
 | `viga.html` | Módulo de vigas (1 a 5 vãos, balanços) |
 | `laje.html` | Módulo de lajes maciças |
+| `pilar.html` | Módulo de pilares (flexão composta oblíqua, 2ª ordem) |
+| `sapata.html` | Módulo de sapatas isoladas rígidas |
 | `app.js` | Login, plano, projetos salvos, barra superior e downloads |
 | `manifest.json`, `sw.js`, `icon-*.png` | Instalação como app e uso offline |
 
@@ -52,7 +54,7 @@ Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automatica
 ## Banco de dados
 
 - `perfis`: nome, CREA/CAU, empresa, plano e validade. O usuário edita só os dados cadastrais; o plano só muda pelo painel/SQL.
-- `projetos`: entradas de cada cálculo salvo (`modulo` = viga ou laje). Cada usuário vê apenas os seus.
+- `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, pilar ou sapata). Cada usuário vê apenas os seus.
 - `exportacoes`: registro de cada PDF/DXF baixado (só aceita inserção de quem é Pro).
 
 Todas as tabelas com RLS; o verificador de segurança do Supabase está sem alertas.

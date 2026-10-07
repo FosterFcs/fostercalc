@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="description" content="Dimensionamento de sapatas isoladas rígidas pela NBR 6118 e NBR 6122. Foster Calc.">
+<title>Sapatas · Foster Calc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: prancheta técnica — entrada à esquerda, folha de resultados à direita */
+:root{
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --beam:#b8babd; --steel:#c4161c; --steel2:#3a3d42;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#a3121a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:20px}
+header.top h1{font:700 2rem/1 var(--f-display);letter-spacing:.01em;margin:0}
+header.top h1 span{color:var(--accent)}
+header.top p{margin:0;color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+aside.inputs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside.inputs{position:static}}
+fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+legend{font:600 .78rem/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 0 8px;grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+label.full{grid-column:1/-1}
+input,select{font:500 .95rem var(--f-mono);color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.unit{position:relative}.unit input{padding-right:52px}
+.unit i{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:400 .75rem var(--f-mono);color:var(--muted);font-style:normal;pointer-events:none}
+.bordas{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;gap:6px;align-items:center;justify-items:center}
+.bordas select{padding:5px 4px;font-size:.8rem;width:100%;max-width:110px}
+.bordas .b-sup{grid-column:2;grid-row:1}.bordas .b-esq{grid-column:1;grid-row:2;justify-self:end}
+.bordas .b-dir{grid-column:3;grid-row:2;justify-self:start}.bordas .b-inf{grid-column:2;grid-row:3}
+.croqui{grid-column:2;grid-row:2;width:100%;max-width:120px}
+.croqui svg{width:100%;height:auto;display:block}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+h2{font:600 1.35rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 12px}
+.status{padding:12px 16px;border-radius:6px;font-weight:500}
+.status.ok{background:var(--ok-soft);color:var(--ok)}.status.warn{background:var(--warn-soft);color:var(--warn)}.status.bad{background:var(--bad-soft);color:var(--bad)}
+.status b{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.msgs{margin:8px 0 0;padding-left:18px;font-size:.88rem;color:var(--ink);font-weight:400}
+.pill{display:inline-block;font:600 .66rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.duo{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+@media (max-width:700px){.duo{grid-template-columns:minmax(0,1fr)}}
+.planta svg{width:100%;height:auto;display:block}
+svg .conc{fill:var(--concrete);stroke:none}
+svg .viga{fill:var(--beam);stroke:var(--ink);stroke-width:.8}
+svg .eng{stroke:var(--ink);stroke-width:3;fill:none}
+svg .hatch{stroke:var(--muted);stroke-width:.8}
+svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .dist{stroke:var(--steel2);stroke-width:1.2;fill:none;stroke-dasharray:6 4}
+svg .dim{stroke:var(--muted);stroke-width:.8;fill:none}
+svg text{fill:var(--ink);font-family:var(--f-mono)}
+svg text.mut{fill:var(--muted)}
+.reac{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.reac div{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.reac dt{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.reac dd{margin:2px 0 0;font:600 1.3rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.reac dd small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:3px}
+details.memo{border-top:1px solid var(--line)}
+details.memo:last-of-type{border-bottom:1px solid var(--line)}
+details.memo summary{cursor:pointer;padding:10px 2px;font:600 1.05rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.memo summary::-webkit-details-marker{display:none}
+details.memo summary::after{content:"+";font-family:var(--f-mono);color:var(--muted)}
+details.memo[open] summary::after{content:"–"}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+th.v{text-align:right}
+td.f{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);min-width:170px}
+td.v{font-family:var(--f-mono);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+td.v.alerta{color:var(--bad);font-weight:600}
+td.r{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.memo .tbl{padding-bottom:12px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.pri{font:600 .9rem var(--f-body);border-radius:4px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--sheet)}
+button.pri.ghost{background:transparent;color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted)}
+.disclaimer{font-size:.8rem;color:var(--muted);border-left:3px solid var(--line);padding:4px 0 4px 12px;max-width:72ch}
+ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
+
+.secao svg,.desenhos svg{width:100%;height:auto;display:block;max-width:420px}
+.desenhos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:700px){.desenhos{grid-template-columns:minmax(0,1fr)}}
+.cap{font:500 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.reac dd{font-size:1.2rem}
+</style>
+</head>
+<body data-pagina="sapata">
+<div class="wrap">
+<div id="fc-bar"></div>
+<header class="top">
+  <h1>Sapata CA <span>· NBR 6118</span></h1>
+  <p>Sapata isolada rígida sob pilar retangular · NBR 6118:2023 e NBR 6122</p>
+</header>
+
+<div class="grid">
+<aside class="inputs" aria-label="Dados de entrada">
+  <form id="f" class="sheet" style="display:flex;flex-direction:column;gap:18px" autocomplete="off">
+    <fieldset>
+      <legend>Pilar</legend>
+      <label>Lado ap (x)<span class="unit"><input id="ap" type="number" step="1" min="14" value="20"><i>cm</i></span></label>
+      <label>Lado bp (y)<span class="unit"><input id="bp" type="number" step="1" min="14" value="40"><i>cm</i></span></label>
+      <label class="full">Ø das barras do pilar<select id="phiPilar"><option value="10">10,0 mm</option><option value="12.5" selected>12,5 mm</option><option value="16">16,0 mm</option><option value="20">20,0 mm</option><option value="25">25,0 mm</option></select></label>
+    </fieldset>
+    <fieldset>
+      <legend>Cargas características na base do pilar</legend>
+      <label class="full">Normal Nk<span class="unit"><input id="Nk" type="number" step="5" min="1" value="800"><i>kN</i></span></label>
+      <label>Mx (em ap)<span class="unit"><input id="Mxk" type="number" step="0.5" min="0" value="0"><i>kN·m</i></span></label>
+      <label>My (em bp)<span class="unit"><input id="Myk" type="number" step="0.5" min="0" value="0"><i>kN·m</i></span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Solo</legend>
+      <label>Tensão admissível<span class="unit"><input id="sadm" type="number" step="10" min="50" value="200"><i>kPa</i></span></label>
+      <label>Peso próprio + solo<span class="unit"><input id="ppPerc" type="number" step="1" min="0" value="5"><i>% Nk</i></span></label>
+      <label class="full">Profundidade da cava<span class="unit"><input id="prof" type="number" step="0.1" min="0.5" value="1.50"><i>m</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">A tensão admissível vem da sondagem e do projeto de fundação (NBR 6122). 200 kPa = 2,0 kgf/cm².</p>
+    </fieldset>
+    <fieldset>
+      <legend>Materiais</legend>
+      <label>Concreto<select id="fck"><option>20</option><option selected>25</option><option>30</option><option>35</option><option>40</option></select></label>
+      <label>Cobrimento<span class="unit"><input id="c" type="number" step="0.5" min="3" value="5.0"><i>cm</i></span></label>
+    </fieldset>
+    <p class="note" style="margin:0">Aço CA-50. Lastro de concreto magro de 5 cm sob a sapata.</p>
+  </form>
+</aside>
+
+<main>
+  <section id="status" class="status ok" aria-live="polite"></section>
+
+  <section class="sheet duo">
+    <div style="min-width:0">
+      <h2>Resultado</h2>
+      <dl class="reac" id="keys"></dl>
+    </div>
+    <div style="min-width:0">
+      <h2>Tensões no solo</h2>
+      <div class="tbl"><table id="tensoes"></table></div>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>Detalhamento</h2>
+    <div class="desenhos"><figure style="margin:0;min-width:0"><figcaption class="cap">Planta</figcaption><div id="planta"></div></figure>
+    <figure style="margin:0;min-width:0"><figcaption class="cap">Corte na direção x</figcaption><div id="corte"></div></figure></div>
+    <p class="note" id="legenda" style="margin:8px 0 0"></p>
+  </section>
+
+  <section class="sheet">
+    <h2>Memória de cálculo</h2>
+    <div id="memoria"></div>
+    <p class="note" style="margin:12px 0 4px"><b>Hipóteses e limites deste módulo:</b></p>
+    <ul class="todo note">
+      <li>Sapata isolada rígida, centrada no pilar, com faces superiores inclinadas; solo com distribuição linear de tensões</li>
+      <li>Armadura pelo método CEB-70 (seção a 0,15·ap para dentro do pilar); armadura mínima adotada de 0,67·ρmín sobre a seção total</li>
+      <li>Não verifica recalques, tombamento, deslizamento nem sapatas associadas ou de divisa. A tensão admissível é responsabilidade do projeto de fundação</li>
+    </ul>
+  </section>
+
+  <section class="sheet">
+    <h2>Quantitativos</h2>
+    <div class="tbl"><table id="quant"></table></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Projeto e exportação</h2>
+    <div class="actions">
+      <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
+      <button type="button" class="pri ghost" id="btnAbrir">Meus projetos</button>
+      <button type="button" class="pri" id="btnPdf">Baixar memória (PDF)</button>
+      <button type="button" class="pri ghost" id="btnDxf">Baixar desenho (DXF em .zip)</button>
+      <span class="note" id="expMsg" role="status"></span>
+    </div>
+    <p class="note" style="margin:10px 0 0">O cálculo é livre. Memória em PDF e desenho em DXF fazem parte do plano Pro.</p>
+  </section>
+
+  <p class="disclaimer">Ferramenta de apoio ao dimensionamento. Os resultados devem ser conferidos por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT. A tensão admissível do solo deve vir de investigação geotécnica conforme a NBR 6122.</p>
+</main>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// Motor de cálculo — Sapata isolada rígida sob pilar retangular (NBR 6118:2023 e NBR 6122)
+// Área pela tensão admissível do solo (com momentos: σmáx ≤ 1,3σadm e sem tração),
+// sapata rígida (22.6.1), armadura pelo método CEB-70 e verificação da diagonal comprimida
+// no contorno do pilar (19.5.3.1). Unidades internas: cm, kN, kN/cm².
+
+const S_ES = 21000, S_FYK = 50;
+const S_BITOLAS = [10, 12.5, 16, 20];
+const sArea = phi => Math.PI * (phi / 10) ** 2 / 4;
+const sMassa = phi => sArea(phi) * 0.785;
+const arred5 = v => Math.ceil(v / 5 - 1e-9) * 5;
+
+function tensoes(N, Mx, My, A, B) {
+  // A: dimensão em x (cm), B: em y; Mx: momento que gira em torno de y, excentricidade ao longo de A
+  const area = A * B;                                       // cm²
+  const ex = Mx / N, ey = My / N;                           // cm
+  const smax = N / area * (1 + 6 * ex / A + 6 * ey / B);
+  const smin = N / area * (1 - 6 * ex / A - 6 * ey / B);
+  return { ex, ey, smax, smin, smed: N / area };
+}
+
+function calcularSapata(e0) {
+  const e = { ...e0 };
+  const erros = [], avisos = [];
+  const ap = e.ap, bp = e.bp;                               // pilar (cm): ap na direção x
+  const sadm = e.sadm / 1e4;                                // kPa → kN/m² → kN/cm²: 1 kPa = 1 kN/m² = 1e-4 kN/cm²
+  const Nk = e.Nk, Mxk = (e.Mxk || 0) * 100, Myk = (e.Myk || 0) * 100;
+  const c = e.c ?? 5.0;
+  const fcd = e.fck / 14, fyd = S_FYK / 1.15;
+  const fctd = 0.7 * 0.03 * e.fck ** (2 / 3) / 1.4;
+  const kpp = 1 + (e.ppPerc ?? 5) / 100;                   // peso próprio + solo sobre a sapata (estimativa)
+
+  // ---- dimensões em planta: balanços iguais (A − ap = B − bp), depois amplia até atender as tensões
+  const areaNec = kpp * Nk / sadm;
+  const d0 = (ap - bp) / 2;
+  let B = arred5(-d0 + Math.sqrt(d0 * d0 + areaNec));
+  let A = arred5(B + (ap - bp));
+  B = Math.max(B, 60); A = Math.max(A, 60);
+  let t, it = 0;
+  for (; it < 200; it++) {
+    t = tensoes(kpp * Nk, Mxk, Myk, A, B);
+    const okMed = t.smed <= sadm * 1.0001, okMax = t.smax <= 1.3 * sadm * 1.0001, okMin = t.smin >= -1e-9;
+    if (okMed && okMax && okMin) break;
+    // amplia na direção com maior excentricidade relativa, mantendo múltiplos de 5 cm
+    if (!okMin || !okMax) { if (Math.abs(t.ex) / A >= Math.abs(t.ey) / B) A += 5; else B += 5; }
+    else { A += 5; B += 5; }
+  }
+  if (it >= 200) erros.push('Não foi possível dimensionar a base com essas cargas e tensão do solo.');
+  const t1 = tensoes(Nk, Mxk, Myk, A, B);                   // sem peso próprio, para reação do solo no concreto
+  if (A / B > 3 || B / A > 3) avisos.push('Relação entre lados maior que 3: considere sapata corrida ou associada.');
+
+  // ---- altura (sapata rígida: h ≥ (A − ap)/3 nas duas direções) e ancoragem do pilar
+  const fbd = 2.25 * fctd;
+  const lbPilar = Math.max(e.phiPilar / 40 * fyd / fbd, 25 * e.phiPilar / 10);
+  const hRig = Math.max((A - ap) / 3, (B - bp) / 3);
+  const hAnc = 0.7 * lbPilar + c + 2;                      // barra do pilar com gancho, sobre a malha (≈ 2 cm de duas camadas)
+  let h = arred5(Math.max(hRig, hAnc, 25, e.hMin || 0));
+  const h0 = Math.max(20, arred5(h / 3));                   // altura da borda (sapata com faces inclinadas)
+  const incl = Math.atan((h - h0) / Math.max((A - ap) / 2 - 2.5, 1)) * 180 / Math.PI;
+  if (incl > 30) avisos.push(`Inclinação da face superior de ${incl.toFixed(0)}° (> 30°): será preciso fôrma também na face inclinada. Considere aumentar h0.`);
+
+  // ---- flexão pelo CEB-70: seção S1 a 0,15·ap para dentro da face do pilar
+  const phiEst = 1.25;
+  const dx = h - c - phiEst / 2, dy = h - c - phiEst * 1.5;
+  const dir = {};
+  for (const [k, L, lp, Bt, d, ecc] of [['x', A, ap, B, dx, t1.ex], ['y', B, bp, A, dy, t1.ey]]) {
+    const xS = (L - lp) / 2 + 0.15 * lp;                    // distância da borda até S1
+    // pressão do solo: usa a máxima no trecho (lado mais comprimido), distribuição trapezoidal
+    const sEdge = Nk / (A * B) * (1 + 6 * Math.abs(ecc) / L);
+    const sS1 = Nk / (A * B) * (1 + 6 * Math.abs(ecc) / L * (1 - 2 * xS / L));
+    const R = (sEdge + sS1) / 2 * xS * Bt;                  // kN
+    const brac = xS * (2 * sEdge + sS1) / (3 * (sEdge + sS1));
+    const M1 = R * (xS - brac);                             // kN·cm (característico)
+    const Md = 1.4 * M1;
+    const d1 = Math.min(d, 1.5 * xS);                       // CEB-70: d ≤ 1,5·c1
+    const As = Md / (0.85 * d1 * fyd);
+    const AsMin = 0.0015 * Bt * h * 0.67;                    // adotado: 0,67·ρmín (Tab. 19.1) sobre a seção total
+    const AsAdot = Math.max(As, AsMin);
+    // bitola e espaçamento: 10 ≤ s ≤ 20 cm
+    let esc = null;
+    for (const sMin of [15, 12, 10]) {                       // prefere espaçamentos maiores (montagem mais simples)
+      for (const phi of S_BITOLAS) {
+        const n = Math.ceil(AsAdot / sArea(phi) - 1e-9);
+        const s = (Bt - 2 * c) / Math.max(n - 1, 1);
+        if (s >= sMin) { const sAd = Math.min(20, Math.floor(s)); const nAd = Math.floor((Bt - 2 * c) / sAd) + 1; esc = { phi, s: sAd, n: Math.max(nAd, n) }; break; }
+      }
+      if (esc) break;
+    }
+    if (!esc) { esc = { phi: 20, s: 10, n: Math.floor((Bt - 2 * c) / 10) + 1 }; erros.push(`Armadura na direção ${k} muito densa: aumente a altura da sapata.`); }
+    const AsEf = esc.n * sArea(esc.phi);
+    const comp = L - 2 * c + 2 * Math.max(h - 2 * c, 15);  // ponta dobrada para cima (gancho) nas bordas
+    dir[k] = { L, lp, Bt, d, d1, xS, sEdge, sS1, R, M1, Md, As, AsMin, AsAdot, ...esc, AsEf, comp };
+  }
+
+  // ---- diagonal comprimida no contorno do pilar (19.5.3.1); sapata rígida dispensa C'
+  const dMed = (dx + dy) / 2;
+  const u0 = 2 * (ap + bp);
+  const Fsd = 1.4 * Nk - 1.4 * Nk / (A * B) * ap * bp;      // desconta a reação do solo sob o pilar
+  const tauSd = Fsd / (u0 * dMed);
+  const tauRd2 = 0.27 * (1 - e.fck / 250) * fcd;
+  if (tauSd > tauRd2) erros.push(`Esmagamento da diagonal comprimida junto ao pilar: τSd = ${(tauSd * 10).toFixed(2)} MPa > τRd2 = ${(tauRd2 * 10).toFixed(2)} MPa. Aumente a altura ou o fck.`);
+  if (t.smin < 0) avisos.push('Há tração no solo sob a sapata: a base foi ampliada.');
+
+  // ---- volumes e quantitativos
+  const Am = A / 100, Bm = B / 100, apm = (ap + 5) / 100, bpm = (bp + 5) / 100, hm = h / 100, h0m = h0 / 100;
+  // tronco de pirâmide sobre o prisma da borda
+  const volPrisma = Am * Bm * h0m;
+  const hT = hm - h0m, A1 = Am * Bm, A2 = apm * bpm;
+  const volTronco = hT / 3 * (A1 + A2 + Math.sqrt(A1 * A2));
+  const vol = volPrisma + volTronco;
+  const magro = (Am + 0.1) * (Bm + 0.1) * 0.05;
+  const forma = 2 * (Am + Bm) * h0m;
+  const pesoAco = dir.x.n * dir.x.comp / 100 * sMassa(dir.x.phi) + dir.y.n * dir.y.comp / 100 * sMassa(dir.y.phi);
+  const escav = (Am + 0.6) * (Bm + 0.6) * ((e.prof ?? 1.5));
+  const ppReal = vol * 25;
+  if (ppReal > (kpp - 1) * Nk * 1.5) avisos.push(`Peso próprio real da sapata (${ppReal.toFixed(1)} kN) é bem maior que a estimativa adotada: aumente o acréscimo de peso próprio.`);
+
+  return { ok: erros.length === 0, erros: [...new Set(erros)], avisos: [...new Set(avisos)], entrada: { ...e, c },
+    mat: { fcd, fyd, fctd, fbd }, sadm, areaNec, A, B, tensao: t, tensaoSemPP: t1, kpp, h, h0, hRig, hAnc, lbPilar, incl,
+    dx, dy, dir, puncao: { u0, dMed, Fsd, tauSd, tauRd2 },
+    quant: { vol, volPrisma, volTronco, magro, forma, pesoAco, escav, ppReal, taxa: pesoAco / vol } };
+}
+
+
+
+</script>
+<script>
+// ---------- utilidades comuns às páginas de módulo ----------
+const $ = id => document.getElementById(id);
+const nf = (v, d = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const bit = p => nf(p, 1);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const asciiPdf = t => String(t).replace(/ρmín/g, 'rho_min').replace(/ρ/g, 'rho').replace(/αb/g, 'alfa_b').replace(/α/g, 'alfa').replace(/λ1/g, 'lambda1').replace(/λ/g, 'lambda')
+  .replace(/ν/g, 'nu').replace(/γn/g, 'gama_n').replace(/γ/g, 'gama').replace(/σ/g, 'sig').replace(/τ/g, 'tau').replace(/φ/g, 'Ø')
+  .replace(/≤/g, '<=').replace(/≥/g, '>=').replace(/[−–—]/g, '-').replace(/→/g, '->').replace(/√/g, 'raiz').replace(/′/g, "'").replace(/²/g, '2').replace(/³/g, '3').replace(/₁/g, '1').replace(/₀/g, '0');
+function msg(t) { $('expMsg').textContent = t; }
+async function salvar(filename, data) { FC.baixar(filename, data); msg('Arquivo baixado.'); }
+function renderMemoria(secoes, alvoId, abrirPadrao) {
+  const abertos = new Set([...document.querySelectorAll(`#${alvoId} details.memo[open]`)].map(d => d.dataset.k));
+  if (!document.querySelector(`#${alvoId} details.memo`)) abertos.add(abrirPadrao);
+  $(alvoId).innerHTML = secoes.map(sec => `<details class="memo" data-k="${esc(sec.t)}" ${abertos.has(sec.t) ? 'open' : ''}><summary>${esc(sec.t)}</summary>
+    <div class="tbl"><table><thead><tr><th>Item</th><th>Expressão</th>${sec.cols.map(c => `<th class="v">${esc(c)}</th>`).join('')}<th>Ref.</th></tr></thead><tbody>
+    ${sec.l.map(l => `<tr><td>${l[0]}</td><td class="f">${l[1]}</td>${l[2].map(v => typeof v === 'object' ? `<td class="v${v.alerta ? ' alerta' : ''}">${v.v}</td>` : `<td class="v">${v}</td>`).join('')}<td class="r">${l[3]}</td></tr>`).join('')}
+    </tbody></table></div></details>`).join('');
+}
+// memória no PDF (retrato A4); devolve a posição y final
+function pdfMemoria(doc, secoes, titulo, subtitulo, r) {
+  const W = 210, HP = 297, M = 14; let y = M;
+  const novaPag = n => { if (y + n > HP - 14) { doc.addPage(); y = M; } };
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(20); doc.text(asciiPdf(titulo), M, y + 4); y += 9;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90); doc.text(asciiPdf(subtitulo), M, y); y += 3;
+  doc.setDrawColor(20); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 6;
+  doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(r.erros.length ? 'VERIFICAR / REVISAR' : r.avisos.length ? 'ATENÇÃO' : 'VERIFICAÇÕES ATENDIDAS', M, y); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  [...r.erros, ...r.avisos].forEach(m => { const ls = doc.splitTextToSize('• ' + asciiPdf(m), W - 2 * M); novaPag(ls.length * 4); doc.text(ls, M, y); y += ls.length * 4; });
+  y += 2;
+  for (const sec of secoes) {
+    const nC = sec.cols.length, xExpr = M + 42, xVal0 = M + 42 + 56, xRef = W - M, larg = (xRef - 16 - xVal0) / nC;
+    novaPag(16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text(asciiPdf(sec.t).toUpperCase(), M, y);
+    doc.setFontSize(6.6); doc.setTextColor(110); sec.cols.forEach((c, i) => doc.text(asciiPdf(c), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }));
+    y += 1.6; doc.setLineWidth(0.2); doc.setDrawColor(150); doc.line(M, y, W - M, y); y += 3.6;
+    for (const l of sec.l) {
+      const ex = doc.splitTextToSize(asciiPdf(l[1]), 54); const hh = Math.max(1, ex.length) * 3.3 + 0.6; novaPag(hh);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(20); doc.text(doc.splitTextToSize(asciiPdf(l[0]), 40)[0], M, y);
+      doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(90); doc.text(ex, xExpr, y);
+      l[2].forEach((v, i) => { const o = typeof v === 'object' ? v : { v }; doc.setFont('courier', 'bold'); doc.setFontSize(nC > 3 ? 6.8 : 7.6); o.alerta ? doc.setTextColor(163, 18, 26) : doc.setTextColor(20); doc.text(asciiPdf(o.v), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }); });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.6); doc.setTextColor(110); doc.text(asciiPdf(l[3]), xRef, y, { align: 'right' });
+      y += hh;
+    }
+    y += 3;
+  }
+  return { y, novaPag };
+}
+function pdfRodape(doc, texto) {
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFont('helvetica', 'italic'); doc.setFontSize(7); doc.setTextColor(110);
+    doc.text(doc.splitTextToSize(asciiPdf(texto), 182), 14, 287); doc.text(`Foster Calc · ${i}/${n}`, 196, 292, { align: 'right' }); }
+}
+// DXF mínimo com camadas
+function novoDxf(camadas) {
+  const L = []; const p = (...a) => L.push(...a.map(String)); const f = v => (+v).toFixed(3);
+  p(0, 'SECTION', 2, 'TABLES', 0, 'TABLE', 2, 'LAYER', 70, Object.keys(camadas).length);
+  for (const [n, c] of Object.entries(camadas)) p(0, 'LAYER', 2, n, 70, 0, 62, c, 6, 'CONTINUOUS');
+  p(0, 'ENDTAB', 0, 'ENDSEC', 0, 'SECTION', 2, 'ENTITIES');
+  const txt = t => asciiPdf(t).replace(/Ø/g, '%%c').replace(/·/g, '-').replace(/[^\x20-\x7E]/g, ch => ({ 'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'é': 'e', 'ê': 'e', 'í': 'i', 'ó': 'o', 'õ': 'o', 'ô': 'o', 'ú': 'u', 'ç': 'c', '×': 'x' }[ch] || ''));
+  return {
+    linha: (x1, y1, x2, y2, l) => p(0, 'LINE', 8, l, 10, f(x1), 20, f(y1), 30, 0, 11, f(x2), 21, f(y2), 31, 0),
+    retangulo(x, y, w, h, l) { this.linha(x, y, x + w, y, l); this.linha(x + w, y, x + w, y + h, l); this.linha(x + w, y + h, x, y + h, l); this.linha(x, y + h, x, y, l); },
+    circulo: (x, y, r, l) => p(0, 'CIRCLE', 8, l, 10, f(x), 20, f(y), 30, 0, 40, f(r)),
+    texto: (x, y, alt, t, centro) => p(0, 'TEXT', 8, 'TEXTO', 10, f(x), 20, f(y), 30, 0, 40, f(alt), 1, txt(t), ...(centro ? [72, 1, 11, f(x), 21, f(y), 31, 0] : [])),
+    fim: () => { p(0, 'ENDSEC', 0, 'EOF'); return L.join('\r\n'); },
+  };
+}
+// projetos salvos (comum)
+function ligarProjetos(modulo, nomeSugerido) {
+  let projetoId = null;
+  $('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
+  $('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
+  (async () => {
+    const id = new URLSearchParams(location.search).get('p'); if (!id) return;
+    await new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
+    const p = FC.sessao && await FC.lerProjeto(id);
+    if (p && p.modulo === modulo) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+  })();
+}
+let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requestAnimationFrame(render); };
+
+const CAMPOS = ['ap', 'bp', 'phiPilar', 'Nk', 'Mxk', 'Myk', 'sadm', 'ppPerc', 'prof', 'fck', 'c'];
+function lerEntrada() { const e = {}; for (const k of CAMPOS) e[k] = +$(k).value; return e; }
+function aplicarEntrada(e) { for (const k of CAMPOS) if (e[k] != null) $(k).value = String(e[k]); render(); }
+// preenchimento vindo do módulo de pilar
+(() => { const q = new URLSearchParams(location.search); if (q.get('p')) return; let mudou = false;
+  for (const k of CAMPOS) if (q.has(k) && $(k)) { $(k).value = q.get(k); mudou = true; } })();
+
+function memoria(r) {
+  const e = r.entrada, t = r.tensao, X = r.dir.x, Y = r.dir.y, p = r.puncao;
+  return [
+    { t: 'Dimensões em planta', cols: ['Valor'], l: [
+      ['Carga total no solo', `Nk · (1 + ${nf((r.kpp - 1) * 100, 0)}% peso próprio)`, [`${nf(e.Nk * r.kpp, 1)} kN`], ''],
+      ['Área necessária', 'Nk,total / σadm', [`${nf(r.areaNec / 1e4, 2)} m²`], 'NBR 6122'],
+      ['Balanços iguais', 'A − B = ap − bp', [`${nf((r.A - e.ap) / 2, 1)} cm`], ''],
+      ['Dimensões adotadas', 'A × B (múltiplos de 5 cm)', [`${r.A} × ${r.B} cm`], ''],
+      ['Excentricidades', 'ex = Mx/N ; ey = My/N', [`${nf(t.ex, 1)} ; ${nf(t.ey, 1)} cm`], ''],
+      ['Tensão média', 'σméd ≤ σadm', [`${nf(t.smed * 1e4, 1)} kPa`], ''],
+      ['Tensão máxima', 'σmáx ≤ 1,3·σadm', [{ v: `${nf(t.smax * 1e4, 1)} kPa`, alerta: t.smax > 1.3 * r.sadm * 1.0001 }], 'NBR 6122'],
+      ['Tensão mínima', 'σmín ≥ 0 (sem tração)', [{ v: `${nf(t.smin * 1e4, 1)} kPa`, alerta: t.smin < 0 }], ''],
+    ]},
+    { t: 'Altura e ancoragem', cols: ['Valor'], l: [
+      ['Sapata rígida', 'h ≥ (A − ap)/3', [`${nf(r.hRig, 1)} cm`], '22.6.1'],
+      ['Ancoragem do pilar', 'lb (Ø' + bit(e.phiPilar) + ') com gancho: 0,7·lb + c', [`${nf(r.hAnc, 1)} cm (lb = ${nf(r.lbPilar, 0)})`], '9.4.2.4'],
+      ['Altura adotada', 'h', [`${r.h} cm`], ''],
+      ['Altura na borda', 'h0 ≥ máx(20 cm; h/3)', [`${r.h0} cm`], ''],
+      ['Inclinação da face', 'α ≤ 30° dispensa fôrma superior', [{ v: `${nf(r.incl, 0)}°`, alerta: r.incl > 30 }], ''],
+    ]},
+    { t: 'Flexão (método CEB-70)', cols: ['Direção x', 'Direção y'], l: [
+      ['Distância até S1', 'c1 = (L − lp)/2 + 0,15·lp', [`${nf(X.xS, 1)} cm`, `${nf(Y.xS, 1)} cm`], ''],
+      ['Altura útil', 'd ≤ 1,5·c1', [`${nf(X.d1, 1)} cm`, `${nf(Y.d1, 1)} cm`], ''],
+      ['Momento em S1', 'M1 (solo, característico)', [`${nf(X.M1 / 100, 1)} kN·m`, `${nf(Y.M1 / 100, 1)} kN·m`], ''],
+      ['Momento de cálculo', 'Md = 1,4 · M1', [`${nf(X.Md / 100, 1)} kN·m`, `${nf(Y.Md / 100, 1)} kN·m`], ''],
+      ['Armadura calculada', 'As = Md / (0,85 · d · fyd)', [`${nf(X.As)} cm²`, `${nf(Y.As)} cm²`], ''],
+      ['Armadura mínima', '0,67 · ρmín · B · h', [`${nf(X.AsMin)} cm²`, `${nf(Y.AsMin)} cm²`], 'Tab. 19.1'],
+      ['Adotado', '10 cm ≤ s ≤ 20 cm', [`${X.n} Ø${bit(X.phi)} c/${X.s}`, `${Y.n} Ø${bit(Y.phi)} c/${Y.s}`], ''],
+      ['Área efetiva', '', [`${nf(X.AsEf)} cm²`, `${nf(Y.AsEf)} cm²`], ''],
+    ]},
+    { t: 'Diagonal comprimida junto ao pilar', cols: ['Valor'], l: [
+      ['Perímetro do pilar', 'u0 = 2·(ap + bp)', [`${nf(p.u0, 0)} cm`], '19.5.2.1'],
+      ['Força de cálculo', 'FSd = 1,4·Nk − reação sob o pilar', [`${nf(p.Fsd, 1)} kN`], ''],
+      ['Tensão atuante', 'τSd = FSd / (u0 · d)', [`${nf(p.tauSd * 10, 2)} MPa`], ''],
+      ['Tensão resistente', 'τRd2 = 0,27 · (1 − fck/250) · fcd', [{ v: `${nf(p.tauRd2 * 10, 2)} MPa`, alerta: p.tauSd > p.tauRd2 }], '19.5.3.1'],
+      ['Contorno C′', 'dispensado em sapata rígida', ['—'], '19.5.3.1'],
+    ]},
+  ];
+}
+
+function svgPlanta(r) {
+  const e = r.entrada, A = r.A, B = r.B, k = 300 / Math.max(A, B), pad = 34;
+  const W = A * k + 2 * pad, H = B * k + 2 * pad;
+  const X = x => pad + x * k, Y = y => pad + (B - y) * k;
+  let o = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Planta da sapata">`;
+  o += `<rect class="conc" x="${X(0)}" y="${Y(B)}" width="${A * k}" height="${B * k}"/>`;
+  const px = (A - e.ap) / 2, py = (B - e.bp) / 2;
+  // linhas da face inclinada até a "gola" do pilar (+2,5 cm)
+  const g = 2.5;
+  [[0, 0, px - g, py - g], [A, 0, px + e.ap + g, py - g], [A, B, px + e.ap + g, py + e.bp + g], [0, B, px - g, py + e.bp + g]].forEach(([x1, y1, x2, y2]) => { o += `<line x1="${X(x1)}" y1="${Y(y1)}" x2="${X(x2)}" y2="${Y(y2)}" stroke="var(--muted)" stroke-width="1"/>`; });
+  o += `<rect x="${X(px - g)}" y="${Y(py + e.bp + g)}" width="${(e.ap + 2 * g) * k}" height="${(e.bp + 2 * g) * k}" fill="none" stroke="var(--muted)" stroke-width="1"/>`;
+  o += `<rect x="${X(px)}" y="${Y(py + e.bp)}" width="${e.ap * k}" height="${e.bp * k}" fill="var(--ink)" opacity=".85"/>`;
+  // malha (indicativa): 5 barras em cada direção
+  for (let i = 0; i < 5; i++) { const yy = e.c + i * (B - 2 * e.c) / 4; o += `<line x1="${X(e.c)}" y1="${Y(yy)}" x2="${X(A - e.c)}" y2="${Y(yy)}" stroke="var(--steel)" stroke-width="1.4" stroke-dasharray="${i === 2 ? '0' : '6 4'}"/>`; }
+  for (let i = 0; i < 5; i++) { const xx = e.c + i * (A - 2 * e.c) / 4; o += `<line x1="${X(xx)}" y1="${Y(e.c)}" x2="${X(xx)}" y2="${Y(B - e.c)}" stroke="var(--steel2)" stroke-width="1.4" stroke-dasharray="${i === 2 ? '0' : '6 4'}"/>`; }
+  o += `<text x="${X(A / 2)}" y="${Y(0) + 20}" font-size="12" text-anchor="middle" class="mut">A = ${A}</text>`;
+  o += `<text x="${X(0) - 8}" y="${Y(B / 2)}" font-size="12" text-anchor="middle" class="mut" transform="rotate(-90 ${X(0) - 8} ${Y(B / 2)})">B = ${B}</text>`;
+  return o + '</svg>';
+}
+function svgCorte(r) {
+  const e = r.entrada, A = r.A, h = r.h, h0 = r.h0, k = 300 / A, pad = 30, hp = 60;
+  const W = A * k + 2 * pad + 60, H = (h + hp + 10) * k + 2 * pad;
+  const X = x => pad + x * k, Y = y => pad + (h + hp - y) * k;
+  const px = (A - e.ap) / 2, g = 2.5;
+  let o = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Corte da sapata">`;
+  o += `<rect x="${X(-5)}" y="${Y(0)}" width="${(A + 10) * k}" height="${5 * k}" fill="var(--line)"/>`;
+  o += `<polygon class="conc" points="${X(0)},${Y(0)} ${X(A)},${Y(0)} ${X(A)},${Y(h0)} ${X(px + e.ap + g)},${Y(h)} ${X(px - g)},${Y(h)} ${X(0)},${Y(h0)}"/>`;
+  o += `<rect x="${X(px)}" y="${Y(h + hp)}" width="${e.ap * k}" height="${hp * k}" class="conc"/>`;
+  // armadura da malha (direção x) com pontas dobradas
+  const yb = e.c; const up = Math.max(h0 - 2 * e.c, 10);
+  o += `<polyline points="${X(e.c)},${Y(yb + up)} ${X(e.c)},${Y(yb)} ${X(A - e.c)},${Y(yb)} ${X(A - e.c)},${Y(yb + up)}" fill="none" stroke="var(--steel)" stroke-width="2"/>`;
+  // arranques do pilar com gancho
+  const yg = yb + 2.5;
+  for (const xx of [px + 4, px + e.ap - 4]) o += `<polyline points="${X(xx)},${Y(h + hp)} ${X(xx)},${Y(yg)} ${X(xx + (xx < A / 2 ? -15 : 15))},${Y(yg)}" fill="none" stroke="var(--steel2)" stroke-width="1.8"/>`;
+  o += `<text x="${X(A) + 4}" y="${Y(h / 2)}" font-size="11" class="mut">h = ${h}</text>`;
+  o += `<text x="${X(0) + 4}" y="${Y(h0) - 4}" font-size="11" class="mut">h0 = ${h0}</text>`;
+  return o + '</svg>';
+}
+
+function render() {
+  const e = lerEntrada();
+  if (!(e.ap > 0 && e.bp > 0 && e.Nk > 0 && e.sadm > 0)) return;
+  const r = calcularSapata(e); window.__r = r;
+  const msgs = [...r.erros, ...r.avisos];
+  $('status').className = 'status ' + (r.erros.length ? 'bad' : r.avisos.length ? 'warn' : 'ok');
+  $('status').innerHTML = `<b>${r.erros.length ? 'Sapata inadequada' : r.avisos.length ? 'Atenção' : 'Verificações atendidas'}</b>
+    ${msgs.length ? `<ul class="msgs">${msgs.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '<span style="margin-left:8px;color:var(--ink);font-weight:400">Tensões no solo, rigidez, flexão e diagonal comprimida dentro dos limites.</span>'}`;
+  const X = r.dir.x, Y = r.dir.y, t = r.tensao;
+  $('keys').innerHTML = `
+    <div><dt>Dimensões</dt><dd>${r.A} × ${r.B}<small>h = ${r.h} cm · h0 = ${r.h0} cm</small></dd></div>
+    <div><dt>Volume de concreto</dt><dd>${nf(r.quant.vol, 2)} m³<small>C${e.fck} · lastro ${nf(r.quant.magro, 2)} m³</small></dd></div>
+    <div><dt>Armadura em x</dt><dd>Ø${bit(X.phi)} c/${X.s}<small>${X.n} barras · ${nf(X.AsEf)} cm²</small></dd></div>
+    <div><dt>Armadura em y</dt><dd>Ø${bit(Y.phi)} c/${Y.s}<small>${Y.n} barras · ${nf(Y.AsEf)} cm²</small></dd></div>`;
+  const pill = ok => `<span class="pill ${ok ? 'ok' : 'bad'}">${ok ? 'ok' : 'revisar'}</span>`;
+  $('tensoes').innerHTML = `<thead><tr><th>Tensão</th><th class="v">Atuante</th><th class="v">Limite</th><th></th></tr></thead><tbody>
+    <tr><td>Média</td><td class="v">${nf(t.smed * 1e4, 1)} kPa</td><td class="v">${nf(r.sadm * 1e4, 0)} kPa</td><td>${pill(t.smed <= r.sadm * 1.0001)}</td></tr>
+    <tr><td>Máxima</td><td class="v">${nf(t.smax * 1e4, 1)} kPa</td><td class="v">${nf(1.3 * r.sadm * 1e4, 0)} kPa</td><td>${pill(t.smax <= 1.3 * r.sadm * 1.0001)}</td></tr>
+    <tr><td>Mínima</td><td class="v">${nf(t.smin * 1e4, 1)} kPa</td><td class="v">≥ 0</td><td>${pill(t.smin >= -1e-9)}</td></tr></tbody>`;
+  $('planta').innerHTML = svgPlanta(r);
+  $('corte').innerHTML = svgCorte(r);
+  $('legenda').textContent = `N1 ${X.n} Ø${bit(X.phi)} c/${X.s} (direção x, por baixo) · N2 ${Y.n} Ø${bit(Y.phi)} c/${Y.s} (direção y) · arranques do pilar com gancho apoiados na malha · cotas em cm`;
+  renderMemoria(memoria(r), 'memoria', 'Flexão (método CEB-70)');
+  const q = r.quant;
+  $('quant').innerHTML = `<thead><tr><th>Pos.</th><th>Descrição</th><th class="v">Qtd.</th><th class="v">Ø (mm)</th><th class="v">Compr. unit.</th><th class="v">Massa</th></tr></thead><tbody>
+    <tr><td>N1</td><td>malha · direção x c/${X.s}</td><td class="v">${X.n}</td><td class="v">${bit(X.phi)}</td><td class="v">${nf(X.comp / 100)} m</td><td class="v">${nf(X.n * X.comp / 100 * Math.PI * (X.phi / 10) ** 2 / 4 * 0.785, 1)} kg</td></tr>
+    <tr><td>N2</td><td>malha · direção y c/${Y.s}</td><td class="v">${Y.n}</td><td class="v">${bit(Y.phi)}</td><td class="v">${nf(Y.comp / 100)} m</td><td class="v">${nf(Y.n * Y.comp / 100 * Math.PI * (Y.phi / 10) ** 2 / 4 * 0.785, 1)} kg</td></tr>
+    <tr><td></td><td><b>Aço CA-50 total</b> (sem perdas)</td><td></td><td></td><td></td><td class="v"><b>${nf(q.pesoAco, 1)} kg</b></td></tr>
+    <tr><td></td><td>Concreto C${e.fck}</td><td></td><td></td><td></td><td class="v">${nf(q.vol, 3)} m³</td></tr>
+    <tr><td></td><td>Concreto magro (lastro 5 cm)</td><td></td><td></td><td></td><td class="v">${nf(q.magro, 3)} m³</td></tr>
+    <tr><td></td><td>Fôrma (faces verticais da borda)</td><td></td><td></td><td></td><td class="v">${nf(q.forma)} m²</td></tr>
+    <tr><td></td><td>Escavação (folga de 30 cm por lado)</td><td></td><td></td><td></td><td class="v">${nf(q.escav, 2)} m³</td></tr>
+    <tr><td></td><td>Taxa de armadura</td><td></td><td></td><td></td><td class="v">${nf(q.taxa, 0)} kg/m³</td></tr></tbody>`;
+}
+
+function gerarPdf() {
+  const r = window.__r; if (!r || !window.jspdf) { msg('Gerador de PDF não carregou. Recarregue a página.'); return null; }
+  const e = r.entrada, X = r.dir.x, Y = r.dir.y;
+  const doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+  let { y, novaPag } = pdfMemoria(doc, memoria(r), 'Memória de cálculo · Sapata isolada',
+    `Pilar ${e.ap}×${e.bp} cm · Nk = ${nf(e.Nk, 0)} kN · σadm = ${nf(e.sadm, 0)} kPa · C${e.fck} / CA-50 · ${new Date().toLocaleDateString('pt-BR')}`, r);
+  novaPag(95);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text('PLANTA E CORTE', 14, y); y += 5;
+  const k = 70 / Math.max(r.A, r.B), x0 = 16, y0 = y;
+  doc.setDrawColor(40); doc.setLineWidth(0.35); doc.rect(x0, y0, r.A * k, r.B * k);
+  const px = (r.A - e.ap) / 2, py = (r.B - e.bp) / 2;
+  doc.setFillColor(30); doc.rect(x0 + px * k, y0 + py * k, e.ap * k, e.bp * k, 'F');
+  doc.setDrawColor(196, 22, 28); doc.setLineWidth(0.25);
+  for (let i = 0; i < 5; i++) { const yy = e.c + i * (r.B - 2 * e.c) / 4; doc.line(x0 + e.c * k, y0 + yy * k, x0 + (r.A - e.c) * k, y0 + yy * k); }
+  doc.setDrawColor(58, 61, 66);
+  for (let i = 0; i < 5; i++) { const xx = e.c + i * (r.A - 2 * e.c) / 4; doc.line(x0 + xx * k, y0 + e.c * k, x0 + xx * k, y0 + (r.B - e.c) * k); }
+  doc.setFont('courier', 'normal'); doc.setFontSize(7.4); doc.setTextColor(20);
+  doc.text(`A = ${r.A} cm`, x0, y0 + r.B * k + 4); doc.text(`B = ${r.B} cm`, x0 + r.A * k + 2, y0 + r.B * k / 2);
+  // corte
+  const cx = 110, cy = y0 + 10, kc = 80 / r.A;
+  const pts = [[0, 0], [r.A, 0], [r.A, r.h0], [px + e.ap + 2.5, r.h], [px - 2.5, r.h], [0, r.h0]];
+  doc.setDrawColor(40); doc.setLineWidth(0.35);
+  for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; doc.line(cx + a[0] * kc, cy + (r.h - a[1]) * kc + 20, cx + b[0] * kc, cy + (r.h - b[1]) * kc + 20); }
+  doc.rect(cx + px * kc, cy + 20 - 25 * kc, e.ap * kc, 25 * kc);
+  doc.setDrawColor(196, 22, 28); doc.setLineWidth(0.45);
+  const ybar = cy + 20 + (r.h - e.c) * kc;
+  doc.line(cx + e.c * kc, ybar, cx + (r.A - e.c) * kc, ybar);
+  doc.text(`h = ${r.h} · h0 = ${r.h0} cm`, cx, cy + 20 + r.h * kc + 5);
+  y = y0 + Math.max(r.B * k, 20 + r.h * kc) + 12;
+  novaPag(20);
+  doc.setFont('courier', 'normal'); doc.setFontSize(7.6);
+  [`N1  ${X.n} Ø${bit(X.phi)} c/${X.s}  C=${nf(X.comp, 0)} cm  (direção x, camada inferior)`, `N2  ${Y.n} Ø${bit(Y.phi)} c/${Y.s}  C=${nf(Y.comp, 0)} cm  (direção y)`,
+   `Aço ${nf(r.quant.pesoAco, 1)} kg · Concreto ${nf(r.quant.vol, 3)} m³ · Lastro ${nf(r.quant.magro, 3)} m³ · Escavação ${nf(r.quant.escav, 2)} m³`].forEach(t => { doc.text(asciiPdf(t), 14, y); y += 4; });
+  pdfRodape(doc, 'Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos por profissional habilitado. Tensão admissível conforme investigação geotécnica (NBR 6122).');
+  return doc.output('arraybuffer');
+}
+function gerarDxf() {
+  const r = window.__r, e = r.entrada, X = r.dir.x, Y = r.dir.y;
+  const d = novoDxf({ SAPATA: 7, PILAR: 8, ARMADURA_X: 1, ARMADURA_Y: 6, TEXTO: 3 });
+  d.retangulo(0, 0, r.A, r.B, 'SAPATA');
+  const px = (r.A - e.ap) / 2, py = (r.B - e.bp) / 2; d.retangulo(px, py, e.ap, e.bp, 'PILAR');
+  d.linha(0, 0, px - 2.5, py - 2.5, 'SAPATA'); d.linha(r.A, 0, px + e.ap + 2.5, py - 2.5, 'SAPATA'); d.linha(r.A, r.B, px + e.ap + 2.5, py + e.bp + 2.5, 'SAPATA'); d.linha(0, r.B, px - 2.5, py + e.bp + 2.5, 'SAPATA');
+  for (let i = 0; i < X.n; i++) { const yy = e.c + i * (r.B - 2 * e.c) / Math.max(X.n - 1, 1); d.linha(e.c, yy, r.A - e.c, yy, 'ARMADURA_X'); }
+  for (let i = 0; i < Y.n; i++) { const xx = e.c + i * (r.A - 2 * e.c) / Math.max(Y.n - 1, 1); d.linha(xx, e.c, xx, r.B - e.c, 'ARMADURA_Y'); }
+  d.texto(0, r.B + 15, 6, `SAPATA ${r.A}x${r.B} h=${r.h} h0=${r.h0} - C${e.fck} / CA-50 - cotas em cm`);
+  d.texto(0, -15, 5, `N1 ${X.n} Ø${bit(X.phi)} c/${X.s} C=${nf(X.comp, 0)}`);
+  d.texto(0, -24, 5, `N2 ${Y.n} Ø${bit(Y.phi)} c/${Y.s} C=${nf(Y.comp, 0)}`);
+  return d.fim();
+}
+$('btnPdf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar a memória de cálculo em PDF'))) return; FC.registrarExport('sapata', 'pdf'); msg('Gerando PDF…'); const b = gerarPdf(); if (b) await salvar(`memoria-sapata-${window.__r.A}x${window.__r.B}.pdf`, b); });
+$('btnDxf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar o desenho em DXF'))) return; FC.registrarExport('sapata', 'dxf');
+  if (!window.JSZip) { msg('Compactador não carregou. Recarregue a página.'); return; }
+  const r = window.__r, nome = `sapata-${r.A}x${r.B}`, z = new JSZip(); z.file(nome + '.dxf', gerarDxf()); await salvar(nome + '-dxf.zip', await z.generateAsync({ type: 'blob' })); });
+ligarProjetos('sapata', () => `Sapata pilar ${$('ap').value}×${$('bp').value} · Nk ${$('Nk').value} kN`);
+$('f').addEventListener('input', agendar); $('f').addEventListener('change', agendar); $('f').addEventListener('submit', ev => ev.preventDefault());
+render();
+</script>
+</body>
+</html>

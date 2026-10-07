@@ -18,8 +18,9 @@
   .fc-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding-block:10px;margin-bottom:6px;font:500 .9rem var(--f-body,system-ui)}
   .fc-logo{font:700 1.25rem/1 var(--f-display,system-ui);letter-spacing:.02em;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px}
   .fc-logo b{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:5px;background:var(--accent);color:var(--sheet);font-size:.95rem}
-  .fc-nav{display:flex;gap:4px;flex:1 1 auto}
-  .fc-nav a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:4px}
+  .fc-nav{display:flex;gap:4px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+  .fc-nav::-webkit-scrollbar{display:none}
+  .fc-nav a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:4px;white-space:nowrap}
   .fc-nav a[aria-current="page"]{color:var(--ink);background:var(--sheet);box-shadow:inset 0 -2px 0 var(--accent)}
   .fc-nav a:hover{color:var(--ink)}
   .fc-user{display:flex;align-items:center;gap:8px;margin-left:auto}
@@ -84,7 +85,7 @@
     const link = (href, nome, id) => `<a href="${href}" ${pagina === id ? 'aria-current="page"' : ''}>${nome}</a>`;
     alvo.className = 'fc-bar';
     alvo.innerHTML = `<a class="fc-logo" href="./"><b>FC</b>Foster Calc</a>
-      <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('viga.html', 'Vigas', 'viga')}${link('laje.html', 'Lajes', 'laje')}${link('./#projetos', 'Meus projetos', '-')}</nav>
+      <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'laje')}${link('viga.html', 'Vigas', 'viga')}${link('pilar.html', 'Pilares', 'pilar')}${link('sapata.html', 'Sapatas', 'sapata')}${link('./#projetos', 'Meus projetos', '-')}</nav>
       <div class="fc-user">${sessao
         ? `<span class="fc-plano ${pro ? 'pro' : ''}">${pro ? 'Pro' : 'Grátis'}</span><span class="fc-mail" title="${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</span><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
         : `<button class="fc-btn" type="button" data-fc="entrar">Entrar</button>`}</div>`;
