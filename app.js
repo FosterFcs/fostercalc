@@ -4,7 +4,9 @@
   const CONFIG = {
     url: 'https://fvsdlpnvqfvjdxmfgbjx.supabase.co',
     chave: 'sb_publishable_VT3XEbInyTr2Eu-AuLnrqw_BOrA2jYy',
-    precoPro: 'R$ 29,90/mês',                         // ajuste aqui
+    precoPro: 'R$ 29,90/mês',                         // plano mensal (preço de lançamento)
+    precoAnual: 'R$ 299/ano',                         // plano anual
+    anualEquivale: 'R$ 24,92/mês',                    // anual dividido por 12
     whatsapp: '5524992096103',                        // contato comercial para assinar o Pro
   };
   const sb = window.supabase ? window.supabase.createClient(CONFIG.url, CONFIG.chave) : null;
@@ -42,7 +44,8 @@
   .fc-lista small{display:block;color:var(--muted);font-size:.76rem}
   .fc-toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:9px 14px;border-radius:6px;font:500 .88rem var(--f-body,system-ui);z-index:50;max-width:calc(100vw - 32px)}
   .fc-plans{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .fc-plans div{border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:.84rem}
+  .fc-plans div{border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:.84rem;cursor:pointer}
+  .fc-plans div:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .fc-plans div.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
   .fc-plans b{display:block;font:600 1.05rem var(--f-display,system-ui);text-transform:uppercase}
   .fc-plans ul{margin:6px 0 0;padding-left:16px;color:var(--muted)}`;
@@ -153,13 +156,25 @@
     });
   }
 
-  function telaPlanos(motivo) {
-    const msg = encodeURIComponent(`Olá! Quero assinar o Foster Calc Pro. Meu e-mail de cadastro é ${sessao?.user.email || ''}.`);
+  function telaPlanos(motivo, planoInicial) {
+    let plano = planoInicial === 'mensal' ? 'mensal' : 'anual';
     const d = dialogo(`<div class="fc-in"><h3>Foster Calc Pro</h3><p>${esc(motivo)}</p>
-      <div class="fc-plans"><div><b>Grátis</b>Cálculo completo na tela<ul><li>Vigas e lajes</li><li>Projetos salvos</li></ul></div>
-      <div class="on"><b>Pro · ${esc(CONFIG.precoPro)}</b>Tudo do grátis, mais<ul><li>Memória de cálculo em PDF</li><li>Detalhamento em DXF</li><li>Novos módulos primeiro</li></ul></div></div>
-      <p>A assinatura é ativada pelo nosso atendimento. Fale com a gente no WhatsApp <b>(24) 99209-6103</b>.</p>
-      <div class="fc-row"><a class="fc-btn" style="text-decoration:none" href="https://wa.me/${CONFIG.whatsapp}?text=${msg}" target="_blank" rel="noopener">Assinar pelo WhatsApp</a><button class="fc-btn ghost" type="button" data-fechar>Agora não</button></div></div>`);
+      <div class="fc-plans" role="radiogroup" aria-label="Escolha o plano">
+        <div data-plano="mensal" role="radio" tabindex="0"><b>Mensal</b>${esc(CONFIG.precoPro)}<ul><li>Preço de lançamento</li><li>Cancele quando quiser</li></ul></div>
+        <div data-plano="anual" role="radio" tabindex="0"><b>Anual</b>${esc(CONFIG.precoAnual)}<ul><li>2 meses grátis</li><li>Equivale a ${esc(CONFIG.anualEquivale)}</li></ul></div></div>
+      <p>Inclui memória de cálculo em PDF, detalhamento em DXF e os novos módulos primeiro. A assinatura é ativada pelo nosso atendimento no WhatsApp <b>(24) 99209-6103</b>.</p>
+      <div class="fc-row"><a class="fc-btn" style="text-decoration:none" data-wa target="_blank" rel="noopener">Assinar pelo WhatsApp</a><button class="fc-btn ghost" type="button" data-fechar>Agora não</button></div></div>`);
+    const wa = d.querySelector('[data-wa]');
+    const marcar = () => {
+      d.querySelectorAll('[data-plano]').forEach(el => { const on = el.dataset.plano === plano; el.classList.toggle('on', on); el.setAttribute('aria-checked', on); });
+      const nome = plano === 'anual' ? `anual (${CONFIG.precoAnual})` : `mensal (${CONFIG.precoPro})`;
+      wa.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(`Olá! Quero assinar o Foster Calc Pro, plano ${nome}. Meu e-mail de cadastro é ${sessao?.user.email || ''}.`)}`;
+    };
+    d.querySelectorAll('[data-plano]').forEach(el => {
+      el.onclick = () => { plano = el.dataset.plano; marcar(); };
+      el.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); el.click(); } };
+    });
+    marcar();
     d.querySelector('[data-fechar]').onclick = () => d.close();
   }
 

@@ -44,6 +44,8 @@ set plano = 'pro', plano_ate = now() + interval '30 days'
 where id = (select id from auth.users where email = 'cliente@exemplo.com');
 ```
 
+Plano anual: use `interval '365 days'` no lugar de `'30 days'`.
+
 Para cancelar: `set plano = 'gratis', plano_ate = null`.
 Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automaticamente.
 
@@ -62,4 +64,4 @@ Todas as tabelas com RLS; o verificador de segurança do Supabase está sem aler
   PDF numa Edge Function, que só responde a assinantes.
 - Cobrança manual (WhatsApp). Próximo passo: integrar Asaas ou Mercado Pago com webhook que
   atualiza `perfis.plano` sozinho.
-- Preço exibido: `R$ 29,90/mês`, em `app.js` (`CONFIG.precoPro`).
+- Preços exibidos: mensal `R$ 29,90/mês` (lançamento) e anual `R$ 299/ano`, em `app.js` (`CONFIG.precoPro`, `CONFIG.precoAnual`, `CONFIG.anualEquivale`) e nos cards de `index.html`.
