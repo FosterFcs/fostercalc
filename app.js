@@ -32,6 +32,10 @@
   .fc-plano{font:600 .66rem var(--f-body,system-ui);letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--muted)}
   .fc-plano.pro{background:var(--accent);color:var(--sheet)}
   .fc-plano.est{background:var(--ink);color:var(--sheet)}
+  .fc-q{margin-left:6px;width:18px;height:18px;border-radius:50%;border:1px solid var(--accent,#c4161c);background:transparent;color:var(--accent,#c4161c);font:700 .7rem/1 var(--f-body,system-ui);cursor:pointer;padding:0;vertical-align:1px}
+  .fc-q[aria-expanded="true"]{background:var(--accent,#c4161c);color:var(--sheet,#fff)}
+  tr.fc-exp td{background:var(--accent-soft,#f8e3e3);font:400 .82rem/1.5 var(--f-body,system-ui);color:var(--ink,#141414);padding:8px 12px;white-space:normal}
+  .fc-didatico{font-size:.8rem;color:var(--muted,#666);margin:0 0 8px}
   .fc-mail{color:var(--muted);font-size:.82rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .fc-dlg{border:1px solid var(--line);border-radius:8px;padding:0;background:var(--sheet);color:var(--ink);width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
   .fc-dlg::backdrop{background:rgb(10 14 12 / .45)}
@@ -505,7 +509,42 @@
     const ref = document.querySelector('.disclaimer');
     (ref ? ref.parentNode : (document.querySelector('.wrap') || document.body)).appendChild(p);
   }
-  const comecar = () => { abasSubtipo(); injetarCamposObra(); rodapeAutoria(); iniciar(); };
+  // ---------- modo didático: botão "?" em cada linha da memória ----------
+  const DIDATICO = ['viga', 'laje', 'pilar'];
+  function modoDidatico() {
+    const pagina = document.body.dataset.pagina, alvo = document.getElementById('memoria');
+    if (!DIDATICO.includes(pagina) || !alvo) return;
+    const s = document.createElement('script'); s.src = 'explica.js';
+    s.onload = () => {
+      const dic = Object.assign({}, (window.FC_EXPLICA || {}).comum, (window.FC_EXPLICA || {})[pagina]);
+      const nota = document.createElement('p'); nota.className = 'fc-didatico';
+      nota.innerHTML = 'Modo didático: toque em <b>?</b> ao lado de cada item para ver o que ele significa (planos Estudante e Pro).';
+      alvo.parentNode.insertBefore(nota, alvo);
+      const decorar = () => {
+        alvo.querySelectorAll('tbody tr:not(.fc-exp)').forEach(tr => {
+          const td = tr.cells[0]; if (!td || td.querySelector('.fc-q')) return;
+          const chave = td.textContent.trim(); if (!dic[chave]) return;
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'fc-q'; b.textContent = '?';
+          b.setAttribute('aria-label', 'Explicar: ' + chave); b.setAttribute('aria-expanded', 'false'); b.dataset.chave = chave;
+          td.appendChild(b);
+        });
+      };
+      new MutationObserver(decorar).observe(alvo, { childList: true, subtree: true });
+      decorar();
+      alvo.addEventListener('click', ev => {
+        const b = ev.target.closest('.fc-q'); if (!b) return;
+        ev.preventDefault(); ev.stopPropagation();
+        if (!pro && plano !== 'estudante') { telaPlanos('O modo didático, com a explicação de cada item da memória, faz parte dos planos Estudante e Pro.', 'est-anual'); return; }
+        const tr = b.closest('tr'), prox = tr.nextElementSibling;
+        if (prox && prox.classList.contains('fc-exp')) { prox.remove(); b.setAttribute('aria-expanded', 'false'); return; }
+        const ex = document.createElement('tr'); ex.className = 'fc-exp';
+        const td = document.createElement('td'); td.colSpan = tr.cells.length; td.textContent = dic[b.dataset.chave];
+        ex.appendChild(td); tr.after(ex); b.setAttribute('aria-expanded', 'true');
+      });
+    };
+    document.head.appendChild(s);
+  }
+  const comecar = () => { abasSubtipo(); injetarCamposObra(); rodapeAutoria(); modoDidatico(); iniciar(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comecar); else comecar();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

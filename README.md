@@ -19,6 +19,7 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `muro.html` | Módulo de muro de arrimo de flexão |
 | `bloco.html` | Módulo de blocos sobre 1 a 4 estacas (bielas e tirantes) |
 | `validacao.html` | Comparação com exemplos resolvidos publicados (gerada por script a partir dos dados de validação) |
+| `explica.js` | Textos do modo didático (botão “?” na memória de viga, laje e pilar; planos Estudante e Pro) |
 | `termos.html` | Termos de uso e política de privacidade (LGPD) |
 | `LICENSE` | Licença proprietária: © Foster Engenharia & Construção, todos os direitos reservados |
 | `app.js` | Login, plano, projetos salvos, barra superior e downloads |
