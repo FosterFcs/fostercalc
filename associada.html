@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="description" content="Sapata associada sob dois pilares com viga de rigidez pela NBR 6118 e NBR 6122. Foster Calc.">
+<title>Sapata associada · Foster Calc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: prancheta técnica — entrada à esquerda, folha de resultados à direita */
+:root{
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --beam:#b8babd; --steel:#c4161c; --steel2:#3a3d42;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#a3121a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:20px}
+header.top h1{font:700 2rem/1 var(--f-display);letter-spacing:.01em;margin:0}
+header.top h1 span{color:var(--accent)}
+header.top p{margin:0;color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+aside.inputs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside.inputs{position:static}}
+fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+legend{font:600 .78rem/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 0 8px;grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+label.full{grid-column:1/-1}
+input,select{font:500 .95rem var(--f-mono);color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.unit{position:relative}.unit input{padding-right:52px}
+.unit i{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:400 .75rem var(--f-mono);color:var(--muted);font-style:normal;pointer-events:none}
+.bordas{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;gap:6px;align-items:center;justify-items:center}
+.bordas select{padding:5px 4px;font-size:.8rem;width:100%;max-width:110px}
+.bordas .b-sup{grid-column:2;grid-row:1}.bordas .b-esq{grid-column:1;grid-row:2;justify-self:end}
+.bordas .b-dir{grid-column:3;grid-row:2;justify-self:start}.bordas .b-inf{grid-column:2;grid-row:3}
+.croqui{grid-column:2;grid-row:2;width:100%;max-width:120px}
+.croqui svg{width:100%;height:auto;display:block}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+h2{font:600 1.35rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 12px}
+.status{padding:12px 16px;border-radius:6px;font-weight:500}
+.status.ok{background:var(--ok-soft);color:var(--ok)}.status.warn{background:var(--warn-soft);color:var(--warn)}.status.bad{background:var(--bad-soft);color:var(--bad)}
+.status b{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.msgs{margin:8px 0 0;padding-left:18px;font-size:.88rem;color:var(--ink);font-weight:400}
+.pill{display:inline-block;font:600 .66rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.duo{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+@media (max-width:700px){.duo{grid-template-columns:minmax(0,1fr)}}
+.planta svg{width:100%;height:auto;display:block}
+svg .conc{fill:var(--concrete);stroke:none}
+svg .viga{fill:var(--beam);stroke:var(--ink);stroke-width:.8}
+svg .eng{stroke:var(--ink);stroke-width:3;fill:none}
+svg .hatch{stroke:var(--muted);stroke-width:.8}
+svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .dist{stroke:var(--steel2);stroke-width:1.2;fill:none;stroke-dasharray:6 4}
+svg .dim{stroke:var(--muted);stroke-width:.8;fill:none}
+svg text{fill:var(--ink);font-family:var(--f-mono)}
+svg text.mut{fill:var(--muted)}
+.reac{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.reac div{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.reac dt{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.reac dd{margin:2px 0 0;font:600 1.3rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.reac dd small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:3px}
+details.memo{border-top:1px solid var(--line)}
+details.memo:last-of-type{border-bottom:1px solid var(--line)}
+details.memo summary{cursor:pointer;padding:10px 2px;font:600 1.05rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.memo summary::-webkit-details-marker{display:none}
+details.memo summary::after{content:"+";font-family:var(--f-mono);color:var(--muted)}
+details.memo[open] summary::after{content:"–"}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+th.v{text-align:right}
+td.f{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);min-width:170px}
+td.v{font-family:var(--f-mono);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+td.v.alerta{color:var(--bad);font-weight:600}
+td.r{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.memo .tbl{padding-bottom:12px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.pri{font:600 .9rem var(--f-body);border-radius:4px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--sheet)}
+button.pri.ghost{background:transparent;color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted)}
+.disclaimer{font-size:.8rem;color:var(--muted);border-left:3px solid var(--line);padding:4px 0 4px 12px;max-width:72ch}
+ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
+
+.secao svg,.desenhos svg{width:100%;height:auto;display:block;max-width:420px}
+#corte svg{width:100%;height:auto;display:block}
+.desenhos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:700px){.desenhos{grid-template-columns:minmax(0,1fr)}}
+.cap{font:500 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.reac dd{font-size:1.2rem}
+.reac4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:800px){.reac4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body data-pagina="associada">
+<div class="wrap">
+<div id="fc-bar"></div>
+<header class="top">
+  <h1>Sapata associada <span>· NBR 6118</span></h1>
+  <p>Sapata sob dois pilares com viga de rigidez · NBR 6118:2023 e NBR 6122</p>
+</header>
+
+<div class="grid">
+<aside class="inputs" aria-label="Dados de entrada">
+  <form id="f" class="sheet" style="display:flex;flex-direction:column;gap:18px" autocomplete="off">
+    <fieldset>
+      <legend>Pilar P1</legend>
+      <label>Lado transversal a<span class="unit"><input id="a1" type="number" step="1" min="14" value="20"><i>cm</i></span></label>
+      <label>Lado na direção da viga b<span class="unit"><input id="b1" type="number" step="1" min="14" value="40"><i>cm</i></span></label>
+      <label class="full">Normal N1k<span class="unit"><input id="N1" type="number" step="5" min="1" value="600"><i>kN</i></span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Pilar P2</legend>
+      <label>Lado transversal a<span class="unit"><input id="a2" type="number" step="1" min="14" value="20"><i>cm</i></span></label>
+      <label>Lado na direção da viga b<span class="unit"><input id="b2" type="number" step="1" min="14" value="40"><i>cm</i></span></label>
+      <label>Normal N2k<span class="unit"><input id="N2" type="number" step="5" min="1" value="900"><i>kN</i></span></label>
+      <label>Distância entre eixos<span class="unit"><input id="l" type="number" step="0.05" min="0.5" value="2.00"><i>m</i></span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Solo e geometria</legend>
+      <label>Tensão admissível<span class="unit"><input id="sadm" type="number" step="10" min="50" value="200"><i>kPa</i></span></label>
+      <label>Peso próprio + solo<span class="unit"><input id="ppPerc" type="number" step="1" min="0" value="5"><i>% N</i></span></label>
+      <label>Balanço máx. além de P1<span class="unit"><input id="limEsq" type="number" step="0.05" min="0" value="0"><i>m</i></span></label>
+      <label>Largura da viga<span class="unit"><input id="bw" type="number" step="5" min="0" value="0"><i>cm</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">Use a sapata associada quando as sapatas isoladas dos dois pilares se sobrepõem. Balanço 0 = livre (informe um valor se houver divisa ou obstáculo do lado de P1). Largura da viga 0 = automática.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Materiais</legend>
+      <label>Concreto<select id="fck"><option>20</option><option selected>25</option><option>30</option><option>35</option><option>40</option></select></label>
+      <label>Cobrimento da sapata<span class="unit"><input id="c" type="number" step="0.5" min="3" value="5.0"><i>cm</i></span></label>
+    </fieldset>
+    <p class="note" style="margin:0">Aço CA-50. Viga de rigidez com cobrimento de 3,0 cm.</p>
+  </form>
+</aside>
+
+<main>
+  <section id="status" class="status ok" aria-live="polite"></section>
+
+  <section class="sheet">
+    <h2>Resultado</h2>
+    <dl class="reac reac4" id="keys"></dl>
+  </section>
+
+  <section class="sheet">
+    <h2>Detalhamento</h2>
+    <div class="desenhos"><figure style="margin:0;min-width:0"><figcaption class="cap">Planta</figcaption><div id="planta"></div></figure>
+    <figure style="margin:0;min-width:0"><figcaption class="cap">Corte longitudinal (viga de rigidez)</figcaption><div id="corte"></div></figure></div>
+    <p class="note" id="legenda" style="margin:8px 0 0"></p>
+    <h3 style="margin:18px 0 6px;font-size:.95rem">Momento fletor na viga de rigidez (característico) · kN·m</h3>
+    <div id="diag"></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Memória de cálculo</h2>
+    <div id="memoria"></div>
+    <p class="note" style="margin:12px 0 4px"><b>Hipóteses e limites deste módulo:</b></p>
+    <ul class="todo note">
+      <li>Sapata rígida centrada na resultante das cargas: tensão uniforme no solo; cargas centradas, sem momentos na base dos pilares</li>
+      <li>Viga de rigidez calculada como viga invertida (reação do solo para cima); laje da sapata em balanço dos dois lados da viga (CEB-70)</li>
+      <li>Não verifica recalques diferenciais nem interação solo-estrutura</li>
+    </ul>
+  </section>
+
+  <section class="sheet">
+    <h2>Quantitativos</h2>
+    <div class="tbl"><table id="quant"></table></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Projeto e exportação</h2>
+    <div class="actions">
+      <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
+      <button type="button" class="pri ghost" id="btnAbrir">Meus projetos</button>
+      <button type="button" class="pri" id="btnPdf">Baixar memória (PDF)</button>
+      <button type="button" class="pri ghost" id="btnDxf">Baixar desenho (DXF em .zip)</button>
+      <span class="note" id="expMsg" role="status"></span>
+    </div>
+    <p class="note" style="margin:10px 0 0">O cálculo é livre. Memória em PDF e desenho em DXF fazem parte do plano Pro.</p>
+  </section>
+
+  <p class="disclaimer">Ferramenta de apoio ao dimensionamento. Os resultados devem ser conferidos por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT. A tensão admissível do solo deve vir de investigação geotécnica conforme a NBR 6122.</p>
+</main>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// Motor de cálculo — Sapata associada (dois pilares) com viga de rigidez, NBR 6118:2023 e NBR 6122.
+// Sapata retangular centrada na resultante das cargas (tensão uniforme no solo); viga de rigidez ao longo
+// dos pilares calculada como viga invertida (reação do solo para cima, pilares como apoios), e a laje da
+// sapata em balanço dos dois lados da viga (CEB-70). Unidades internas: cm, kN, kN/cm².
+
+const AS_BIT_S = [10, 12.5, 16, 20];
+const AS_BIT_V = [12.5, 16, 20, 25];
+const aA = phi => Math.PI * (phi / 10) ** 2 / 4;
+const aR5 = v => Math.ceil(v / 5 - 1e-9) * 5;
+const afx = (v, d) => v.toFixed(d).replace('.', ',');
+
+function calcularAssociada(e0) {
+  const e = { ...e0 };
+  const erros = [], avisos = [];
+  const c = e.c ?? 5, cv = 3.0;
+  const fcd = e.fck / 14, fyd = 50 / 1.15, fctm = 0.3 * e.fck ** (2 / 3) / 10, fctd = 0.7 * fctm / 1.4;
+  const sadm = e.sadm / 1e4, kpp = 1 + (e.ppPerc ?? 5) / 100;
+  const l = e.l * 100, N1 = e.N1, N2 = e.N2, Nt = N1 + N2;
+  const bw = Math.max(e.bw || 0, e.a1, e.a2, 20);            // a = lado transversal à viga
+
+  // ---- comprimento centrado na resultante
+  const xR = N2 * l / Nt;                                    // da posição de P1
+  const folga = Math.max(e.b1, e.b2) / 2 + 25;
+  let esq = Math.max(xR, l - xR) + folga - xR;              // balanço além de P1 (simétrico em torno de xR)
+  let L = aR5(2 * (Math.max(xR, l - xR) + folga));
+  esq = L / 2 - xR;
+  if (e.limEsq > 0 && esq > e.limEsq * 100) {               // divisa à esquerda limita o balanço
+    esq = e.limEsq * 100; L = aR5(2 * (xR + esq)); esq = L / 2 - xR;
+    if (L / 2 - (l - xR) < e.b2 / 2) erros.push('Com o balanço limitado à esquerda, a sapata não alcança P2 centrada na resultante: use viga alavanca (sapata de divisa).');
+  }
+  const dir = L - esq - l;
+  const area = kpp * Nt / sadm;
+  let B = Math.max(aR5(area / L), aR5(bw + 40));
+  const sigma = kpp * Nt / (L * B);
+  if (sigma > sadm * 1.0001) erros.push('Tensão no solo acima da admissível.');
+  if (B > L) avisos.push('A largura ficou maior que o comprimento: pilares muito próximos; confira se uma sapata isolada única não resolve.');
+
+  // ---- viga de rigidez (características): x a partir da extremidade esquerda
+  const x1 = esq, x2 = esq + l, w = Nt / L;                 // reação líquida do solo (kN/cm)
+  const cargas = [[x1 - e.b1 / 2, x1 + e.b1 / 2, N1 / e.b1], [x2 - e.b2 / 2, x2 + e.b2 / 2, N2 / e.b2]];
+  const mU = (x, a, b) => { if (x <= a) return 0; const t = Math.min(x, b) - a; return t * (x - a - t / 2); };
+  const vU = (x, a, b) => Math.max(0, Math.min(x, b) - a);
+  const Vx = x => w * x - cargas.reduce((s, [a, b, p]) => s + p * vU(x, a, b), 0);
+  const Mx = x => w * x * x / 2 - cargas.reduce((s, [a, b, p]) => s + p * mU(x, a, b), 0);
+  const xs = []; for (let i = 0; i <= 400; i++) xs.push(i * L / 400);
+  cargas.forEach(([a, b]) => xs.push(a, b, (a + b) / 2));
+  // cortante nulo entre os pilares
+  xs.push((N1) / w);
+  const pts = [...new Set(xs.filter(x => x >= 0 && x <= L).map(x => +x.toFixed(4)))].sort((a, b) => a - b).map(x => ({ x, V: Vx(x), M: Mx(x) }));
+  const Mpos = Math.max(0, ...pts.map(p => p.M));          // tração embaixo (balanços sob os pilares)
+  const Mneg = Math.max(0, ...pts.map(p => -p.M));         // tração em cima (entre pilares)
+  const Vmax = Math.max(...pts.map(p => Math.abs(p.V)));
+  const fim = pts[pts.length - 1];
+
+  // ---- laje da sapata (transversal): balanços de (B − bw)/2
+  const c1 = (B - bw) / 2;
+  const hs = aR5(Math.max(c1 * 2 / 3, 30, e.hsMin || 0));
+  const h0 = Math.max(20, aR5(hs / 3));
+  const ds = hs - c - 0.625, sLiq = Nt / (L * B), xS = c1 + 0.15 * bw;
+  const M1 = sLiq * L * xS * xS / 2, Md1 = 1.4 * M1;
+  const d1 = Math.min(ds, 1.5 * xS);
+  const AsS = Md1 / (0.85 * d1 * fyd), AsSmin = 0.0015 * L * hs * 0.67, AsSad = Math.max(AsS, AsSmin);
+  const escolha = (As, larg) => {
+    for (const sMin of [15, 12, 10]) for (const phi of AS_BIT_S) {
+      const n = Math.ceil(As / aA(phi) - 1e-9), s = (larg - 2 * c) / Math.max(n - 1, 1);
+      if (s >= sMin) { const sAd = Math.min(20, Math.floor(s)); const nAd = Math.floor((larg - 2 * c) / sAd) + 1; return { phi, s: sAd, n: Math.max(nAd, n) }; }
+    }
+    return null;
+  };
+  let princ = escolha(AsSad, L);
+  if (!princ) { princ = { phi: 20, s: 10, n: Math.floor((L - 2 * c) / 10) + 1 }; erros.push('Armadura transversal da sapata muito densa: aumente a altura.'); }
+  princ.AsEf = princ.n * aA(princ.phi); princ.comp = B - 2 * c + 2 * Math.max(h0 - 2 * c, 15);
+  const AsDistM = Math.max(princ.AsEf / (L / 100) / 5, 0.9);
+  const dist = escolha(AsDistM * B / 100, B) || { phi: 10, s: 20, n: Math.floor((B - 2 * c) / 20) + 1 };
+  dist.comp = L - 2 * c + 2 * 15;
+  const VsdS = 1.4 * sLiq * L * c1, tauS = VsdS / (L * ds), tauRd2S = 0.27 * (1 - e.fck / 250) * fcd;
+  if (tauS > tauRd2S) erros.push('Diagonal comprimida da sapata junto à viga acima do limite: aumente a altura.');
+
+  // ---- viga de rigidez: h automático (rígida: h ≥ l/8) com flexão nas duas faces e cisalhamento
+  const phiT = 0.63, fyw = 50 / 1.15, ah = 2.5;
+  const flexao = (Md, h) => {
+    for (const [phi, maxCam] of [...AS_BIT_V.map(p => [p, 1]), ...AS_BIT_V.map(p => [p, 2])]) {
+      const porCamada = Math.floor((bw - 2 * cv - 2 * phiT + ah) / (phi / 10 + ah)); if (porCamada < 2) continue;
+      let d = h - cv - phiT - phi / 20;
+      const xlim = 0.45 * d, Mlim = 0.68 * bw * xlim * fcd * (d - 0.4 * xlim); if (Md > Mlim) return null;
+      let x = Md > 0 ? 1.25 * d * (1 - Math.sqrt(1 - Md / (0.425 * bw * d * d * fcd))) : 0;
+      let As = Md > 0 ? Md / (fyd * (d - 0.4 * x)) : 0;
+      const AsMin = 0.0015 * bw * h, n = Math.max(2, Math.ceil(Math.max(As, AsMin) / aA(phi) - 1e-9));
+      const camadas = Math.ceil(n / porCamada); if (camadas > maxCam) continue;
+      if (camadas === 2) { d -= (phi / 10 + 2) / 2; x = 1.25 * d * (1 - Math.sqrt(Math.max(0, 1 - Md / (0.425 * bw * d * d * fcd)))); As = Md / (fyd * (d - 0.4 * x)); if (n * aA(phi) < As) continue; }
+      return { phi, n, camadas, d, x, xd: d ? x / d : 0, As, AsMin, AsEf: n * aA(phi) };
+    }
+    return null;
+  };
+  let viga = null;
+  const Vd = 1.4 * Vmax;
+  for (let h = Math.max(aR5(hs + 10), aR5(l / 8), 40, e.hvMin || 0); h <= 200; h += 5) {
+    const sup = flexao(1.4 * Mneg, h), inf = flexao(1.4 * Mpos, h);
+    if (!sup || !inf) continue;
+    const d = Math.min(sup.d, inf.d);
+    const VRd2 = 0.27 * (1 - e.fck / 250) * fcd * bw * d; if (Vd > VRd2) continue;
+    const Vc = 0.6 * fctd * bw * d;
+    const aswCalc = Math.max(0, (Vd - Vc) / (0.9 * d * fyw)) * 100, aswMin = 0.2 * fctm / 50 * bw * 100, asw = Math.max(aswCalc, aswMin);
+    const smax = Vd <= 0.67 * VRd2 ? Math.min(0.6 * d, 30) : Math.min(0.3 * d, 20);
+    let est = null;
+    for (const pt of [5, 6.3, 8, 10]) { const s = Math.floor(Math.min(smax, 2 * aA(pt) / asw * 100)); if (s >= 10) { est = { phi: pt, s, asw, aswMin, aswCalc }; break; } }
+    if (!est) continue;
+    viga = { h, d, sup, inf, VRd2, Vc, est, smax, pele: h > 60 ? 0.001 * bw * h : 0 };
+    break;
+  }
+  if (!viga) erros.push('Não foi possível dimensionar a viga de rigidez até h = 200 cm: aumente a largura da viga.');
+
+  // ---- quantitativos
+  const massa = (n, comp, phi) => n * comp / 100 * aA(phi) * 0.785;
+  const vSap = (L / 100) * ((B / 100) * (h0 / 100) + ((hs - h0) / 100) * ((B + bw) / 200));
+  const vViga = viga ? (bw / 100) * ((viga.h - hs) / 100) * (L / 100) : 0;
+  let pesoViga = 0, nEst = 0, compEst = 0, compLong = 0;
+  if (viga) {
+    compLong = L - 2 * cv + 2 * (viga.h - 2 * cv);
+    nEst = Math.ceil(L / viga.est.s) + 1; compEst = 2 * (bw - 2 * cv) + 2 * (viga.h - 2 * cv) + 10;
+    pesoViga = massa(viga.sup.n, compLong, viga.sup.phi) + massa(viga.inf.n, compLong, viga.inf.phi) + massa(nEst, compEst, viga.est.phi) + (viga.pele ? massa(2 * Math.ceil(viga.pele / aA(10)), L, 10) : 0);
+  }
+  const pesoSap = massa(princ.n, princ.comp, princ.phi) + massa(dist.n, dist.comp, dist.phi);
+
+  return { ok: erros.length === 0, erros: [...new Set(erros)], avisos: [...new Set(avisos)], entrada: { ...e, c, bw },
+    mat: { fcd, fyd }, sadm, kpp, Nt, xR, L, B, esq, dir, sigma, area,
+    viga: { bw, pts, w, x1, x2, Mpos, Mneg, Vmax, Vd, fimV: fim.V, fimM: fim.M, cv, compLong, ...viga },
+    sapata: { hs, h0, c1, sLiq, xS, M1, Md1, d1, ds, AsS, AsSmin, AsSad, princ, dist, AsDistM, tauS, tauRd2S },
+    quant: { vol: vSap + vViga, vSap, vViga, peso: pesoSap + pesoViga, pesoSap, pesoViga, nEst, compEst, magro: (L / 100 + 0.1) * (B / 100 + 0.1) * 0.05 } };
+}
+
+
+</script>
+<script>
+// ---------- utilidades comuns às páginas de módulo ----------
+const $ = id => document.getElementById(id);
+const nf = (v, d = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const bit = p => nf(p, 1);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const asciiPdf = t => String(t).replace(/ρmín/g, 'rho_min').replace(/ρ/g, 'rho').replace(/αb/g, 'alfa_b').replace(/α/g, 'alfa').replace(/λ1/g, 'lambda1').replace(/λ/g, 'lambda')
+  .replace(/ν/g, 'nu').replace(/γn/g, 'gama_n').replace(/γ/g, 'gama').replace(/σ/g, 'sig').replace(/τ/g, 'tau').replace(/φ/g, 'Ø')
+  .replace(/≤/g, '<=').replace(/≥/g, '>=').replace(/[−–—]/g, '-').replace(/→/g, '->').replace(/√/g, 'raiz').replace(/′/g, "'").replace(/²/g, '2').replace(/³/g, '3').replace(/₁/g, '1').replace(/₀/g, '0');
+function msg(t) { $('expMsg').textContent = t; }
+async function salvar(filename, data) { FC.baixar(filename, data); msg('Arquivo baixado.'); }
+function renderMemoria(secoes, alvoId, abrirPadrao) {
+  const abertos = new Set([...document.querySelectorAll(`#${alvoId} details.memo[open]`)].map(d => d.dataset.k));
+  if (!document.querySelector(`#${alvoId} details.memo`)) abertos.add(abrirPadrao);
+  $(alvoId).innerHTML = secoes.map(sec => `<details class="memo" data-k="${esc(sec.t)}" ${abertos.has(sec.t) ? 'open' : ''}><summary>${esc(sec.t)}</summary>
+    <div class="tbl"><table><thead><tr><th>Item</th><th>Expressão</th>${sec.cols.map(c => `<th class="v">${esc(c)}</th>`).join('')}<th>Ref.</th></tr></thead><tbody>
+    ${sec.l.map(l => `<tr><td>${l[0]}</td><td class="f">${l[1]}</td>${l[2].map(v => typeof v === 'object' ? `<td class="v${v.alerta ? ' alerta' : ''}">${v.v}</td>` : `<td class="v">${v}</td>`).join('')}<td class="r">${l[3]}</td></tr>`).join('')}
+    </tbody></table></div></details>`).join('');
+}
+// memória no PDF (retrato A4); devolve a posição y final
+function pdfMemoria(doc, secoes, titulo, subtitulo, r) {
+  const W = 210, HP = 297, M = 14; let y = FC.PDF.topo;
+  const novaPag = n => { if (y + n > HP - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } };
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(20); doc.text(asciiPdf(titulo), M, y + 4); y += 9;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90); doc.text(asciiPdf(subtitulo), M, y); y += 3;
+  doc.setDrawColor(20); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 6;
+  doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(r.erros.length ? 'VERIFICAR / REVISAR' : r.avisos.length ? 'ATENÇÃO' : 'VERIFICAÇÕES ATENDIDAS', M, y); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  [...r.erros, ...r.avisos].forEach(m => { const ls = doc.splitTextToSize('• ' + asciiPdf(m), W - 2 * M); novaPag(ls.length * 4); doc.text(ls, M, y); y += ls.length * 4; });
+  y += 2;
+  for (const sec of secoes) {
+    const nC = sec.cols.length, xExpr = M + 42, xVal0 = M + 42 + 56, xRef = W - M, larg = (xRef - 16 - xVal0) / nC;
+    novaPag(16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text(asciiPdf(sec.t).toUpperCase(), M, y);
+    doc.setFontSize(6.6); doc.setTextColor(110); sec.cols.forEach((c, i) => doc.text(asciiPdf(c), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }));
+    y += 1.6; doc.setLineWidth(0.2); doc.setDrawColor(150); doc.line(M, y, W - M, y); y += 3.6;
+    for (const l of sec.l) {
+      const ex = doc.splitTextToSize(asciiPdf(l[1]), 54); const hh = Math.max(1, ex.length) * 3.3 + 0.6; novaPag(hh);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(20); doc.text(doc.splitTextToSize(asciiPdf(l[0]), 40)[0], M, y);
+      doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(90); doc.text(ex, xExpr, y);
+      l[2].forEach((v, i) => { const o = typeof v === 'object' ? v : { v }; doc.setFont('courier', 'bold'); doc.setFontSize(nC > 3 ? 6.8 : 7.6); o.alerta ? doc.setTextColor(163, 18, 26) : doc.setTextColor(20); doc.text(asciiPdf(o.v), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }); });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.6); doc.setTextColor(110); doc.text(asciiPdf(l[3]), xRef, y, { align: 'right' });
+      y += hh;
+    }
+    y += 3;
+  }
+  return { y, novaPag };
+}
+function pdfRodape(doc, texto) { FC.finalizarPdf(doc, texto); }
+// DXF mínimo com camadas
+function novoDxf(camadas) {
+  const L = []; const p = (...a) => L.push(...a.map(String)); const f = v => (+v).toFixed(3);
+  p(0, 'SECTION', 2, 'TABLES', 0, 'TABLE', 2, 'LAYER', 70, Object.keys(camadas).length);
+  for (const [n, c] of Object.entries(camadas)) p(0, 'LAYER', 2, n, 70, 0, 62, c, 6, 'CONTINUOUS');
+  p(0, 'ENDTAB', 0, 'ENDSEC', 0, 'SECTION', 2, 'ENTITIES');
+  const txt = t => asciiPdf(t).replace(/Ø/g, '%%c').replace(/·/g, '-').replace(/[^\x20-\x7E]/g, ch => ({ 'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'é': 'e', 'ê': 'e', 'í': 'i', 'ó': 'o', 'õ': 'o', 'ô': 'o', 'ú': 'u', 'ç': 'c', '×': 'x' }[ch] || ''));
+  return {
+    linha: (x1, y1, x2, y2, l) => p(0, 'LINE', 8, l, 10, f(x1), 20, f(y1), 30, 0, 11, f(x2), 21, f(y2), 31, 0),
+    retangulo(x, y, w, h, l) { this.linha(x, y, x + w, y, l); this.linha(x + w, y, x + w, y + h, l); this.linha(x + w, y + h, x, y + h, l); this.linha(x, y + h, x, y, l); },
+    circulo: (x, y, r, l) => p(0, 'CIRCLE', 8, l, 10, f(x), 20, f(y), 30, 0, 40, f(r)),
+    texto: (x, y, alt, t, centro) => p(0, 'TEXT', 8, 'TEXTO', 10, f(x), 20, f(y), 30, 0, 40, f(alt), 1, txt(t), ...(centro ? [72, 1, 11, f(x), 21, f(y), 31, 0] : [])),
+    fim: () => { p(0, 'ENDSEC', 0, 'EOF'); return L.join('\r\n'); },
+  };
+}
+// projetos salvos (comum)
+function ligarProjetos(modulo, nomeSugerido) {
+  let projetoId = null;
+  $('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
+  $('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
+  (async () => {
+    const id = new URLSearchParams(location.search).get('p'); if (!id) return;
+    await new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
+    const p = FC.sessao && await FC.lerProjeto(id);
+    if (p && p.modulo === modulo) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+  })();
+}
+let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requestAnimationFrame(render); };
+
+const CAMPOS = ['a1', 'b1', 'N1', 'a2', 'b2', 'N2', 'l', 'sadm', 'ppPerc', 'limEsq', 'bw', 'fck', 'c'];
+function lerEntrada() { const e = {}; for (const k of CAMPOS) e[k] = +$(k).value; return e; }
+function aplicarEntrada(e) { for (const k of CAMPOS) if (e[k] != null) $(k).value = String(e[k]); render(); }
+(() => { const q = new URLSearchParams(location.search); if (q.get('p')) return; for (const k of CAMPOS) if (q.has(k) && $(k)) $(k).value = q.get(k); })();
+const barras = b => b ? `${b.n} Ø${bit(b.phi)}${b.camadas > 1 ? ' (2 camadas)' : ''}` : '—';
+
+function memoria(r) {
+  const e = r.entrada, v = r.viga, s = r.sapata, P = s.princ, D = s.dist;
+  const out = [
+    { t: 'Dimensões em planta', cols: ['Valor'], l: [
+      ['Carga total', 'N1 + N2', [`${nf(r.Nt, 1)} kN`], ''],
+      ['Posição da resultante', 'xR = N2 · l / (N1 + N2), a partir de P1', [`${nf(r.xR, 1)} cm`], ''],
+      ['Comprimento', 'L centrado na resultante', [`${r.L} cm (balanços ${nf(r.esq, 0)} e ${nf(r.dir, 0)} cm)`], ''],
+      ['Área necessária', 'N · (1 + pp) / σadm', [`${nf(r.area / 1e4, 2)} m²`], ''],
+      ['Largura', 'B = área / L', [`${r.B} cm`], ''],
+      ['Tensão no solo', 'σ ≤ σadm (uniforme)', [{ v: `${nf(r.sigma * 1e4, 1)} ≤ ${nf(e.sadm, 0)} kPa`, alerta: r.sigma > r.sadm * 1.0001 }], 'NBR 6122'],
+    ]},
+    { t: 'Laje da sapata (transversal)', cols: ['Valor'], l: [
+      ['Balanço', 'c1 = (B − bw)/2', [`${nf(s.c1, 1)} cm`], ''],
+      ['Altura', 'h ≥ (B − bw)/3 ; h0', [`${s.hs} ; ${s.h0} cm`], '22.6.1'],
+      ['Momento em S1', 'M1 = σ·L·(c1 + 0,15·bw)²/2', [`${nf(s.M1 / 100, 1)} kN·m`], 'CEB-70'],
+      ['Armadura', 'As = 1,4·M1 / (0,85·d·fyd)', [`${nf(s.AsS)} cm² (mín. ${nf(s.AsSmin)})`], ''],
+      ['Adotado (transversal)', '', [`${P.n} Ø${bit(P.phi)} c/${P.s}`], ''],
+      ['Distribuição (longitudinal)', '≥ 1/5 da principal', [`Ø${bit(D.phi)} c/${D.s}`], ''],
+      ['Diagonal comprimida', 'τSd ≤ τRd2', [{ v: `${nf(s.tauS * 10, 2)} ≤ ${nf(s.tauRd2S * 10, 2)} MPa`, alerta: s.tauS > s.tauRd2S }], '19.5.3.1'],
+    ]},
+  ];
+  if (v.h) out.push({ t: 'Viga de rigidez', cols: ['Valor'], l: [
+    ['Seção', 'bw × h (h ≥ l/8)', [`${v.bw} × ${v.h} cm`], ''],
+    ['Reação do solo', 'w = N / L', [`${nf(v.w * 100, 1)} kN/m`], ''],
+    ['Momento entre pilares', 'Mk (tração em cima)', [`${nf(v.Mneg / 100, 1)} kN·m`], ''],
+    ['Momento nos balanços', 'Mk (tração embaixo)', [`${nf(v.Mpos / 100, 1)} kN·m`], ''],
+    ['Armadura superior', 'Md = 1,4·Mk', [`${nf(v.sup.As)} cm² → ${barras(v.sup)}`], ''],
+    ['Armadura inferior', 'Md = 1,4·Mk', [`${nf(v.inf.As)} cm² → ${barras(v.inf)}`], ''],
+    ['Cortante máximo', 'Vd = 1,4 · Vk', [`${nf(v.Vd, 1)} kN`], ''],
+    ['Biela comprimida', 'VRd2 = 0,27·αv2·fcd·bw·d', [{ v: `${nf(v.VRd2, 1)} kN`, alerta: v.Vd > v.VRd2 }], '17.4.2.2'],
+    ['Estribos', 'Asw/s (Modelo I)', [`${nf(v.est.asw)} cm²/m → Ø${bit(v.est.phi)} c/${v.est.s}`], '17.4.1.1'],
+    ['Armadura de pele', 'Asp = 0,10%·bw·h por face', [v.pele ? `${nf(v.pele)} cm²` : 'dispensada (h ≤ 60 cm)'], '17.3.5.2.3'],
+  ]});
+  return out;
+}
+
+function svgPlanta(r) {
+  const e = r.entrada, v = r.viga, L = r.L, B = r.B, k = 360 / Math.max(L, B * 1.2), pad = 30;
+  const W = L * k + 2 * pad, H = B * k + 2 * pad;
+  const X = x => (pad + x * k).toFixed(1), Y = y => (pad + (B / 2 - y) * k).toFixed(1);
+  let o = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Planta da sapata associada">`;
+  o += `<rect class="conc" x="${X(0)}" y="${Y(B / 2)}" width="${(L * k).toFixed(1)}" height="${(B * k).toFixed(1)}"/>`;
+  o += `<rect x="${X(0)}" y="${Y(v.bw / 2)}" width="${(L * k).toFixed(1)}" height="${(v.bw * k).toFixed(1)}" fill="none" stroke="var(--steel2)" stroke-width="1.3" stroke-dasharray="5 3"/>`;
+  o += `<rect x="${X(v.x1 - e.b1 / 2)}" y="${Y(e.a1 / 2)}" width="${(e.b1 * k).toFixed(1)}" height="${(e.a1 * k).toFixed(1)}" fill="var(--ink)" opacity=".85"/>`;
+  o += `<rect x="${X(v.x2 - e.b2 / 2)}" y="${Y(e.a2 / 2)}" width="${(e.b2 * k).toFixed(1)}" height="${(e.a2 * k).toFixed(1)}" fill="var(--ink)" opacity=".85"/>`;
+  o += `<line x1="${X(v.x1 + r.xR)}" y1="${Y(B / 2) - 6}" x2="${X(v.x1 + r.xR)}" y2="${(+Y(-B / 2) + 6).toFixed(1)}" stroke="var(--accent)" stroke-dasharray="3 3"/>`;
+  o += `<text x="${X(v.x1 + r.xR)}" y="${(+Y(B / 2) - 9).toFixed(1)}" font-size="10" text-anchor="middle" style="fill:var(--accent)">resultante</text>`;
+  o += `<text x="${X(v.x1)}" y="${(+Y(e.a1 / 2) - 4).toFixed(1)}" font-size="11" text-anchor="middle">P1</text><text x="${X(v.x2)}" y="${(+Y(e.a2 / 2) - 4).toFixed(1)}" font-size="11" text-anchor="middle">P2</text>`;
+  o += `<text x="${X(L / 2)}" y="${(+Y(-B / 2) + 16).toFixed(1)}" font-size="11" text-anchor="middle" class="mut">L = ${L}</text>`;
+  o += `<text x="${(+X(0) - 8).toFixed(1)}" y="${Y(0)}" font-size="11" text-anchor="middle" class="mut" transform="rotate(-90 ${(+X(0) - 8).toFixed(1)} ${Y(0)})">B = ${B}</text>`;
+  return o + '</svg>';
+}
+function svgCorte(r) {
+  const e = r.entrada, v = r.viga, s = r.sapata, L = r.L, hv = v.h || s.hs + 10, hp = 45;
+  const k = 360 / L, pad = 26, W = L * k + 2 * pad, H = (hv + hp + 10) * k + 2 * pad + 18;
+  const X = x => (pad + x * k).toFixed(1), Y = y => (pad + (hv + hp - y) * k).toFixed(1);
+  let o = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Corte da viga de rigidez">`;
+  o += `<rect x="${X(-5)}" y="${Y(0)}" width="${((L + 10) * k).toFixed(1)}" height="${(5 * k).toFixed(1)}" fill="var(--line)"/>`;
+  o += `<rect class="conc" x="${X(0)}" y="${Y(hv)}" width="${(L * k).toFixed(1)}" height="${(hv * k).toFixed(1)}"/>`;
+  o += `<rect class="conc" x="${X(v.x1 - e.b1 / 2)}" y="${Y(hv + hp)}" width="${(e.b1 * k).toFixed(1)}" height="${(hp * k).toFixed(1)}"/>`;
+  o += `<rect class="conc" x="${X(v.x2 - e.b2 / 2)}" y="${Y(hv + hp)}" width="${(e.b2 * k).toFixed(1)}" height="${(hp * k).toFixed(1)}"/>`;
+  o += `<line x1="${X(0)}" y1="${Y(s.hs)}" x2="${X(L)}" y2="${Y(s.hs)}" stroke="var(--muted)" stroke-dasharray="4 3"/>`;
+  o += `<polyline points="${X(4)},${Y(hv - 20)} ${X(4)},${Y(hv - 4)} ${X(L - 4)},${Y(hv - 4)} ${X(L - 4)},${Y(hv - 20)}" fill="none" stroke="var(--steel)" stroke-width="2"/>`;
+  o += `<polyline points="${X(4)},${Y(20)} ${X(4)},${Y(4)} ${X(L - 4)},${Y(4)} ${X(L - 4)},${Y(20)}" fill="none" stroke="var(--steel)" stroke-width="2"/>`;
+  if (v.est) for (let x = 10; x < L - 5; x += Math.max(v.est.s, 12) * 1.6) o += `<line x1="${X(x)}" y1="${Y(6)}" x2="${X(x)}" y2="${Y(hv - 6)}" stroke="var(--steel2)" stroke-width=".8" opacity=".7"/>`;
+  o += `<text x="${X(L / 2)}" y="${(+Y(hv) - 5).toFixed(1)}" font-size="11" text-anchor="middle" style="fill:var(--steel)">${barras(v.sup)} superior</text>`;
+  o += `<text x="${X(L / 2)}" y="${(+Y(0) + 16).toFixed(1)}" font-size="11" text-anchor="middle" style="fill:var(--steel)">${barras(v.inf)} inferior · viga h = ${v.h || '—'} · sapata h = ${s.hs}</text>`;
+  return o + '</svg>';
+}
+function svgMomento(r) {
+  const v = r.viga, pts = v.pts, W = 760, H = 170, pad = 30, L = r.L;
+  const mMax = Math.max(1, ...pts.map(p => Math.abs(p.M)));
+  const X = x => (pad + x / L * (W - 2 * pad)).toFixed(1), k = (H / 2 - pad) / mMax, eixo = H / 2;
+  let o = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de momentos">`;
+  o += `<path d="M${X(0)},${eixo} ${pts.map(p => `L${X(p.x)},${(eixo + p.M * k).toFixed(1)}`).join(' ')} L${X(L)},${eixo} Z" style="fill:var(--accent-soft);stroke:var(--accent)"/>`;
+  o += `<line x1="${X(0)}" y1="${eixo}" x2="${X(L)}" y2="${eixo}" stroke="var(--ink)"/>`;
+  const pmin = pts.reduce((a, p) => p.M < a.M ? p : a), pmax = pts.reduce((a, p) => p.M > a.M ? p : a);
+  o += `<text x="${X(pmin.x)}" y="${(eixo + pmin.M * k - 5).toFixed(1)}" font-size="11" text-anchor="middle" style="fill:var(--accent)">${nf(pmin.M / 100, 1)}</text>`;
+  if (pmax.M > 0) o += `<text x="${X(pmax.x)}" y="${(eixo + pmax.M * k + 13).toFixed(1)}" font-size="11" text-anchor="middle" style="fill:var(--accent)">+${nf(pmax.M / 100, 1)}</text>`;
+  o += `<text x="${X(v.x1)}" y="${H - 6}" font-size="10" class="mut" text-anchor="middle">P1</text><text x="${X(v.x2)}" y="${H - 6}" font-size="10" class="mut" text-anchor="middle">P2</text>`;
+  o += `<text x="${W - pad}" y="14" font-size="10" class="mut" text-anchor="end">negativo: tração em cima</text>`;
+  return o + '</svg>';
+}
+
+function render() {
+  const e = lerEntrada();
+  if (!(e.N1 > 0 && e.N2 > 0 && e.l > 0 && e.sadm > 0 && e.a1 > 0 && e.b1 > 0 && e.a2 > 0 && e.b2 > 0)) return;
+  const r = calcularAssociada(e); window.__r = r;
+  const v = r.viga, s = r.sapata, msgs = [...r.erros, ...r.avisos];
+  $('status').className = 'status ' + (r.erros.length ? 'bad' : r.avisos.length ? 'warn' : 'ok');
+  $('status').innerHTML = `<b>${r.erros.length ? 'Solução inadequada' : r.avisos.length ? 'Atenção' : 'Verificações atendidas'}</b>
+    ${msgs.length ? `<ul class="msgs">${msgs.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '<span style="margin-left:8px;color:var(--ink);font-weight:400">Solo, sapata e viga de rigidez dentro dos limites.</span>'}`;
+  $('keys').innerHTML = `
+    <div><dt>Sapata</dt><dd>${r.L} × ${r.B}<small>h = ${s.hs} · h0 = ${s.h0} cm</small></dd></div>
+    <div><dt>Viga de rigidez</dt><dd>${v.bw} × ${v.h || '—'}<small>${v.h ? `sup. ${barras(v.sup)} · inf. ${barras(v.inf)}` : 'sem solução'}</small></dd></div>
+    <div><dt>Estribos</dt><dd>${v.est ? `Ø${bit(v.est.phi)} c/${v.est.s}` : '—'}<small>Vd = ${nf(v.Vd, 0)} kN</small></dd></div>
+    <div><dt>Solo</dt><dd>${nf(r.sigma * 1e4, 0)} kPa<small>admissível ${nf(e.sadm, 0)} kPa</small></dd></div>`;
+  $('planta').innerHTML = svgPlanta(r);
+  $('corte').innerHTML = svgCorte(r);
+  $('diag').innerHTML = svgMomento(r);
+  $('legenda').textContent = `Sapata: ${s.princ.n} Ø${bit(s.princ.phi)} c/${s.princ.s} transversais (por baixo) e Ø${bit(s.dist.phi)} c/${s.dist.s} longitudinais · Viga: ${barras(v.sup)} superiores, ${barras(v.inf)} inferiores, estribos ${v.est ? `Ø${bit(v.est.phi)} c/${v.est.s}` : '—'} · cotas em cm`;
+  renderMemoria(memoria(r), 'memoria', 'Viga de rigidez');
+  const q = r.quant;
+  const linha = (pos, d, n, phi, L) => `<tr><td>${pos}</td><td>${d}</td><td class="v">${n}</td><td class="v">${bit(phi)}</td><td class="v">${nf(L / 100)} m</td><td class="v">${nf(n * L / 100 * Math.PI * (phi / 10) ** 2 / 4 * 0.785, 1)} kg</td></tr>`;
+  $('quant').innerHTML = `<thead><tr><th>Pos.</th><th>Descrição</th><th class="v">Qtd.</th><th class="v">Ø (mm)</th><th class="v">Compr. unit.</th><th class="v">Massa</th></tr></thead><tbody>
+    ${linha('N1', `sapata · transversal c/${s.princ.s}`, s.princ.n, s.princ.phi, s.princ.comp)}
+    ${linha('N2', `sapata · longitudinal c/${s.dist.s}`, s.dist.n, s.dist.phi, s.dist.comp)}
+    ${v.h ? linha('N3', 'viga · superior', v.sup.n, v.sup.phi, v.compLong) + linha('N4', 'viga · inferior', v.inf.n, v.inf.phi, v.compLong) + linha('N5', `viga · estribos c/${v.est.s}`, q.nEst, v.est.phi, q.compEst) : ''}
+    <tr><td></td><td><b>Aço CA-50 total</b> (sem perdas)</td><td></td><td></td><td></td><td class="v"><b>${nf(q.peso, 1)} kg</b></td></tr>
+    <tr><td></td><td>Concreto C${e.fck}</td><td></td><td></td><td></td><td class="v">${nf(q.vol, 3)} m³</td></tr>
+    <tr><td></td><td>Concreto magro (lastro 5 cm)</td><td></td><td></td><td></td><td class="v">${nf(q.magro, 3)} m³</td></tr></tbody>`;
+}
+
+function gerarPdf() {
+  const r = window.__r; if (!r || !window.jspdf) { msg('Gerador de PDF não carregou. Recarregue a página.'); return null; }
+  const e = r.entrada, v = r.viga, s = r.sapata;
+  const doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+  let { y } = pdfMemoria(doc, memoria(r), 'Memória de cálculo · Sapata associada',
+    `N1 = ${nf(e.N1, 0)} kN · N2 = ${nf(e.N2, 0)} kN · l = ${nf(e.l)} m · σadm = ${nf(e.sadm, 0)} kPa · C${e.fck} / CA-50 · ${new Date().toLocaleDateString('pt-BR')}`, r);
+  const HP = doc.internal.pageSize.getHeight();
+  const novaPag = need => { if (y + need > HP - FC.PDF.base - 26) { doc.addPage(); y = FC.PDF.topo; } };
+  novaPag(80);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text('PLANTA', 14, y); y += 4;
+  const k = Math.min(170 / r.L, 60 / r.B), x0 = 18, y0 = y;
+  doc.setDrawColor(30); doc.setLineWidth(0.35); doc.rect(x0, y0, r.L * k, r.B * k);
+  doc.setLineDashPattern([1.2, 0.8], 0); doc.rect(x0, y0 + (r.B - v.bw) / 2 * k, r.L * k, v.bw * k); doc.setLineDashPattern([], 0);
+  doc.setFillColor(30);
+  doc.rect(x0 + (v.x1 - e.b1 / 2) * k, y0 + (r.B - e.a1) / 2 * k, e.b1 * k, e.a1 * k, 'F');
+  doc.rect(x0 + (v.x2 - e.b2 / 2) * k, y0 + (r.B - e.a2) / 2 * k, e.b2 * k, e.a2 * k, 'F');
+  doc.setFont('courier', 'normal'); doc.setFontSize(7.4);
+  doc.text(`L = ${r.L} cm`, x0, y0 + r.B * k + 4); doc.text(`B = ${r.B} cm`, x0 + r.L * k + 2, y0 + r.B * k / 2);
+  y = y0 + r.B * k + 10; novaPag(25); doc.setFontSize(7.6);
+  [`Sapata ${r.L}x${r.B} h=${s.hs} h0=${s.h0} · N1 ${s.princ.n} Ø${bit(s.princ.phi)} c/${s.princ.s} (transversal) · N2 Ø${bit(s.dist.phi)} c/${s.dist.s}`,
+   v.h ? `Viga de rigidez ${v.bw}x${v.h} · N3 ${barras(v.sup)} sup. · N4 ${barras(v.inf)} inf. · N5 Ø${bit(v.est.phi)} c/${v.est.s}` : 'Viga de rigidez: sem solução',
+   `Aço ${nf(r.quant.peso, 1)} kg · Concreto ${nf(r.quant.vol, 3)} m³ · Lastro ${nf(r.quant.magro, 3)} m³`].forEach(t => { doc.text(asciiPdf(t), 14, y); y += 4; });
+  pdfRodape(doc, 'Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos por profissional habilitado. Tensão admissível conforme investigação geotécnica (NBR 6122).');
+  return doc.output('arraybuffer');
+}
+function gerarDxf() {
+  const r = window.__r, e = r.entrada, v = r.viga, s = r.sapata;
+  const d = novoDxf({ SAPATA: 7, VIGA: 5, PILAR: 8, ARMADURA: 1, TEXTO: 3 });
+  d.retangulo(0, -r.B / 2, r.L, r.B, 'SAPATA');
+  d.retangulo(0, -v.bw / 2, r.L, v.bw, 'VIGA');
+  d.retangulo(v.x1 - e.b1 / 2, -e.a1 / 2, e.b1, e.a1, 'PILAR'); d.retangulo(v.x2 - e.b2 / 2, -e.a2 / 2, e.b2, e.a2, 'PILAR');
+  const P = s.princ;
+  for (let i = 0; i < P.n; i++) { const xx = e.c + i * (r.L - 2 * e.c) / Math.max(P.n - 1, 1); d.linha(xx, -r.B / 2 + e.c, xx, r.B / 2 - e.c, 'ARMADURA'); }
+  d.texto(0, r.B / 2 + 20, 6, `SAPATA ASSOCIADA ${r.L}x${r.B} h=${s.hs} - VIGA DE RIGIDEZ ${v.bw}x${v.h || '-'} - C${e.fck} / CA-50 - cotas em cm`);
+  d.texto(0, -r.B / 2 - 15, 5, `N1 ${P.n} Ø${bit(P.phi)} c/${P.s} C=${nf(P.comp, 0)} - N2 Ø${bit(s.dist.phi)} c/${s.dist.s}`);
+  if (v.h) d.texto(0, -r.B / 2 - 25, 5, `VIGA: N3 ${barras(v.sup)} sup. - N4 ${barras(v.inf)} inf. - N5 Ø${bit(v.est.phi)} c/${v.est.s}`);
+  return d.fim();
+}
+$('btnPdf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar a memória de cálculo em PDF'))) return; FC.registrarExport('associada', 'pdf'); msg('Gerando PDF…'); const b = gerarPdf(); if (b) await salvar(`memoria-sapata-associada-${window.__r.L}x${window.__r.B}.pdf`, b); });
+$('btnDxf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar o desenho em DXF'))) return; FC.registrarExport('associada', 'dxf');
+  if (!window.JSZip) { msg('Compactador não carregou. Recarregue a página.'); return; }
+  const r = window.__r, nome = `sapata-associada-${r.L}x${r.B}`, z = new JSZip(); z.file(nome + '.dxf', gerarDxf()); await salvar(nome + '-dxf.zip', await z.generateAsync({ type: 'blob' })); });
+ligarProjetos('associada', () => `Sapata associada · N1 ${$('N1').value} + N2 ${$('N2').value} kN`);
+$('f').addEventListener('input', agendar); $('f').addEventListener('change', agendar); $('f').addEventListener('submit', ev => ev.preventDefault());
+render();
+</script>
+</body>
+</html>

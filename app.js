@@ -174,8 +174,8 @@
   function abasSubtipo() {
     const pagina = document.body.dataset.pagina || '';
     const grupos = { laje: [['laje.html', 'Laje maciça', 'laje'], ['trelicada.html', 'Laje treliçada', 'trelicada']],
-      sapata: [['sapata.html', 'Sapata isolada', 'sapata'], ['divisa.html', 'Sapata de divisa', 'divisa'], ['bloco.html', 'Bloco sobre estacas', 'bloco']] };
-    const g = grupos[pagina] || grupos[{ trelicada: 'laje', bloco: 'sapata', divisa: 'sapata' }[pagina]];
+      sapata: [['sapata.html', 'Sapata isolada', 'sapata'], ['divisa.html', 'Sapata de divisa', 'divisa'], ['associada.html', 'Sapata associada', 'associada'], ['bloco.html', 'Bloco sobre estacas', 'bloco']] };
+    const g = grupos[pagina] || grupos[{ trelicada: 'laje', bloco: 'sapata', divisa: 'sapata', associada: 'sapata' }[pagina]];
     const hd = document.querySelector('header.top'); if (!g || !hd) return;
     const nav = document.createElement('nav'); nav.className = 'fc-abas'; nav.setAttribute('aria-label', 'Tipo');
     nav.innerHTML = g.map(([h, n, id]) => `<a href="${h}" ${id === pagina ? 'aria-current="page"' : ''}>${n}</a>`).join('');
@@ -266,11 +266,11 @@
   function desenharBarra() {
     const alvo = document.getElementById('fc-bar'); if (!alvo) return;
     const pagina = document.body.dataset.pagina || '';
-    const grupo = { laje: 'lajes', trelicada: 'lajes', viga: 'vigas', pilar: 'pilares', sapata: 'fundacoes', bloco: 'fundacoes', divisa: 'fundacoes', escada: 'escadas', inicio: 'inicio' }[pagina];
+    const grupo = { laje: 'lajes', trelicada: 'lajes', viga: 'vigas', pilar: 'pilares', sapata: 'fundacoes', bloco: 'fundacoes', divisa: 'fundacoes', associada: 'fundacoes', escada: 'escadas', muro: 'muros', inicio: 'inicio' }[pagina];
     const link = (href, nome, id) => `<a href="${href}" ${grupo === id ? 'aria-current="page"' : ''}>${nome}</a>`;
     alvo.className = 'fc-bar';
     alvo.innerHTML = `<a class="fc-logo" href="./"><b>FC</b>Foster Calc</a>
-      <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'lajes')}${link('viga.html', 'Vigas', 'vigas')}${link('pilar.html', 'Pilares', 'pilares')}${link('sapata.html', 'Fundações', 'fundacoes')}${link('escada.html', 'Escadas', 'escadas')}${link('./#projetos', 'Meus projetos', '-')}</nav>
+      <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'lajes')}${link('viga.html', 'Vigas', 'vigas')}${link('pilar.html', 'Pilares', 'pilares')}${link('sapata.html', 'Fundações', 'fundacoes')}${link('escada.html', 'Escadas', 'escadas')}${link('muro.html', 'Muros', 'muros')}${link('./#projetos', 'Meus projetos', '-')}</nav>
       <div class="fc-user">${sessao
         ? `<span class="fc-plano ${pro ? 'pro' : ''}">${pro ? 'Pro' : 'Grátis'}</span><button class="fc-nome" type="button" data-fc="perfil" title="Meu perfil · ${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</button><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
         : `<button class="fc-btn" type="button" data-fc="entrar">Entrar</button>`}</div>`;
