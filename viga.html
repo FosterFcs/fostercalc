@@ -64,6 +64,8 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .trechos .hd span{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .trechos .row b{white-space:nowrap;font:600 .9rem var(--f-display);letter-spacing:.03em;text-transform:uppercase}
 .trechos .row.bal b{color:var(--muted);font-weight:500}
+.trechos.conc .hd,.trechos.conc .row{grid-template-columns:78px repeat(3,minmax(0,1fr)) 28px}
+.trechos select{padding:6px 4px;font-size:.84rem;min-width:0}
 .trechos input{padding:6px 7px;font-size:.88rem}
 .x{border:0;background:transparent;color:var(--muted);font:500 1.1rem var(--f-mono);padding:0;cursor:pointer;width:28px;height:28px;border-radius:4px}
 .x:hover{background:var(--bad-soft);color:var(--bad)}
@@ -151,6 +153,12 @@ ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
       <p class="note full" style="grid-column:1/-1;margin:0">L entre eixos de apoio, em m. g e q em kN/m. Balanço com L = 0 não é considerado.</p>
     </fieldset>
     <fieldset>
+      <legend>Cargas concentradas</legend>
+      <div class="trechos conc" id="conc"></div>
+      <button type="button" class="add" id="addConc">+ Adicionar carga concentrada</button>
+      <p class="note full" style="grid-column:1/-1;margin:0">Viga ou pilar apoiado nesta viga. a = distância do início do trecho (m). G e Q em kN, características.</p>
+    </fieldset>
+    <fieldset>
       <legend>Seção e apoios</legend>
       <label>Largura bw<span class="unit"><input id="bw" type="number" step="1" min="12" value="20"><i>cm</i></span></label>
       <label>Altura h<span class="unit"><input id="h" type="number" step="1" min="20" value="50"><i>cm</i></span></label>
@@ -198,7 +206,7 @@ ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
     <p class="note" style="margin:12px 0 4px"><b>Hipóteses e limites deste protótipo:</b></p>
     <ul class="todo note">
       <li>Esforços por análise linear (elementos de barra), apoios simples, sem redistribuição nem arredondamento de momentos sobre os apoios</li>
-      <li>Seção retangular constante; não considera mesa colaborante da laje, torção nem cargas concentradas</li>
+      <li>Seção retangular constante; não considera mesa colaborante da laje nem torção; cargas concentradas aplicadas como forças pontuais (sem redução junto aos apoios)</li>
       <li>Barras negativas de um único comprimento por apoio (sem escalonamento)</li>
     </ul>
   </section>
@@ -231,7 +239,7 @@ ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 // Motor de cálculo — Viga contínua de concreto armado (NBR 6118:2023)
-// 1 a 5 vãos + balanços opcionais, carga uniforme por trecho.
+// 1 a 5 vãos + balanços opcionais, carga uniforme por trecho e cargas concentradas.
 // Unidades internas: cm, kN, kN/cm². Entradas: m, cm, mm, MPa, kN/m.
 
 const ES = 21000, FYK = 50, GC = 1.4, GS = 1.15, GF = 1.4;
@@ -266,7 +274,10 @@ function montarModelo(e) {
   e.vaos.forEach((v, i) => segs.push({ tipo: 'vao', idx: i + 1, ...v }));
   if (e.balDir && e.balDir.L > 0) segs.push({ tipo: 'balanco', lado: 'dir', ...e.balDir });
   let x = 0;
-  for (const s of segs) { s.Lcm = s.L * 100; s.xi = x; s.xf = x + s.Lcm; x = s.xf; }
+  for (const s of segs) { s.Lcm = s.L * 100; s.xi = x; s.xf = x + s.Lcm; x = s.xf; s.conc = []; }
+  // cargas concentradas: { t: 'be' | 'bd' | 'v0'..'v4', a (m, a partir do início do trecho), g, q (kN) }
+  const avisosConc = [];
+  const segPorChave = t => t === 'be' ? segs.find(s => s.tipo === 'balanco' && s.lado === 'esq') : t === 'bd' ? segs.find(s => s.tipo === 'balanco' && s.lado === 'dir') : segs.find(s => s.tipo === 'vao' && s.idx === +String(t).slice(1) + 1);
   // apoios: extremidades dos vãos
   const apoiosX = [];
   segs.forEach(s => { if (s.tipo === 'vao') { apoiosX.push(s.xi, s.xf); } });
@@ -275,16 +286,31 @@ function montarModelo(e) {
   // apoio extremo = sem balanço do lado de fora
   apoios[0].extremo = !(e.balEsq && e.balEsq.L > 0);
   apoios[apoios.length - 1].extremo = !(e.balDir && e.balDir.L > 0);
-  return { segs, apoios, Ltot: x };
+  (e.conc || []).forEach((c, i) => {
+    if (!(c.g > 0 || c.q > 0)) return;
+    const s = segPorChave(c.t), nome = `Carga concentrada ${i + 1}`;
+    if (!s) { avisosConc.push(`${nome}: o trecho indicado não existe (balanço com L = 0 ou vão removido). Carga ignorada.`); return; }
+    const a = Math.min(Math.max(0, c.a), s.L), xc = s.xi + a * 100;
+    const apS = apoios.find(ap => Math.abs(ap.x - xc) < 1);
+    if (apS) { apS.concG = (apS.concG || 0) + (c.g || 0); apS.concQ = (apS.concQ || 0) + (c.q || 0);
+      avisosConc.push(`${nome}: está sobre o apoio P${apS.id} e vai direto ao pilar, sem esforço na viga (já somada na reação de P${apS.id}).`); return; }
+    s.conc.push({ n: i + 1, a, x: xc, g: c.g || 0, q: c.q || 0 });
+  });
+  return { segs, apoios, Ltot: x, avisosConc };
 }
 
 function malha(modelo) {
   const nos = [0]; const elems = [];
   modelo.segs.forEach((s, si) => {
-    const le = s.Lcm / NE;
-    for (let k = 0; k < NE; k++) {
-      const n1 = nos.length - 1; nos.push(s.xi + (k + 1) * le);
-      elems.push({ n1, n2: n1 + 1, L: le, seg: si });
+    // nós uniformes + nós nas cargas concentradas
+    let xs = []; for (let k = 1; k <= NE; k++) xs.push(s.xi + k * s.Lcm / NE);
+    (s.conc || []).forEach(c => { if (c.x > s.xi + 1e-6 && c.x < s.xf - 1e-6) xs.push(c.x); });
+    xs.sort((a, b) => a - b);
+    const ehConc = x => (s.conc || []).some(c => Math.abs(c.x - x) < 1e-6);
+    xs = xs.filter(x => ehConc(x) || Math.abs(x - s.xf) < 1e-6 || !(s.conc || []).some(c => Math.abs(c.x - x) < 0.5));
+    for (const xn of xs) {
+      const n1 = nos.length - 1, xa = nos[n1]; if (xn - xa < 1e-6) continue;
+      nos.push(xn); elems.push({ n1, n2: n1 + 1, L: xn - xa, seg: si });
     }
   });
   const restr = new Set();
@@ -320,6 +346,7 @@ function resolver(m, EIseg, cargas) {
   }
   return cargas.map(wseg => {
     const F = new Float64Array(N);
+    (wseg.P || []).forEach(c => { const n = m.nos.findIndex(x => Math.abs(x - c.x) < 1e-6); const i = n >= 0 ? mapa[2 * n] : -1; if (i >= 0) F[i] -= c.P; });
     m.elems.forEach(el => {
       const w = wseg[el.seg]; if (!w) return; const L = el.L;
       const fe = [-w * L / 2, -w * L * L / 12, -w * L / 2, w * L * L / 12];
@@ -444,7 +471,11 @@ function calcularViga(e0) {
   const S = mod.segs;
   S.forEach(s => { s.gk = s.g + pp; s.qk = s.q; });
   // casos: G e uma acidental por trecho
-  const casos = [S.map(s => s.gk / 100), ...S.map((_, k) => S.map((s, j) => (j === k ? s.qk / 100 : 0)))];
+  avisos.push(...mod.avisosConc);
+  const comP = (arr, P) => { arr.P = P; return arr; };
+  const todasConc = S.flatMap(s => s.conc);
+  const casos = [comP(S.map(s => s.gk / 100), todasConc.map(c => ({ x: c.x, P: c.g }))),
+    ...S.map((sk, k) => comP(S.map((s, j) => (j === k ? s.qk / 100 : 0)), sk.conc.map(c => ({ x: c.x, P: c.q }))))];
   const Ic = e.bw * e.h ** 3 / 12;
   const sol = resolver(m, S.map(() => mat.Ecs * Ic), casos);
   const G = sol[0].pts, Q = sol.slice(1).map(r => r.pts);
@@ -472,7 +503,7 @@ function calcularViga(e0) {
   const reacao = (pts, x) => { const ix = []; pts.forEach((p, i) => { if (Math.abs(p.x - x) < 1e-6) ix.push(i); });
     if (ix.length >= 2) return pts[ix[ix.length - 1]].V - pts[ix[0]].V;
     return ix[0] === 0 ? pts[ix[0]].V : -pts[ix[0]].V; };
-  A.forEach(a => { a.Rg = reacao(G, a.x); a.Rq = Q.reduce((t, q) => t + Math.max(0, reacao(q, a.x)), 0); });
+  A.forEach(a => { a.Rg = reacao(G, a.x) + (a.concG || 0); a.Rq = Q.reduce((t, q) => t + Math.max(0, reacao(q, a.x)), 0) + (a.concQ || 0); });
   const xIni = A[0].extremo ? -e.apoio / 2 : 0, xFim = A[A.length - 1].extremo ? mod.Ltot + e.apoio / 2 : mod.Ltot;
   A.forEach(a => {
     const P = env.filter(p => Math.abs(p.x - a.x) < 1e-6);
@@ -592,7 +623,7 @@ function calcularViga(e0) {
     const Ieq = Ma <= Mr ? Ic : Math.min(Ic, (Mr / Ma) ** 3 * Ic + (1 - (Mr / Ma) ** 3) * III);
     s.def = { Ma, Mr, xII, III, Ieq, As };
   });
-  const solQP = resolver(m, S.map(s => mat.Ecs * s.def.Ieq), [S.map(s => (s.gk + ps.psi2 * s.qk) / 100)])[0];
+  const solQP = resolver(m, S.map(s => mat.Ecs * s.def.Ieq), [comP(S.map(s => (s.gk + ps.psi2 * s.qk) / 100), todasConc.map(c => ({ x: c.x, P: c.g + ps.psi2 * c.q })))])[0];
   const xi0 = 0.68 * 0.996 ** 1 * 1 ** 0.32, alfaF = 2 - xi0;
   S.forEach((s, si) => {
     const idx = []; m.nos.forEach((x, n) => { if (x >= s.xi - 1e-6 && x <= s.xf + 1e-6) idx.push(n); });
@@ -630,7 +661,7 @@ function calcularViga(e0) {
   const volConc = e.bw * e.h * Lt / 1e6, forma = (2 * e.h + e.bw) * Lt / 1e4;
 
   return { ok: erros.length === 0, erros: [...new Set(erros)], avisos: [...new Set(avisos)], entrada: e, geo, mat, pp, psi: ps,
-    segs: S, apoios: A, Ltot: mod.Ltot, xIni, xFim, env, deformada, pele, pos, compEst, wlim,
+    segs: S, apoios: A, Ltot: mod.Ltot, conc: todasConc, xIni, xFim, env, deformada, pele, pos, compEst, wlim,
     quant: { pesoAco, volConc, forma, taxa: pesoAco / volConc, Lt } };
 }
 
@@ -664,7 +695,28 @@ function desenharTrechos() {
     linhaTrecho('bd', 'Bal. dir', trechos.balDir, true, false);
   $('addVao').disabled = n >= 5;
   $('addVao').textContent = n >= 5 ? 'Limite de 5 vãos' : '+ Adicionar vão';
+  lerConc(); desenharConc();
 }
+// ---------- Cargas concentradas ----------
+let conc = [];
+function lerConc() {
+  if (!$('conc').querySelector('.row')) return;
+  conc = [...$('conc').querySelectorAll('.row')].map(r => ({ t: r.querySelector('select').value,
+    a: Math.max(0, +r.querySelector('[data-a]').value || 0), g: Math.max(0, +r.querySelector('[data-g]').value || 0), q: Math.max(0, +r.querySelector('[data-q]').value || 0) }));
+}
+function desenharConc() {
+  const n = trechos.vaos.length;
+  const ops = [['be', 'Bal. esq'], ...trechos.vaos.map((_, i) => ['v' + i, 'Vão ' + (i + 1)]), ['bd', 'Bal. dir']];
+  $('conc').innerHTML = conc.length ? `<div class="hd"><span>Trecho</span><span>a (m)</span><span>G</span><span>Q</span><span></span></div>` + conc.map((c, i) => `<div class="row">
+    <select aria-label="Carga ${i + 1}: trecho">${ops.map(o => `<option value="${o[0]}"${o[0] === c.t ? ' selected' : ''}>${o[1]}</option>`).join('')}</select>
+    <input data-a type="number" step="0.05" min="0" value="${c.a}" aria-label="Carga ${i + 1}: posição em m">
+    <input data-g type="number" step="1" min="0" value="${c.g}" aria-label="Carga ${i + 1}: permanente em kN">
+    <input data-q type="number" step="1" min="0" value="${c.q}" aria-label="Carga ${i + 1}: acidental em kN">
+    <button type="button" class="x" data-rmc="${i}" aria-label="Remover carga ${i + 1}">×</button></div>`).join('') : '';
+  $('addConc').disabled = conc.length >= 8;
+}
+$('addConc').addEventListener('click', () => { lerConc(); const v = trechos.vaos[0]; conc.push({ t: 'v0', a: +(v ? v.L / 2 : 1).toFixed(2), g: 20, q: 5 }); desenharConc(); render(); });
+$('conc').addEventListener('click', ev => { const i = ev.target.dataset && ev.target.dataset.rmc; if (i == null) return; lerConc(); conc.splice(+i, 1); desenharConc(); render(); });
 function lerTrechos() {
   const ler = id => ({ L: Math.max(0, +$(id + '_L').value || 0), g: Math.max(0, +$(id + '_g').value || 0), q: Math.max(0, +$(id + '_q').value || 0) });
   trechos = { balEsq: ler('be'), vaos: trechos.vaos.map((_, i) => ler('v' + i)), balDir: ler('bd') };
@@ -680,9 +732,9 @@ $('trechos').addEventListener('click', ev => {
 });
 
 function lerEntrada() {
-  lerTrechos();
+  lerTrechos(); lerConc();
   return {
-    vaos: trechos.vaos.filter(v => v.L > 0), balEsq: trechos.balEsq, balDir: trechos.balDir,
+    vaos: trechos.vaos.filter(v => v.L > 0), balEsq: trechos.balEsq, balDir: trechos.balDir, conc: conc.map(c => ({ ...c })),
     apoio: +$('apoio').value, bw: +$('bw').value, h: +$('h').value, incluirPP: $('pp').checked, psi2: +$('psi2').value,
     fck: +$('fck').value, caa: $('caa').value, phiL: +$('phiL').value, phiT: +$('phiT').value, dmax: +$('dmax').value,
   };
@@ -717,6 +769,9 @@ function memoria(r) {
     ['Momento positivo máx.', 'Md+ (envoltória)', S.map(s => s.tipo === 'vao' ? nf(s.Mpos) : '—'), 'kN·m'],
     ['Cortante máx.', 'Vd (envoltória)', S.map(s => nf(s.Vd)), 'kN'],
   ]});
+  if (r.conc.length) out.push({ t: 'Cargas concentradas', cols: ['Trecho', 'Posição', 'Gk', 'Qk'], l: r.conc.map(c => {
+    const s = S.find(s => s.conc.includes(c));
+    return [`P${c.n}`, 'a a partir do início do trecho', [nomeSeg(s), `${nf(c.a)} m`, `${nf(c.g, 1)} kN`, `${nf(c.q, 1)} kN`], '']; }) });
   out.push({ t: 'Momentos nos apoios', cols: A.map(a => 'P' + a.id), l: [
     ['Momento negativo', 'Md− (envoltória)', A.map(a => a.temNeg ? nf(-a.Mneg) : '0'), 'kN·m'],
     ['Tipo de apoio', '', A.map(a => a.extremo ? 'extremo' : 'interno'), ''],
@@ -863,6 +918,8 @@ function desenharDiagramas(r) {
   bloco('Momento fletor de cálculo · kN·m', 150, (eixo, meia) => {
     const k = meia / mMax;
     out.push(area(p => Math.max(0, p.Mmax), eixo, k, 'mpos'), area(p => Math.min(0, p.Mmin), eixo, k, 'mneg'));
+    r.conc.forEach(c => { const xc = X(c.x), yt = eixo - meia - 6;
+      out.push(`<line x1="${xc}" y1="${yt}" x2="${xc}" y2="${yt + 16}" stroke="currentColor" style="stroke:var(--accent)" stroke-width="1.6"/><path d="M${xc} ${yt + 20} l-4 -7 h8 z" style="fill:var(--accent)"/><text x="${(+xc + 6).toFixed(1)}" y="${yt + 8}" font-size="10" style="fill:var(--accent)">${nf(c.g + c.q, 0)} kN</text>`); });
     out.push(`<line class="axis" x1="${X(r.xIni)}" y1="${eixo}" x2="${X(r.xFim)}" y2="${eixo}"/>`, apoios(eixo));
     r.segs.filter(s => s.tipo === 'vao').forEach(s => { const p = env.filter(q => q.seg === r.segs.indexOf(s)).reduce((a, b) => b.Mmax > a.Mmax ? b : a);
       out.push(`<text class="pos" x="${X(p.x)}" y="${(eixo + p.Mmax * k + 14).toFixed(1)}" font-size="11" text-anchor="middle">${nf(p.Mmax, 1)}</text>`); });
@@ -1124,6 +1181,7 @@ function aplicarEntrada(e) {
   for (const k of ['bw', 'h', 'apoio', 'fck', 'caa', 'phiL', 'phiT', 'dmax', 'psi2']) if (e[k] != null) $(k).value = String(e[k]);
   $('pp').checked = e.incluirPP !== false;
   trechos = { balEsq: e.balEsq || { L: 0, g: 0, q: 0 }, vaos: (e.vaos && e.vaos.length) ? e.vaos : [{ L: 5, g: 10, q: 3 }], balDir: e.balDir || { L: 0, g: 0, q: 0 } };
+  conc = Array.isArray(e.conc) ? e.conc.map(c => ({ ...c })) : []; $('conc').innerHTML = '';
   desenharTrechos(); render();
 }
 $('btnSalvar').addEventListener('click', async () => {

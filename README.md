@@ -8,7 +8,7 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | Arquivo | Função |
 |---|---|
 | `index.html` | Página inicial, meus projetos e planos |
-| `viga.html` | Módulo de vigas (1 a 5 vãos, balanços) |
+| `viga.html` | Módulo de vigas (1 a 5 vãos, balanços, cargas concentradas) |
 | `laje.html` | Módulo de lajes maciças |
 | `pilar.html` | Módulo de pilares (flexão composta oblíqua, 2ª ordem) |
 | `sapata.html` | Módulo de sapatas isoladas rígidas |
