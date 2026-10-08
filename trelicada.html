@@ -529,6 +529,7 @@ function svgCorte(R) {
   return o + '</svg>';
 }
 
+const lnkViga = (g, q, L, de) => `<a ${'style=\"display:inline-block;margin-top:6px;font:600 .78rem var(--f-body);color:var(--accent)\"'} href="viga.html?${new URLSearchParams({ g: g.toFixed(2), q: q.toFixed(2), ...(L ? { L: L.toFixed(2) } : {}), de }).toString()}">Usar na viga →</a>`;
 function render() {
   const e = lerEntrada();
   if (!(e.L > 0 && e.B > 0)) return;
@@ -549,7 +550,8 @@ function render() {
     ${R.todas.map(t => `<tr${t === r ? ' style="font-weight:600"' : ''}><td>${t.alt.id}</td><td class="v">${t.h}</td><td class="v">${nf(t.pp)} kN/m²</td><td class="v">${t.flex ? adicTxt(t.flex) : '—'}</td><td class="v">${t.flecha ? nf(t.flecha.aTot) + ' / ' + nf(t.flecha.aLim) : '—'}</td><td class="v">${t.flecha && t.flecha.contraflecha ? nf(t.flecha.contraflecha, 1) + ' cm' : '—'}</td><td>${t.ok ? pill(true, 'atende') : pill(false, t.motivos.join(', '))}</td></tr>`).join('')}</tbody>`;
   $('reacoes').innerHTML = R.reacao ? `
     <div><dt>Permanente g</dt><dd>${nf(R.reacao.gk)} kN/m<small>em cada viga de apoio</small></dd></div>
-    <div><dt>Acidental q</dt><dd>${nf(R.reacao.qk)} kN/m<small>em cada viga de apoio</small></dd></div>` : '';
+    <div><dt>Acidental q</dt><dd>${nf(R.reacao.qk)} kN/m<small>em cada viga de apoio</small></dd></div>
+    <div style="grid-column:1/-1">${lnkViga(R.reacao.gk, R.reacao.qk, e.B, 'laje treliçada')}</div>` : '';
   renderMemoria(memoria(R), 'memoria', 'Flexão da nervura (seção T)');
   const q = R.quant;
   $('quant').innerHTML = q ? `<thead><tr><th>Item</th><th class="v">Quantidade</th><th>Observação</th></tr></thead><tbody>

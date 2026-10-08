@@ -69,6 +69,12 @@ Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automatica
 
 Todas as tabelas com RLS; o verificador de segurança do Supabase está sem alertas.
 
+## Integração entre módulos
+
+- Laje maciça, laje treliçada e escada: botão **Usar na viga** em cada reação leva g e q (kN/m) para `viga.html?g=..&q=..&L=..&de=..`.
+- Viga: tabela **Reações nos pilares** com link **Calcular pilar** (`pilar.html?Nk=..&hx=..&fck=..`).
+- Pilar: links para sapata (`sapata.html?...`) e bloco sobre estacas (`bloco.html?...`) com seção, Nk, momento e fck preenchidos.
+
 ## Limitações conhecidas
 
 - O cálculo e a geração de PDF/DXF rodam no navegador. O bloqueio do Pro impede o uso normal,

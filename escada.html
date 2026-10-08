@@ -531,6 +531,7 @@ function svgPerfil(r) {
   return o + '</svg>';
 }
 
+const lnkViga = (g, q, L, de) => `<a ${'style=\"display:inline-block;margin-top:6px;font:600 .78rem var(--f-body);color:var(--accent)\"'} href="viga.html?${new URLSearchParams({ g: g.toFixed(2), q: q.toFixed(2), ...(L ? { L: L.toFixed(2) } : {}), de }).toString()}">Usar na viga →</a>`;
 function render() {
   const e = lerEntrada();
   if (!(e.H > 0 && e.piso > 0 && e.b > 0)) return;
@@ -546,8 +547,8 @@ function render() {
     <div><dt>Distribuição</dt><dd>${r.dist ? `Ø${bit(r.dist.phi)} c/${r.dist.s}` : '—'}<small>flecha ${r.flecha ? nf(r.flecha.aTot) : '—'} / ${r.flecha ? nf(r.flecha.aLim) : '—'} cm</small></dd></div>`;
   $('corte').innerHTML = svgPerfil(r);
   $('legenda').textContent = f ? `Armadura principal Ø${bit(f.phi)} c/${f.s} na face inferior, contínua do apoio inferior ao superior · distribuição Ø${bit(r.dist.phi)} c/${r.dist.s} · cobrimento ${nf(r.entrada.c, 1)} cm` : '';
-  $('reacoes').innerHTML = `<div><dt>Apoio inferior</dt><dd>g ${nf(r.reacao.A.g)} · q ${nf(r.reacao.A.q)}<small>kN/m de largura</small></dd></div>
-    <div><dt>Apoio superior</dt><dd>g ${nf(r.reacao.B.g)} · q ${nf(r.reacao.B.q)}<small>kN/m de largura</small></dd></div>`;
+  $('reacoes').innerHTML = `<div><dt>Apoio inferior</dt><dd>g ${nf(r.reacao.A.g)} · q ${nf(r.reacao.A.q)}<small>kN/m de largura</small></dd>${lnkViga(r.reacao.A.g, r.reacao.A.q, 0, 'escada (apoio inferior)')}</div>
+    <div><dt>Apoio superior</dt><dd>g ${nf(r.reacao.B.g)} · q ${nf(r.reacao.B.q)}<small>kN/m de largura</small></dd>${lnkViga(r.reacao.B.g, r.reacao.B.q, 0, 'escada (apoio superior)')}</div>`;
   renderMemoria(memoria(r), 'memoria', 'Flexão e armaduras');
   const q = r.quant;
   $('quant').innerHTML = q ? `<thead><tr><th>Pos.</th><th>Descrição</th><th class="v">Qtd.</th><th class="v">Ø (mm)</th><th class="v">Compr. unit.</th><th class="v">Massa</th></tr></thead><tbody>

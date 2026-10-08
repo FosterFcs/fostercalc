@@ -174,7 +174,7 @@ ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
     <div style="min-width:0">
       <h2>Reações nas vigas</h2>
       <dl class="reac" id="reac"></dl>
-      <p class="note" style="margin:8px 0 0">Valores característicos por metro de viga, pelo processo das charneiras (45°, ou 60° a partir da borda engastada). Use g e q direto no módulo de viga.</p>
+      <p class="note" style="margin:8px 0 0">Valores característicos por metro de viga, pelo processo das charneiras (45°, ou 60° a partir da borda engastada). Toque em “Usar na viga” para levar g e q ao módulo de viga.</p>
     </div>
   </section>
 
@@ -495,6 +495,8 @@ const nf = (v, d = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigi
 const bit = p => nf(p, 1);
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const LADOS = ['esq', 'dir', 'inf', 'sup'];
+const lnkViga = (g, q, L, de) => `<a ${'style=\"display:inline-block;margin-top:6px;font:600 .78rem var(--f-body);color:var(--accent)\"'} href="viga.html?${new URLSearchParams({ g: g.toFixed(2), q: q.toFixed(2), ...(L ? { L: L.toFixed(2) } : {}), de }).toString()}">Usar na viga →</a>`;
+
 
 function lerEntrada() {
   return { lx: +$('lx').value, ly: +$('ly').value, h: +$('h').value, apoio: +$('apoio').value,
@@ -644,7 +646,7 @@ function render() {
     <tr><td><b>Flecha total</b></td><td class="v">—</td><td class="v">—</td><td class="v">${nf(r.flecha.aTot)} cm</td><td class="v">lim. ${nf(r.flecha.aLim)}</td><td>${pill(r.flecha.aTot <= r.flecha.aLim)}</td></tr></tbody>`;
   $('planta').innerHTML = desenharPlanta(r);
   $('reac').innerHTML = LADOS.map(l => { const v = r.cis[l].Vk, fg = r.cargas.gk / r.cargas.pk;
-    return `<div><dt>Viga ${nomeBorda(l)}</dt><dd>${nf(v, 1)} kN/m<small>g ${nf(v * fg, 2)} · q ${nf(v * (1 - fg), 2)}</small></dd></div>`; }).join('');
+    return `<div><dt>Viga ${nomeBorda(l)}</dt><dd>${nf(v, 1)} kN/m<small>g ${nf(v * fg, 2)} · q ${nf(v * (1 - fg), 2)}</small></dd>${lnkViga(v * fg, v * (1 - fg), (l === 'esq' || l === 'dir') ? r.entrada.ly : r.entrada.lx, `laje maciça (borda ${nomeBorda(l)})`)}</div>`; }).join('');
   const abertos = new Set([...document.querySelectorAll('details.memo[open]')].map(d => d.dataset.k));
   if (!document.querySelector('details.memo')) abertos.add('Flexão (faixa de 1 m)');
   $('memoria').innerHTML = memoria(r).map(sec => `<details class="memo" data-k="${esc(sec.t)}" ${abertos.has(sec.t) ? 'open' : ''}><summary>${esc(sec.t)}</summary>

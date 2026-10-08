@@ -187,6 +187,8 @@ ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
   <section class="sheet">
     <h2>Esforços e deformada</h2>
     <div class="drawbox" id="diagramas"></div>
+    <h3>Reações nos pilares</h3>
+    <div class="tbl"><table id="reacoes"></table></div>
     <p class="note" style="margin:8px 0 0">Envoltória de cálculo (ELU) com a carga acidental alternada entre os trechos. Momentos positivos desenhados abaixo do eixo, no lado tracionado. Deformada para a combinação quase permanente, já com fluência.</p>
   </section>
 
@@ -466,6 +468,11 @@ function calcularViga(e0) {
     s.Mmin = Math.min(0, ...P.map(p => p.Mmin));
   });
   const A = mod.apoios;
+  // reações características por apoio (salto do cortante): G inteiro + acidentais desfavoráveis
+  const reacao = (pts, x) => { const ix = []; pts.forEach((p, i) => { if (Math.abs(p.x - x) < 1e-6) ix.push(i); });
+    if (ix.length >= 2) return pts[ix[ix.length - 1]].V - pts[ix[0]].V;
+    return ix[0] === 0 ? pts[ix[0]].V : -pts[ix[0]].V; };
+  A.forEach(a => { a.Rg = reacao(G, a.x); a.Rq = Q.reduce((t, q) => t + Math.max(0, reacao(q, a.x)), 0); });
   const xIni = A[0].extremo ? -e.apoio / 2 : 0, xFim = A[A.length - 1].extremo ? mod.Ltot + e.apoio / 2 : mod.Ltot;
   A.forEach(a => {
     const P = env.filter(p => Math.abs(p.x - a.x) < 1e-6);
@@ -916,6 +923,9 @@ function render() {
   if (!e.vaos.length || !(e.bw > 0) || !(e.h > 0) || !(e.apoio > 0)) return;
   let r;
   try { r = calcularViga(e); } catch (err) { $('status').className = 'status bad'; $('status').innerHTML = '<b>Entrada inválida</b><ul class="msgs"><li>Confira os comprimentos e cargas dos vãos.</li></ul>'; return; }
+  $('reacoes').innerHTML = `<thead><tr><th>Apoio</th><th class="v">g (kN)</th><th class="v">q (kN)</th><th class="v">Total Nk (kN)</th><th></th></tr></thead><tbody>${r.apoios.map(a => {
+    const qs = new URLSearchParams({ Nk: (a.Rg + a.Rq).toFixed(1), hx: e.apoio, fck: e.fck });
+    return `<tr><td>P${a.id}</td><td class="v">${nf(a.Rg, 1)}</td><td class="v">${nf(a.Rq, 1)}</td><td class="v"><b>${nf(a.Rg + a.Rq, 1)}</b></td><td><a href="pilar.html?${qs}" style="color:var(--accent);font-weight:600">Calcular pilar →</a></td></tr>`; }).join('')}</tbody>`;
   window.__r = r;
   const msgs = [...r.erros, ...r.avisos];
   $('status').className = 'status ' + (r.erros.length ? 'bad' : r.avisos.length ? 'warn' : 'ok');
@@ -1096,6 +1106,14 @@ const agendar = () => { cancelAnimationFrame(pend); pend = requestAnimationFrame
 $('f').addEventListener('input', agendar);
 $('f').addEventListener('change', agendar);
 $('f').addEventListener('submit', ev => ev.preventDefault());
+// cargas vindas de outro módulo (laje, laje treliçada, escada)
+const _qs = new URLSearchParams(location.search);
+if (!_qs.get('p') && _qs.has('g')) {
+  const g = Math.max(0, +_qs.get('g') || 0), q = Math.max(0, +_qs.get('q') || 0), L = +_qs.get('L') || 0;
+  if (L > 0) trechos = { balEsq: { L: 0, g, q }, vaos: [{ L, g, q }], balDir: { L: 0, g, q } };
+  else trechos.vaos = trechos.vaos.map(v => ({ ...v, g, q }));
+  setTimeout(() => FC.toast(`Cargas da ${_qs.get('de') || 'laje'} aplicadas: g ${nf(g)} · q ${nf(q)} kN/m. Some alvenaria e outras lajes que apoiam nesta viga.`), 600);
+}
 desenharTrechos();
 render();
 </script>
