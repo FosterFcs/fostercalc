@@ -174,7 +174,7 @@ ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
     <div style="min-width:0">
       <h2>Reações nas vigas</h2>
       <dl class="reac" id="reac"></dl>
-      <p class="note" style="margin:8px 0 0">Valores característicos por metro de viga, pelo processo das charneiras (45°, ou 60° a partir da borda engastada). Toque em “Usar na viga” para levar g e q ao módulo de viga.</p>
+      <p class="note" style="margin:8px 0 0">Valores característicos por metro de viga, pela maior entre o processo das charneiras (45°, ou 60° a partir da borda engastada) e a teoria das placas, a favor da segurança. Toque em “Usar na viga” para levar g e q ao módulo de viga.</p>
     </div>
   </section>
 
@@ -289,7 +289,31 @@ function resolverPlaca(lx, ly, bordas, p, D, nu, nBase = 24) {
     const wyy = (W(i, j - 1) - 2 * W(i, j) + W(i, j + 1)) / hy ** 2;
     grade.push({ i, j, x: i * hx, y: j * hy, w: W(i, j), mx: -D * (wxx + nu * wyy), my: -D * (wyy + nu * wxx) });
   }
-  return { nx, ny, hx, hy, grade };
+  // reação elástica nas bordas: cortante efetivo de Kirchhoff Vn = −D·(∂³w/∂n³ + (2 − ν)·∂³w/∂n∂t²), por nó da borda
+  const reacBordas = () => {
+    // borda apoiada: diferenças centradas com nós fantasmas (w = 0, M = 0);
+    // borda engastada: ∂w/∂n = 0 ao longo da borda ⇒ termo misto nulo; ∂³w/∂n³ por diferença unilateral de 2ª ordem
+    const wyy = (i, j) => (W(i, j - 1) - 2 * W(i, j) + W(i, j + 1)) / hy ** 2;
+    const wxx = (i, j) => (W(i - 1, j) - 2 * W(i, j) + W(i + 1, j)) / hx ** 2;
+    const uni = (f0, f1, f2, f3, f4, h) => (-5 * f0 + 18 * f1 - 24 * f2 + 14 * f3 - 3 * f4) / (2 * h ** 3);
+    const out = { esq: [], dir: [], inf: [], sup: [] };
+    for (let j = 1; j < ny; j++) {
+      out.esq.push(Math.abs(bordas.esq === 'E' ? D * uni(0, W(1, j), W(2, j), W(3, j), W(4, j), hx)
+        : D * ((W(2, j) - 2 * W(1, j) + 2 * W(-1, j) - W(-2, j)) / (2 * hx ** 3) + (2 - nu) * (wyy(1, j) - wyy(-1, j)) / (2 * hx))));
+      out.dir.push(Math.abs(bordas.dir === 'E' ? D * uni(0, W(nx - 1, j), W(nx - 2, j), W(nx - 3, j), W(nx - 4, j), hx)
+        : D * ((W(nx + 2, j) - 2 * W(nx + 1, j) + 2 * W(nx - 1, j) - W(nx - 2, j)) / (2 * hx ** 3) + (2 - nu) * (wyy(nx + 1, j) - wyy(nx - 1, j)) / (2 * hx))));
+    }
+    for (let i = 1; i < nx; i++) {
+      out.inf.push(Math.abs(bordas.inf === 'E' ? D * uni(0, W(i, 1), W(i, 2), W(i, 3), W(i, 4), hy)
+        : D * ((W(i, 2) - 2 * W(i, 1) + 2 * W(i, -1) - W(i, -2)) / (2 * hy ** 3) + (2 - nu) * (wxx(i, 1) - wxx(i, -1)) / (2 * hy))));
+      out.sup.push(Math.abs(bordas.sup === 'E' ? D * uni(0, W(i, ny - 1), W(i, ny - 2), W(i, ny - 3), W(i, ny - 4), hy)
+        : D * ((W(i, ny + 2) - 2 * W(i, ny + 1) + 2 * W(i, ny - 1) - W(i, ny - 2)) / (2 * hy ** 3) + (2 - nu) * (wxx(i, ny + 1) - wxx(i, ny - 1)) / (2 * hy))));
+    }
+    const r = {};
+    for (const k in out) { const a = out[k]; r[k] = { media: a.reduce((s, v) => s + v, 0) / a.length, max: Math.max(...a) }; }
+    return r;
+  };
+  return { nx, ny, hx, hy, grade, reacBordas };
 }
 
 // Reações pelo processo das charneiras (14.7.6.1): 45° entre bordas iguais, 60° a partir da engastada
@@ -416,7 +440,24 @@ function calcularLaje(e0) {
   [reg.x, reg.y, ...Object.values(neg)].forEach(r => erros.push(...r.erros));
 
   // ---- reações e cisalhamento (19.4.1)
+  // reações: maior entre charneiras (14.7.6.1), teoria das placas (cortante médio de Kirchhoff na borda) e,
+  // para laje armada em uma direção, a faixa de viga unidirecional
   const rea = reacoes(lx, ly, e.bordas, pk / 1e4);
+  const elast = sol.reacBordas();
+  const lamR = Math.max(lx, ly) / Math.min(lx, ly);
+  const umaDir = {};
+  if (lamR >= 2) {
+    const [p1, p2] = lx <= ly ? ['esq', 'dir'] : ['inf', 'sup'], vao = Math.min(lx, ly);
+    const E1 = e.bordas[p1] === 'E', E2 = e.bordas[p2] === 'E';
+    const c1 = E1 === E2 ? 0.5 : E1 ? 5 / 8 : 3 / 8;
+    umaDir[p1] = c1 * pk / 1e4 * vao; umaDir[p2] = (1 - c1) * pk / 1e4 * vao;
+  }
+  for (const l of ['esq', 'dir', 'inf', 'sup']) {
+    const vC = rea[l].v, vE = elast[l].media * pk, vU = umaDir[l] || 0;
+    rea[l].vCharneira = vC; rea[l].vPlaca = vE; rea[l].vUmaDir = vU;
+    rea[l].v = Math.max(vC, vE, vU);
+    rea[l].criterio = rea[l].v === vC ? 'charneiras' : rea[l].v === vE ? 'placa' : 'uma direção';
+  }
   const cis = {};
   for (const l of ['esq', 'dir', 'inf', 'sup']) {
     const Vk = rea[l].v * 100;                                 // kN/m
@@ -426,7 +467,7 @@ function calcularLaje(e0) {
     const kk = Math.max(1, 1.6 - dm), rho1 = Math.min(r.AsEf / (100 * r.d), 0.02);
     const tauRd = 0.25 * fctd;
     const VRd1 = tauRd * kk * (1.2 + 40 * rho1) * 100 * r.d;   // kN por metro
-    cis[l] = { Vk, Vd, VRd1, k: kk, rho1, tauRd, ok: Vd <= VRd1, area: rea[l].area };
+    cis[l] = { Vk, Vd, VRd1, k: kk, rho1, tauRd, ok: Vd <= VRd1, area: rea[l].area, vC: rea[l].vCharneira * 100, vE: rea[l].vPlaca * 100, vU: rea[l].vUmaDir * 100, criterio: rea[l].criterio };
     if (Vd > VRd1) erros.push(`Cisalhamento na borda ${nomeBorda(l)}: Vd = ${Vd.toFixed(1)} kN/m > VRd1 = ${VRd1.toFixed(1)} kN/m. Aumente a espessura.`);
   }
 
@@ -546,7 +587,10 @@ function memoria(r) {
   ]});
   out.push({ t: 'Reações e cisalhamento (sem estribos)', cols: LADOS.map(l => 'Borda ' + nomeBorda(l)), l: [
     ['Área de influência', 'charneiras 45° / 60°', LADOS.map(l => nf(r.cis[l].area)), 'm²'],
-    ['Reação característica', 'pk · área / comprimento', LADOS.map(l => nf(r.cis[l].Vk)), 'kN/m'],
+    ['Reação por charneiras', 'pk · área / comprimento', LADOS.map(l => nf(r.cis[l].vC)), '14.7.6.1'],
+    ['Reação pela teoria das placas', 'cortante médio na borda (Kirchhoff)', LADOS.map(l => nf(r.cis[l].vE)), ''],
+    ...(LADOS.some(l => r.cis[l].vU > 0) ? [['Reação como laje em uma direção', 'λ ≥ 2: faixa de viga', LADOS.map(l => r.cis[l].vU > 0 ? nf(r.cis[l].vU) : '—'), '14.7.6']] : []),
+    ['Reação característica adotada', 'a maior das anteriores', LADOS.map(l => nf(r.cis[l].Vk)), 'kN/m'],
     ['Cortante de cálculo', 'Vd = 1,4 · Vk', LADOS.map(l => nf(r.cis[l].Vd)), 'kN/m'],
     ['Resistência', 'VRd1 = τRd·k·(1,2 + 40ρ₁)·bw·d', LADOS.map(l => ({ v: nf(r.cis[l].VRd1), alerta: !r.cis[l].ok })), '19.4.1'],
   ]});
