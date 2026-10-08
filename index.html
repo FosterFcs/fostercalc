@@ -155,6 +155,11 @@ footer p{margin:0;max-width:70ch}
       <a class="bt" href="sapata.html">Abrir módulo</a>
     </article>
     <article class="mod">
+      <span class="tag">4 · Fundação</span><h3>Sapata de divisa</h3>
+      <ul><li>Sapata excêntrica na divisa</li><li>Viga alavanca dimensionada</li><li>Alívio no pilar interno (NBR 6122)</li><li>Flexão e estribos da viga</li><li>Leva a carga para a sapata de P2</li></ul>
+      <a class="bt" href="divisa.html">Abrir módulo</a>
+    </article>
+    <article class="mod">
       <span class="tag">4 · Fundação</span><h3>Blocos sobre estacas</h3>
       <ul><li>1 a 4 estacas</li><li>Bielas e tirantes (Blévot)</li><li>Tensões nas bielas no pilar e na estaca</li><li>Armaduras complementares</li><li>Planta e corte em DXF</li></ul>
       <a class="bt" href="bloco.html">Abrir módulo</a>
@@ -220,7 +225,7 @@ async function listar() {
   $('projMsg').textContent = ps.length ? 'Abra um projeto para continuar de onde parou.' : 'Nenhum projeto salvo ainda. Use "Salvar projeto" em qualquer módulo.';
   $('projLista').hidden = !ps.length;
   $('projLista').innerHTML = `<table><thead><tr><th>Projeto</th><th>Módulo</th><th>Atualizado</th><th></th></tr></thead><tbody>${ps.map(p => `<tr>
-    <td>${esc(p.nome)}</td><td>${{ viga: 'Viga', laje: 'Laje maciça', trelicada: 'Laje treliçada', pilar: 'Pilar', sapata: 'Sapata', bloco: 'Bloco', escada: 'Escada' }[p.modulo] || p.modulo}</td><td>${new Date(p.atualizado_em).toLocaleDateString('pt-BR')}</td>
+    <td>${esc(p.nome)}</td><td>${{ viga: 'Viga', laje: 'Laje maciça', trelicada: 'Laje treliçada', pilar: 'Pilar', sapata: 'Sapata', bloco: 'Bloco', divisa: 'Sapata de divisa', escada: 'Escada' }[p.modulo] || p.modulo}</td><td>${new Date(p.atualizado_em).toLocaleDateString('pt-BR')}</td>
     <td class="acoes"><a href="${p.modulo}.html?p=${p.id}">Abrir</a><button type="button" data-apagar="${p.id}" data-nome="${esc(p.nome)}">Apagar</button></td></tr>`).join('')}</tbody></table>`;
 }
 $('projLista').addEventListener('click', ev => {

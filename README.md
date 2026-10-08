@@ -14,6 +14,7 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `sapata.html` | Módulo de sapatas isoladas rígidas |
 | `trelicada.html` | Módulo de lajes treliçadas unidirecionais (vigotas TR, enchimento cerâmico ou EPS) |
 | `escada.html` | Módulo de escadas de lance reto com patamares |
+| `divisa.html` | Módulo de sapata de divisa com viga alavanca |
 | `bloco.html` | Módulo de blocos sobre 1 a 4 estacas (bielas e tirantes) |
 | `termos.html` | Termos de uso e política de privacidade (LGPD) |
 | `LICENSE` | Licença proprietária: © Foster Engenharia & Construção, todos os direitos reservados |
@@ -66,7 +67,7 @@ Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automatica
 ## Banco de dados
 
 - `perfis`: nome, CREA/CAU, empresa, telefone, e-mail, cidade, logo, plano e validade. O usuário edita só os dados cadastrais; o plano só muda pelo painel/SQL.
-- `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, trelicada, pilar, sapata, bloco ou escada). Cada usuário vê apenas os seus.
+- `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, trelicada, pilar, sapata, divisa, bloco ou escada). Cada usuário vê apenas os seus.
 - `exportacoes`: registro de cada PDF/DXF baixado (só aceita inserção de quem é Pro).
 
 Todas as tabelas com RLS; o verificador de segurança do Supabase está sem alertas.

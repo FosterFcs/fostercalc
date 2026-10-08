@@ -174,8 +174,8 @@
   function abasSubtipo() {
     const pagina = document.body.dataset.pagina || '';
     const grupos = { laje: [['laje.html', 'Laje maciça', 'laje'], ['trelicada.html', 'Laje treliçada', 'trelicada']],
-      sapata: [['sapata.html', 'Sapata isolada', 'sapata'], ['bloco.html', 'Bloco sobre estacas', 'bloco']] };
-    const g = grupos[pagina] || grupos[{ trelicada: 'laje', bloco: 'sapata' }[pagina]];
+      sapata: [['sapata.html', 'Sapata isolada', 'sapata'], ['divisa.html', 'Sapata de divisa', 'divisa'], ['bloco.html', 'Bloco sobre estacas', 'bloco']] };
+    const g = grupos[pagina] || grupos[{ trelicada: 'laje', bloco: 'sapata', divisa: 'sapata' }[pagina]];
     const hd = document.querySelector('header.top'); if (!g || !hd) return;
     const nav = document.createElement('nav'); nav.className = 'fc-abas'; nav.setAttribute('aria-label', 'Tipo');
     nav.innerHTML = g.map(([h, n, id]) => `<a href="${h}" ${id === pagina ? 'aria-current="page"' : ''}>${n}</a>`).join('');
@@ -266,7 +266,7 @@
   function desenharBarra() {
     const alvo = document.getElementById('fc-bar'); if (!alvo) return;
     const pagina = document.body.dataset.pagina || '';
-    const grupo = { laje: 'lajes', trelicada: 'lajes', viga: 'vigas', pilar: 'pilares', sapata: 'fundacoes', bloco: 'fundacoes', escada: 'escadas', inicio: 'inicio' }[pagina];
+    const grupo = { laje: 'lajes', trelicada: 'lajes', viga: 'vigas', pilar: 'pilares', sapata: 'fundacoes', bloco: 'fundacoes', divisa: 'fundacoes', escada: 'escadas', inicio: 'inicio' }[pagina];
     const link = (href, nome, id) => `<a href="${href}" ${grupo === id ? 'aria-current="page"' : ''}>${nome}</a>`;
     alvo.className = 'fc-bar';
     alvo.innerHTML = `<a class="fc-logo" href="./"><b>FC</b>Foster Calc</a>
