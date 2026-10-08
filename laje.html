@@ -669,8 +669,8 @@ async function salvar(filename, data) { FC.baixar(filename, data); msg('Arquivo 
 function gerarPdf() {
   const r = window.__r; if (!r || !window.jspdf) { msg('Gerador de PDF não carregou. Recarregue a página.'); return null; }
   const doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
-  const W = 210, HP = 297, M = 14; let y = M; const e = r.entrada;
-  const novaPag = n => { if (y + n > HP - 14) { doc.addPage(); y = M; } };
+  const W = 210, HP = 297, M = 14; let y = FC.PDF.topo; const e = r.entrada;
+  const novaPag = n => { if (y + n > HP - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } };
   doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.text('Memória de cálculo · Laje maciça', M, y + 4); y += 9;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90);
   doc.text(asciiPdf(`lx × ly = ${nf(e.lx)} × ${nf(e.ly)} m · h = ${nf(e.h, 1)} cm · C${e.fck} / CA-50 · NBR 6118:2023 · ${new Date().toLocaleDateString('pt-BR')}`), M, y); y += 3;
@@ -697,11 +697,11 @@ function gerarPdf() {
     y += 3;
   }
   // planta
-  doc.addPage(); y = M;
+  doc.addPage(); y = FC.PDF.topo;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(20); doc.text('PLANTA DE ARMAÇÃO', M, y + 3); y += 8;
   const medir = { rect() {}, line() {}, poly() {}, tick() {}, text() {}, textV() {} };
   const b = layoutPlanta(r, medir);
-  const s = Math.min((W - 2 * M) / (b.x1 - b.x0), 170 / (b.y1 - b.y0));
+  const s = Math.min((W - 2 * M) / (b.x1 - b.x0), 150 / (b.y1 - b.y0));
   const X = x => M + (x - b.x0) * s, Y = yy => y + (b.y1 - yy) * s;
   const cor = { viga: [120, 120, 120], conc: [200, 200, 200], eng: [20, 20, 20], hatch: [130, 130, 130], bar: [196, 22, 28], bar2: [58, 61, 66], dist: [58, 61, 66], dim: [120, 120, 120] };
   const lw = { eng: 0.8, bar: 0.5, bar2: 0.5, dist: 0.25, hatch: 0.15, dim: 0.15, viga: 0.2 };
@@ -723,8 +723,7 @@ function gerarPdf() {
   doc.text(asciiPdf(`Aço ${nf(r.quant.pesoAco, 1)} kg · Concreto ${nf(r.quant.vol, 3)} m³ · Fôrma ${nf(r.quant.forma)} m²`), M, y); y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(20);
   doc.text(asciiPdf(`Reações características nas vigas (kN/m): ` + LADOS.map(l => `${nomeBorda(l)} ${nf(r.cis[l].Vk, 1)}`).join(' · ')), M, y);
-  doc.setFont('helvetica', 'italic'); doc.setFontSize(7); doc.setTextColor(110);
-  doc.text(doc.splitTextToSize('Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos por profissional habilitado, responsável técnico pela ART/RRT. Laje isolada, sem compatibilização de momentos com lajes vizinhas.', W - 2 * M), M, HP - 10);
+  FC.finalizarPdf(doc, 'Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos pelo responsável técnico. Laje isolada, sem compatibilização de momentos com lajes vizinhas.');
   return doc.output('arraybuffer');
 }
 function gerarDxf() {

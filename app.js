@@ -49,7 +49,17 @@
   .fc-plans div:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .fc-plans div.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
   .fc-plans b{display:block;font:600 1.05rem var(--f-display,system-ui);text-transform:uppercase}
-  .fc-plans ul{margin:6px 0 0;padding-left:16px;color:var(--muted)}`;
+  .fc-plans ul{margin:6px 0 0;padding-left:16px;color:var(--muted)}
+  .fc-nome{background:none;border:0;padding:0;cursor:pointer;font:500 .82rem var(--f-body,system-ui);color:var(--ink);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+  .fc-nome:hover{text-decoration-color:var(--accent)}
+  .fc-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .fc-grid2 .full{grid-column:1/-1}
+  .fc-logo-prev{display:flex;align-items:center;gap:12px;border:1px dashed var(--line);border-radius:6px;padding:10px;min-height:64px}
+  .fc-logo-prev img{max-width:150px;max-height:56px;object-fit:contain;background:#fff;border-radius:3px}
+  .fc-obra{display:grid;grid-template-columns:2fr 1.4fr 1fr;gap:10px;margin:0 0 14px}
+  @media (max-width:700px){.fc-obra{grid-template-columns:1fr}}
+  .fc-obra label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted);min-width:0}
+  .fc-obra input{font:500 .9rem var(--f-body,system-ui);color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%}`;
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -65,9 +75,165 @@
   async function carregarPerfil() {
     perfil = null; pro = false;
     if (!sb || !sessao) return;
-    const { data } = await sb.from('perfis').select('nome, registro_profissional, empresa, plano, plano_ate').eq('id', sessao.user.id).maybeSingle();
+    const { data } = await sb.from('perfis').select('nome, registro_profissional, empresa, telefone, email_contato, cidade, logo_path, plano, plano_ate').eq('id', sessao.user.id).maybeSingle();
     perfil = data;
     const r = await sb.rpc('plano_ativo'); pro = !!r.data;
+    await carregarLogo();
+  }
+  let logo = null, logoPath = null;                      // { data: dataURL, w, h }
+  async function carregarLogo() {
+    const p = perfil?.logo_path || null;
+    if (p === logoPath) return; logoPath = p; logo = null;
+    if (!p) return;
+    try {
+      const { data, error } = await sb.storage.from('logos').download(p);
+      if (error || !data) return;
+      logo = await blobParaLogo(data);
+    } catch (e) { logo = null; }
+  }
+  function blobParaLogo(blob) {
+    return new Promise((ok, falha) => {
+      const fr = new FileReader();
+      fr.onload = () => { const img = new Image(); img.onload = () => ok({ data: fr.result, w: img.naturalWidth, h: img.naturalHeight }); img.onerror = falha; img.src = fr.result; };
+      fr.onerror = falha; fr.readAsDataURL(blob);
+    });
+  }
+  // reduz a imagem para no máximo 900×360 px e grava em PNG (mantém transparência)
+  function prepararLogo(file) {
+    return new Promise((ok, falha) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 900 / img.naturalWidth, 360 / img.naturalHeight);
+        const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        c.toBlob(b => b ? ok(b) : falha(new Error('conversão')), 'image/png');
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); falha(new Error('imagem')); };
+      img.src = url;
+    });
+  }
+
+  function telaPerfil() {
+    if (!sessao) return entrar('Entre na sua conta para editar o perfil.');
+    const p = perfil || {};
+    const campo = (n, rot, ph, extra = '') => `<label${extra}>${rot}<input name="${n}" value="${esc(p[n] || '')}" placeholder="${esc(ph)}" maxlength="120"></label>`;
+    const d = dialogo(`<form method="dialog" novalidate><h3>Meu perfil</h3>
+      <p>Esses dados aparecem no cabeçalho e no carimbo da memória de cálculo em PDF.</p>
+      <div class="fc-grid2">
+        ${campo('nome', 'Nome do responsável técnico', 'Eng. Civil Fulano de Tal', ' class="full"')}
+        ${campo('registro_profissional', 'CREA / CAU', 'CREA-SP 000000000')}
+        ${campo('empresa', 'Empresa', 'Sua empresa Ltda.')}
+        ${campo('telefone', 'Telefone', '(11) 90000-0000')}
+        ${campo('cidade', 'Cidade / UF', 'São Paulo/SP')}
+        ${campo('email_contato', 'E-mail de contato', 'contato@empresa.com.br', ' class="full"')}
+      </div>
+      <div><span style="font-size:.8rem;color:var(--muted)">Logo (PNG ou JPG)</span>
+        <div class="fc-logo-prev"><span data-prev>${logo ? `<img src="${logo.data}" alt="Logo atual">` : '<span style="color:var(--muted);font-size:.85rem">Sem logo</span>'}</span>
+          <div class="fc-row"><label class="fc-btn ghost" style="flex-direction:row;color:var(--accent)">Escolher arquivo<input type="file" name="logo" accept="image/png,image/jpeg" hidden></label>
+          <button type="button" class="fc-link" data-rm ${logo ? '' : 'hidden'}>Remover</button></div></div></div>
+      <span class="fc-erro" data-erro role="alert"></span>
+      <div class="fc-row"><button class="fc-btn" data-ok>Salvar perfil</button><button class="fc-btn ghost" type="button" data-fechar>Cancelar</button></div></form>`);
+    const f = d.querySelector('form'), erro = d.querySelector('[data-erro]');
+    let novoLogo = null, removerLogo = false;
+    d.querySelector('[data-fechar]').onclick = () => d.close();
+    f.logo.addEventListener('change', async () => {
+      const file = f.logo.files[0]; if (!file) return; erro.textContent = '';
+      if (!/^image\/(png|jpeg)$/.test(file.type)) { erro.textContent = 'Use uma imagem PNG ou JPG.'; return; }
+      if (file.size > 8 * 1024 * 1024) { erro.textContent = 'Imagem muito grande (máximo 8 MB).'; return; }
+      try { novoLogo = await prepararLogo(file); removerLogo = false;
+        d.querySelector('[data-prev]').innerHTML = `<img src="${URL.createObjectURL(novoLogo)}" alt="Novo logo">`; d.querySelector('[data-rm]').hidden = false;
+      } catch (e) { erro.textContent = 'Não foi possível ler essa imagem.'; }
+    });
+    d.querySelector('[data-rm]').onclick = () => { novoLogo = null; removerLogo = true; d.querySelector('[data-prev]').innerHTML = '<span style="color:var(--muted);font-size:.85rem">Sem logo</span>'; d.querySelector('[data-rm]').hidden = true; };
+    f.addEventListener('submit', async ev => {
+      ev.preventDefault(); erro.textContent = '';
+      const bt = d.querySelector('[data-ok]'); bt.disabled = true;
+      try {
+        const dados = {}; for (const k of ['nome', 'registro_profissional', 'empresa', 'telefone', 'cidade', 'email_contato']) dados[k] = f[k].value.trim() || null;
+        const uid = sessao.user.id, caminho = `${uid}/logo.png`;
+        if (novoLogo) {
+          const up = await sb.storage.from('logos').upload(caminho, novoLogo, { upsert: true, contentType: 'image/png' });
+          if (up.error) throw new Error('Não foi possível enviar o logo. Tente uma imagem menor.');
+          dados.logo_path = caminho; logoPath = '__recarregar__';
+        } else if (removerLogo && perfil?.logo_path) {
+          await sb.storage.from('logos').remove([perfil.logo_path]); dados.logo_path = null;
+        }
+        const { error } = await sb.from('perfis').update(dados).eq('id', uid);
+        if (error) throw new Error('Não foi possível salvar o perfil. Verifique a conexão.');
+        await carregarPerfil(); desenharBarra(); d.close(); toast('Perfil salvo.');
+      } catch (e) { erro.textContent = e.message; } finally { bt.disabled = false; }
+    });
+  }
+
+  // ---------- dados da obra (aparecem no PDF e são salvos com o projeto) ----------
+  const OBRA = ['obra', 'cliente', 'art'];
+  function lembrarObra(v) { try { localStorage.setItem('fc-obra', JSON.stringify(v)); } catch (e) {} }
+  function obraLembrada() { try { return JSON.parse(localStorage.getItem('fc-obra') || '{}'); } catch (e) { return {}; } }
+  function dadosObra() { const o = {}; for (const k of OBRA) { const el = document.getElementById('fc-' + k); o[k] = el ? el.value.trim() : ''; } return o; }
+  function aplicarObra(o) { if (!o) return; for (const k of OBRA) { const el = document.getElementById('fc-' + k); if (el && o[k] != null) el.value = o[k]; } }
+  function injetarCamposObra() {
+    const bt = document.getElementById('btnPdf'); if (!bt || document.getElementById('fc-obra')) return;
+    const acoes = bt.closest('.actions'); if (!acoes) return;
+    const box = document.createElement('div'); box.className = 'fc-obra';
+    box.innerHTML = `<label>Obra / identificação<input id="fc-obra" maxlength="120" placeholder="Residência Silva · Rua das Flores, 100"></label>
+      <label>Cliente<input id="fc-cliente" maxlength="120" placeholder="Nome do cliente"></label>
+      <label>ART / RRT nº<input id="fc-art" maxlength="40" placeholder="Opcional"></label>`;
+    acoes.parentNode.insertBefore(box, acoes);
+    aplicarObra(obraLembrada());
+    box.addEventListener('input', () => lembrarObra(dadosObra()));
+  }
+
+  // ---------- cabeçalho e carimbo do PDF ----------
+  const PDF = { topo: 30, base: 24 };
+  function txtPdf(t) { return String(t ?? '').replace(/[−–—]/g, '-').replace(/[^\x00-\xFF]/g, ''); }
+  function finalizarPdf(doc, aviso) {
+    const n = doc.getNumberOfPages(), o = dadosObra(), p = perfil || {};
+    const data = new Date().toLocaleDateString('pt-BR');
+    for (let i = 1; i <= n; i++) {
+      doc.setPage(i);
+      const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = W > H ? 12 : 14;
+      // cabeçalho
+      let xt = M;
+      if (logo) {
+        const bw = 36, bh = 15, k = Math.min(bw / logo.w, bh / logo.h), w = logo.w * k, h = logo.h * k;
+        try { doc.addImage(logo.data, 'PNG', M, 7 + (bh - h) / 2, w, h, 'logo-fc', 'FAST'); xt = M + w + 5; } catch (e) { xt = M; }
+      }
+      doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+      doc.text(txtPdf(p.nome || p.empresa || 'Foster Calc'), xt, 11);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.4); doc.setTextColor(80);
+      const l2 = [p.registro_profissional, p.nome && p.empresa ? p.empresa : null].filter(Boolean).join(' · ');
+      const l3 = [p.telefone, p.email_contato, p.cidade].filter(Boolean).join(' · ');
+      if (l2) doc.text(txtPdf(l2), xt, 15);
+      if (l3) doc.text(txtPdf(l3), xt, l2 ? 19 : 15);
+      // direita: obra
+      const xr = W - M; doc.setTextColor(20);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.4);
+      doc.text(txtPdf(o.obra ? 'Obra: ' + o.obra : 'Memória de cálculo estrutural'), xr, 11, { align: 'right', maxWidth: W / 2 - 10 });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.4); doc.setTextColor(80);
+      if (o.cliente) doc.text(txtPdf('Cliente: ' + o.cliente), xr, 15, { align: 'right', maxWidth: W / 2 - 10 });
+      doc.text(txtPdf(`Data: ${data} · Folha ${i}/${n}`), xr, o.cliente ? 19 : 15, { align: 'right' });
+      doc.setDrawColor(196, 22, 28); doc.setLineWidth(0.7); doc.line(M, 23.5, W - M, 23.5);
+      // rodapé
+      doc.setDrawColor(180); doc.setLineWidth(0.2); doc.line(M, H - 11, W - M, H - 11);
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(6.4); doc.setTextColor(110);
+      doc.text(doc.splitTextToSize(txtPdf(aviso), W - 2 * M - 46), M, H - 7.5);
+      doc.setFont('helvetica', 'normal'); doc.text('Gerado no Foster Calc · fostercalc.com.br', W - M, H - 7.5, { align: 'right' });
+    }
+    // carimbo de responsabilidade técnica na última folha
+    doc.setPage(n);
+    const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = W > H ? 12 : 14;
+    const y0 = H - 23, larg = Math.min(150, W - 2 * M), x0 = W - M - larg;
+    doc.setFillColor(255, 255, 255); doc.rect(x0, y0, larg, 11, 'F');
+    doc.setDrawColor(60); doc.setLineWidth(0.3); doc.rect(x0, y0, larg, 11);
+    doc.line(x0 + larg * 0.62, y0, x0 + larg * 0.62, y0 + 11);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(110);
+    doc.text('RESPONSÁVEL TÉCNICO', x0 + 2, y0 + 2.6); doc.text('ART / RRT Nº', x0 + larg * 0.62 + 2, y0 + 2.6);
+    doc.setDrawColor(150); doc.setLineWidth(0.2); doc.line(x0 + 2, y0 + 7.2, x0 + larg * 0.62 - 2, y0 + 7.2);
+    doc.setFontSize(6.6); doc.setTextColor(20);
+    doc.text(txtPdf([p.nome, p.registro_profissional].filter(Boolean).join(' · ') || 'Nome e registro profissional'), x0 + 2, y0 + 9.8);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.4);
+    if (o.art) doc.text(txtPdf(o.art), x0 + larg * 0.62 + 2, y0 + 8.2);
+    else { doc.setDrawColor(150); doc.line(x0 + larg * 0.62 + 2, y0 + 8.4, x0 + larg - 3, y0 + 8.4); }
   }
   async function iniciar() {
     if (!sb) { desenharBarra(); return; }
@@ -87,9 +253,10 @@
     alvo.innerHTML = `<a class="fc-logo" href="./"><b>FC</b>Foster Calc</a>
       <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'laje')}${link('viga.html', 'Vigas', 'viga')}${link('pilar.html', 'Pilares', 'pilar')}${link('sapata.html', 'Sapatas', 'sapata')}${link('./#projetos', 'Meus projetos', '-')}</nav>
       <div class="fc-user">${sessao
-        ? `<span class="fc-plano ${pro ? 'pro' : ''}">${pro ? 'Pro' : 'Grátis'}</span><span class="fc-mail" title="${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</span><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
+        ? `<span class="fc-plano ${pro ? 'pro' : ''}">${pro ? 'Pro' : 'Grátis'}</span><button class="fc-nome" type="button" data-fc="perfil" title="Meu perfil · ${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</button><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
         : `<button class="fc-btn" type="button" data-fc="entrar">Entrar</button>`}</div>`;
     alvo.querySelector('[data-fc="entrar"]')?.addEventListener('click', () => entrar());
+    alvo.querySelector('[data-fc="perfil"]')?.addEventListener('click', () => telaPerfil());
     alvo.querySelector('[data-fc="sair"]')?.addEventListener('click', async () => { await sb.auth.signOut(); toast('Você saiu da conta.'); });
   }
 
@@ -184,6 +351,7 @@
     if (!sessao && !(await entrar(`Entre na sua conta para ${acao}.`))) return false;
     await carregarPerfil(); desenharBarra();
     if (!pro) { telaPlanos(`Para ${acao}, é preciso o plano Pro.`); return false; }
+    if (!perfil?.nome) toast('Dica: preencha seu perfil (clique no seu nome no topo) para sair com nome, CREA e logo no PDF.');
     return true;
   }
   async function registrarExport(modulo, formato) { try { await sb.from('exportacoes').insert({ modulo, formato }); } catch (e) { /* métrica não bloqueia o download */ } }
@@ -197,6 +365,8 @@
   // ---------- projetos ----------
   async function salvarProjeto(modulo, entrada, sugestao, idAtual) {
     if (!sb) return null;
+    entrada = { ...entrada, _obra: dadosObra() };
+    if (entrada._obra.obra && !idAtual) sugestao = `${entrada._obra.obra} · ${sugestao}`;
     if (!sessao && !(await entrar('Entre na sua conta para salvar este projeto.'))) return null;
     return new Promise(resolve => {
       const d = dialogo(`<form method="dialog"><h3>Salvar projeto</h3>
@@ -225,7 +395,11 @@
     if (modulo) q = q.eq('modulo', modulo);
     const { data } = await q; return data || [];
   }
-  async function lerProjeto(id) { const { data } = await sb.from('projetos').select('*').eq('id', id).maybeSingle(); return data; }
+  async function lerProjeto(id) {
+    const { data } = await sb.from('projetos').select('*').eq('id', id).maybeSingle();
+    if (data?.entrada?._obra) { aplicarObra(data.entrada._obra); lembrarObra(data.entrada._obra); }
+    return data;
+  }
   async function apagarProjeto(id) { const { error } = await sb.from('projetos').delete().eq('id', id); return !error; }
 
   async function abrirProjeto(modulo) {
@@ -245,9 +419,11 @@
 
   window.FC = {
     sb, toast, dialogo, entrar, exigirPro, registrarExport, baixar, salvarProjeto, abrirProjeto, listarProjetos, lerProjeto, apagarProjeto, telaPlanos,
+    telaPerfil, finalizarPdf, dadosObra, PDF,
     get sessao() { return sessao; }, get pro() { return pro; }, get perfil() { return perfil; },
     aoMudar: f => ouvintes.push(f), CONFIG,
   };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
+  const comecar = () => { injetarCamposObra(); iniciar(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comecar); else comecar();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

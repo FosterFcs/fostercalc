@@ -51,9 +51,16 @@ Plano anual: use `interval '365 days'` no lugar de `'30 days'`.
 Para cancelar: `set plano = 'gratis', plano_ate = null`.
 Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automaticamente.
 
+## Perfil do engenheiro e cabeçalho do PDF
+
+- Clique no seu nome, no topo do site, para abrir **Meu perfil**: nome, CREA/CAU, empresa, telefone, e-mail, cidade e logo (PNG ou JPG; é reduzido automaticamente).
+- Em cada módulo, a seção **Projeto e exportação** tem os campos **Obra**, **Cliente** e **ART/RRT nº**. Eles ficam lembrados entre os módulos e são salvos junto com o projeto.
+- Todas as folhas do PDF saem com cabeçalho (logo, responsável técnico, obra, cliente, data e folha) e a última folha traz o carimbo com espaço para assinatura e número da ART.
+- Logos ficam no bucket privado `logos`, na pasta de cada usuário (`<id do usuário>/logo.png`).
+
 ## Banco de dados
 
-- `perfis`: nome, CREA/CAU, empresa, plano e validade. O usuário edita só os dados cadastrais; o plano só muda pelo painel/SQL.
+- `perfis`: nome, CREA/CAU, empresa, telefone, e-mail, cidade, logo, plano e validade. O usuário edita só os dados cadastrais; o plano só muda pelo painel/SQL.
 - `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, pilar ou sapata). Cada usuário vê apenas os seus.
 - `exportacoes`: registro de cada PDF/DXF baixado (só aceita inserção de quem é Pro).
 
