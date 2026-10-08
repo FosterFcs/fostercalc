@@ -56,6 +56,9 @@
   .fc-grid2 .full{grid-column:1/-1}
   .fc-logo-prev{display:flex;align-items:center;gap:12px;border:1px dashed var(--line);border-radius:6px;padding:10px;min-height:64px}
   .fc-logo-prev img{max-width:150px;max-height:56px;object-fit:contain;background:#fff;border-radius:3px}
+  .fc-abas{display:flex;gap:6px;margin:-8px 0 18px;flex-wrap:wrap}
+  .fc-abas a{font:600 .85rem var(--f-body,system-ui);text-decoration:none;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:5px 14px;background:var(--sheet)}
+  .fc-abas a[aria-current="page"]{color:var(--sheet);background:var(--ink);border-color:var(--ink)}
   .fc-obra{display:grid;grid-template-columns:2fr 1.4fr 1fr;gap:10px;margin:0 0 14px}
   @media (max-width:700px){.fc-obra{grid-template-columns:1fr}}
   .fc-obra label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted);min-width:0}
@@ -165,6 +168,18 @@
     });
   }
 
+  // ---------- abas de subtipo (lajes e fundações) ----------
+  function abasSubtipo() {
+    const pagina = document.body.dataset.pagina || '';
+    const grupos = { laje: [['laje.html', 'Laje maciça', 'laje'], ['trelicada.html', 'Laje treliçada', 'trelicada']],
+      sapata: [['sapata.html', 'Sapata isolada', 'sapata'], ['bloco.html', 'Bloco sobre estacas', 'bloco']] };
+    const g = grupos[pagina] || grupos[{ trelicada: 'laje', bloco: 'sapata' }[pagina]];
+    const hd = document.querySelector('header.top'); if (!g || !hd) return;
+    const nav = document.createElement('nav'); nav.className = 'fc-abas'; nav.setAttribute('aria-label', 'Tipo');
+    nav.innerHTML = g.map(([h, n, id]) => `<a href="${h}" ${id === pagina ? 'aria-current="page"' : ''}>${n}</a>`).join('');
+    hd.insertAdjacentElement('afterend', nav);
+  }
+
   // ---------- dados da obra (aparecem no PDF e são salvos com o projeto) ----------
   const OBRA = ['obra', 'cliente', 'art'];
   function lembrarObra(v) { try { localStorage.setItem('fc-obra', JSON.stringify(v)); } catch (e) {} }
@@ -248,10 +263,11 @@
   function desenharBarra() {
     const alvo = document.getElementById('fc-bar'); if (!alvo) return;
     const pagina = document.body.dataset.pagina || '';
-    const link = (href, nome, id) => `<a href="${href}" ${pagina === id ? 'aria-current="page"' : ''}>${nome}</a>`;
+    const grupo = { laje: 'lajes', trelicada: 'lajes', viga: 'vigas', pilar: 'pilares', sapata: 'fundacoes', bloco: 'fundacoes', escada: 'escadas', inicio: 'inicio' }[pagina];
+    const link = (href, nome, id) => `<a href="${href}" ${grupo === id ? 'aria-current="page"' : ''}>${nome}</a>`;
     alvo.className = 'fc-bar';
     alvo.innerHTML = `<a class="fc-logo" href="./"><b>FC</b>Foster Calc</a>
-      <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'laje')}${link('viga.html', 'Vigas', 'viga')}${link('pilar.html', 'Pilares', 'pilar')}${link('sapata.html', 'Sapatas', 'sapata')}${link('./#projetos', 'Meus projetos', '-')}</nav>
+      <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'lajes')}${link('viga.html', 'Vigas', 'vigas')}${link('pilar.html', 'Pilares', 'pilares')}${link('sapata.html', 'Fundações', 'fundacoes')}${link('escada.html', 'Escadas', 'escadas')}${link('./#projetos', 'Meus projetos', '-')}</nav>
       <div class="fc-user">${sessao
         ? `<span class="fc-plano ${pro ? 'pro' : ''}">${pro ? 'Pro' : 'Grátis'}</span><button class="fc-nome" type="button" data-fc="perfil" title="Meu perfil · ${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</button><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
         : `<button class="fc-btn" type="button" data-fc="entrar">Entrar</button>`}</div>`;
@@ -423,7 +439,7 @@
     get sessao() { return sessao; }, get pro() { return pro; }, get perfil() { return perfil; },
     aoMudar: f => ouvintes.push(f), CONFIG,
   };
-  const comecar = () => { injetarCamposObra(); iniciar(); };
+  const comecar = () => { abasSubtipo(); injetarCamposObra(); iniciar(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comecar); else comecar();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

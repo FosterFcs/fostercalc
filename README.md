@@ -1,6 +1,6 @@
 # Foster Calc
 
-Cálculo de lajes maciças, vigas contínuas, pilares retangulares e sapatas isoladas de concreto armado pela ABNT NBR 6118:2023, no navegador.
+Cálculo de lajes maciças e treliçadas, vigas contínuas, pilares retangulares, escadas, sapatas isoladas e blocos sobre estacas de concreto armado pela ABNT NBR 6118:2023, no navegador.
 PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 
 ## Arquivos
@@ -12,6 +12,9 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `laje.html` | Módulo de lajes maciças |
 | `pilar.html` | Módulo de pilares (flexão composta oblíqua, 2ª ordem) |
 | `sapata.html` | Módulo de sapatas isoladas rígidas |
+| `trelicada.html` | Módulo de lajes treliçadas unidirecionais (vigotas TR, enchimento cerâmico ou EPS) |
+| `escada.html` | Módulo de escadas de lance reto com patamares |
+| `bloco.html` | Módulo de blocos sobre 1 a 4 estacas (bielas e tirantes) |
 | `app.js` | Login, plano, projetos salvos, barra superior e downloads |
 | `manifest.json`, `sw.js`, `icon-*.png` | Instalação como app e uso offline |
 
@@ -61,7 +64,7 @@ Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automatica
 ## Banco de dados
 
 - `perfis`: nome, CREA/CAU, empresa, telefone, e-mail, cidade, logo, plano e validade. O usuário edita só os dados cadastrais; o plano só muda pelo painel/SQL.
-- `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, pilar ou sapata). Cada usuário vê apenas os seus.
+- `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, trelicada, pilar, sapata, bloco ou escada). Cada usuário vê apenas os seus.
 - `exportacoes`: registro de cada PDF/DXF baixado (só aceita inserção de quem é Pro).
 
 Todas as tabelas com RLS; o verificador de segurança do Supabase está sem alertas.

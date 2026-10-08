@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="description" content="Dimensionamento de blocos sobre 1 a 4 estacas pelo método das bielas (NBR 6118). Foster Calc.">
+<title>Blocos sobre estacas · Foster Calc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: prancheta técnica — entrada à esquerda, folha de resultados à direita */
+:root{
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --beam:#b8babd; --steel:#c4161c; --steel2:#3a3d42;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#a3121a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:20px}
+header.top h1{font:700 2rem/1 var(--f-display);letter-spacing:.01em;margin:0}
+header.top h1 span{color:var(--accent)}
+header.top p{margin:0;color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+aside.inputs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside.inputs{position:static}}
+fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+legend{font:600 .78rem/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 0 8px;grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+label.full{grid-column:1/-1}
+input,select{font:500 .95rem var(--f-mono);color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.unit{position:relative}.unit input{padding-right:52px}
+.unit i{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:400 .75rem var(--f-mono);color:var(--muted);font-style:normal;pointer-events:none}
+.bordas{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;gap:6px;align-items:center;justify-items:center}
+.bordas select{padding:5px 4px;font-size:.8rem;width:100%;max-width:110px}
+.bordas .b-sup{grid-column:2;grid-row:1}.bordas .b-esq{grid-column:1;grid-row:2;justify-self:end}
+.bordas .b-dir{grid-column:3;grid-row:2;justify-self:start}.bordas .b-inf{grid-column:2;grid-row:3}
+.croqui{grid-column:2;grid-row:2;width:100%;max-width:120px}
+.croqui svg{width:100%;height:auto;display:block}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+h2{font:600 1.35rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 12px}
+.status{padding:12px 16px;border-radius:6px;font-weight:500}
+.status.ok{background:var(--ok-soft);color:var(--ok)}.status.warn{background:var(--warn-soft);color:var(--warn)}.status.bad{background:var(--bad-soft);color:var(--bad)}
+.status b{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.msgs{margin:8px 0 0;padding-left:18px;font-size:.88rem;color:var(--ink);font-weight:400}
+.pill{display:inline-block;font:600 .66rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.duo{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+@media (max-width:700px){.duo{grid-template-columns:minmax(0,1fr)}}
+.planta svg{width:100%;height:auto;display:block}
+svg .conc{fill:var(--concrete);stroke:none}
+svg .viga{fill:var(--beam);stroke:var(--ink);stroke-width:.8}
+svg .eng{stroke:var(--ink);stroke-width:3;fill:none}
+svg .hatch{stroke:var(--muted);stroke-width:.8}
+svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .dist{stroke:var(--steel2);stroke-width:1.2;fill:none;stroke-dasharray:6 4}
+svg .dim{stroke:var(--muted);stroke-width:.8;fill:none}
+svg text{fill:var(--ink);font-family:var(--f-mono)}
+svg text.mut{fill:var(--muted)}
+.reac{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.reac div{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.reac dt{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.reac dd{margin:2px 0 0;font:600 1.3rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.reac dd small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:3px}
+details.memo{border-top:1px solid var(--line)}
+details.memo:last-of-type{border-bottom:1px solid var(--line)}
+details.memo summary{cursor:pointer;padding:10px 2px;font:600 1.05rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.memo summary::-webkit-details-marker{display:none}
+details.memo summary::after{content:"+";font-family:var(--f-mono);color:var(--muted)}
+details.memo[open] summary::after{content:"–"}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+th.v{text-align:right}
+td.f{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);min-width:170px}
+td.v{font-family:var(--f-mono);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+td.v.alerta{color:var(--bad);font-weight:600}
+td.r{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.memo .tbl{padding-bottom:12px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.pri{font:600 .9rem var(--f-body);border-radius:4px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--sheet)}
+button.pri.ghost{background:transparent;color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted)}
+.disclaimer{font-size:.8rem;color:var(--muted);border-left:3px solid var(--line);padding:4px 0 4px 12px;max-width:72ch}
+ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
+
+.secao svg,.desenhos svg{width:100%;height:auto;display:block;max-width:420px}
+#corte svg{width:100%;height:auto;display:block}
+.desenhos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:700px){.desenhos{grid-template-columns:minmax(0,1fr)}}
+.cap{font:500 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.reac dd{font-size:1.2rem}
+.reac4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:800px){.reac4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body data-pagina="bloco">
+<div class="wrap">
+<div id="fc-bar"></div>
+<header class="top">
+  <h1>Bloco sobre estacas <span>· NBR 6118</span></h1>
+  <p>Bloco rígido de 1 a 4 estacas, método das bielas · NBR 6118:2023</p>
+</header>
+
+<div class="grid">
+<aside class="inputs" aria-label="Dados de entrada">
+  <form id="f" class="sheet" style="display:flex;flex-direction:column;gap:18px" autocomplete="off">
+    <fieldset>
+      <legend>Pilar e carga</legend>
+      <label>Lado ap (x)<span class="unit"><input id="ap" type="number" step="1" min="14" value="20"><i>cm</i></span></label>
+      <label>Lado bp (y)<span class="unit"><input id="bp" type="number" step="1" min="14" value="40"><i>cm</i></span></label>
+      <label>Normal Nk<span class="unit"><input id="Nk" type="number" step="5" min="1" value="600"><i>kN</i></span></label>
+      <label>Ø barras do pilar<select id="phiPilar"><option value="10">10,0 mm</option><option value="12.5" selected>12,5 mm</option><option value="16">16,0 mm</option><option value="20">20,0 mm</option></select></label>
+      <label class="full">Momento na base (opcional)<span class="unit"><input id="Mk" type="number" step="0.5" min="0" value="0"><i>kN·m</i></span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Estacas</legend>
+      <label>Diâmetro<span class="unit"><input id="phiE" type="number" step="5" min="20" value="30"><i>cm</i></span></label>
+      <label>Capacidade<span class="unit"><input id="cap" type="number" step="10" min="50" value="350"><i>kN</i></span></label>
+      <label>Número<select id="n"><option value="0" selected>Automático</option><option value="1">1 estaca</option><option value="2">2 estacas</option><option value="3">3 estacas</option><option value="4">4 estacas</option></select></label>
+      <label>Espaçamento<select id="fatorEsp"><option value="2.5" selected>2,5 φ (moldada no local)</option><option value="3">3,0 φ (pré-moldada / cravada)</option></select></label>
+      <label class="full">Peso do bloco + solo<span class="unit"><input id="ppPerc" type="number" step="1" min="0" value="5"><i>% Nk</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">A capacidade (carga admissível) de cada estaca vem do projeto de fundação e da sondagem (NBR 6122).</p>
+    </fieldset>
+    <fieldset>
+      <legend>Materiais</legend>
+      <label>Concreto<select id="fck"><option>20</option><option selected>25</option><option>30</option><option>35</option><option>40</option></select></label>
+      <label>Cobrimento<span class="unit"><input id="c" type="number" step="0.5" min="3" value="5.0"><i>cm</i></span></label>
+    </fieldset>
+    <p class="note" style="margin:0">Aço CA-50. Cabeça das estacas embutida 5 a 10 cm no bloco.</p>
+  </form>
+</aside>
+
+<main>
+  <section id="status" class="status ok" aria-live="polite"></section>
+
+  <section class="sheet">
+    <h2>Resultado</h2>
+    <dl class="reac reac4" id="keys"></dl>
+  </section>
+
+  <section class="sheet">
+    <h2>Detalhamento</h2>
+    <div class="desenhos"><figure style="margin:0;min-width:0"><figcaption class="cap">Planta</figcaption><div id="planta"></div></figure>
+    <figure style="margin:0;min-width:0"><figcaption class="cap">Corte</figcaption><div id="corteB"></div></figure></div>
+    <p class="note" id="legenda" style="margin:8px 0 0"></p>
+  </section>
+
+  <section class="sheet">
+    <h2>Memória de cálculo</h2>
+    <div id="memoria"></div>
+    <p class="note" style="margin:12px 0 4px"><b>Hipóteses e limites deste módulo:</b></p>
+    <ul class="todo note">
+      <li>Bloco rígido com carga centrada; estacas iguais, simetricamente dispostas; método de Blévot-Frémy para 2 a 4 estacas</li>
+      <li>Tirantes com acréscimo de 15% (Blévot); armaduras de suspensão, superior e de pele construtivas</li>
+      <li>Momentos e cargas horizontais na base do pilar não são distribuídos às estacas; blocos de 1 e 2 estacas exigem vigas de travamento</li>
+    </ul>
+  </section>
+
+  <section class="sheet">
+    <h2>Quantitativos</h2>
+    <div class="tbl"><table id="quant"></table></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Projeto e exportação</h2>
+    <div class="actions">
+      <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
+      <button type="button" class="pri ghost" id="btnAbrir">Meus projetos</button>
+      <button type="button" class="pri" id="btnPdf">Baixar memória (PDF)</button>
+      <button type="button" class="pri ghost" id="btnDxf">Baixar desenho (DXF em .zip)</button>
+      <span class="note" id="expMsg" role="status"></span>
+    </div>
+    <p class="note" style="margin:10px 0 0">O cálculo é livre. Memória em PDF e desenho em DXF fazem parte do plano Pro.</p>
+  </section>
+
+  <p class="disclaimer">Ferramenta de apoio ao dimensionamento. Os resultados devem ser conferidos por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT. A capacidade das estacas deve vir do projeto geotécnico (NBR 6122).</p>
+</main>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// Motor de cálculo — Bloco rígido sobre 1 a 4 estacas, carga centrada (NBR 6118:2023, 22.7)
+// Método das bielas e tirantes de Blévot-Frémy para 2, 3 e 4 estacas; bloco de 1 estaca como
+// elemento de transição com armadura de fretagem. Unidades internas: cm, kN, kN/cm².
+
+const B_BIT = [8, 10, 12.5, 16, 20, 25];
+const bA = phi => Math.PI * (phi / 10) ** 2 / 4;
+const r5 = v => Math.ceil(v / 5 - 1e-9) * 5;
+
+function geometriaBloco(n, e, phiE, borda, ap, bp) {
+  // coordenadas das estacas (cm, centro do pilar na origem) e contorno do bloco
+  let est, contorno, A, B;
+  const m = phiE / 2 + borda;                               // do eixo da estaca à face do bloco
+  if (n === 1) { est = [[0, 0]]; A = Math.max(phiE + 2 * borda, ap + 10); B = Math.max(phiE + 2 * borda, bp + 10); }
+  else if (n === 2) { est = [[-e / 2, 0], [e / 2, 0]]; A = e + 2 * m; B = Math.max(2 * m, bp + 10); }
+  else if (n === 3) { const r = e / Math.sqrt(3); est = [[0, r], [-e / 2, -r / 2], [e / 2, -r / 2]]; A = e + 2 * m; B = r * 1.5 + 2 * m; }
+  else { est = [[-e / 2, -e / 2], [e / 2, -e / 2], [e / 2, e / 2], [-e / 2, e / 2]]; A = e + 2 * m; B = e + 2 * m; }
+  A = r5(A); B = r5(B);
+  if (n === 3) {
+    // planta triangular com cantos chanfrados (hexágono irregular)
+    const r = e / Math.sqrt(3);
+    const yTop = r + m, yBot = -r / 2 - m, xL = -e / 2 - m, xR = e / 2 + m;
+    contorno = [[-m, yTop], [m, yTop], [xR, -r / 2 + m * 0.6], [xR, yBot], [xL, yBot], [xL, -r / 2 + m * 0.6]];
+    const yC = (yTop + yBot) / 2;                            // recentra no retângulo envolvente
+    return { est, contorno, A: r5(xR - xL), B: r5(yTop - yBot), deslocY: yC };
+  }
+  contorno = [[-A / 2, -B / 2], [A / 2, -B / 2], [A / 2, B / 2], [-A / 2, B / 2]];
+  return { est, contorno, A, B, deslocY: 0 };
+}
+
+function calcularBloco(e0) {
+  const e = { ...e0 };
+  const erros = [], avisos = [];
+  const fcd = e.fck / 14, fyd = 50 / 1.15;
+  const fctd = 0.7 * 0.03 * e.fck ** (2 / 3) / 1.4;
+  const ap = e.ap, bp = e.bp, phiE = e.phiE, c = e.c ?? 5;
+  const apEq = Math.sqrt(ap * bp);                          // pilar quadrado equivalente (Blévot)
+  const kpp = 1 + (e.ppPerc ?? 5) / 100;
+
+  // ---- número de estacas
+  const Ntot = kpp * e.Nk;
+  let n = e.n && e.n > 0 ? Math.round(e.n) : Math.ceil(Ntot / e.cap - 1e-9);
+  if (n > 4) { erros.push(`São necessárias ${n} estacas com essa capacidade: este módulo cobre até 4. Use estacas de maior capacidade.`); n = 4; }
+  n = Math.max(1, n);
+  const cargaEst = Ntot / n;
+  if (cargaEst > e.cap * 1.0001) erros.push(`Carga por estaca ${cargaEst.toFixed(0)} kN acima da capacidade de ${e.cap} kN.`);
+  if (e.n && e.n > 0 && Math.ceil(Ntot / e.cap - 1e-9) < n) avisos.push(`Com essa capacidade bastariam ${Math.ceil(Ntot / e.cap - 1e-9)} estaca(s).`);
+
+  // ---- espaçamento e geometria
+  const eMin = (e.fatorEsp ?? 2.5) * phiE;
+  const esp = n === 1 ? 0 : r5(Math.max(eMin, e.esp || 0));
+  const borda = Math.max(15, phiE / 2) ;                    // da face da estaca à borda do bloco (usual ≥ 15 cm)
+  const geo = geometriaBloco(n, esp, phiE, borda, ap, bp);
+  const Nd = 1.4 * e.Nk;
+
+  // ---- ancoragem das barras do pilar
+  const fbd = 2.25 * fctd;
+  const lbPilar = Math.max(e.phiPilar / 40 * fyd / fbd, 25 * e.phiPilar / 10);
+
+  let res;
+  if (n === 1) {
+    // bloco de transição: altura para ancorar o pilar e fretagem pelos estribos horizontais
+    const h = r5(Math.max(0.7 * lbPilar + 10, 1.2 * phiE, 40));
+    const As = 0.25 * Nd / fyd;                             // fretagem: 25% de Nd em armadura horizontal (prática usual)
+    res = { tipo: 'transição', h, d: h - 10, As, theta: null, asOk: true };
+    avisos.push('Bloco de uma estaca: funciona como transição. O pilar deve estar centrado na estaca e as excentricidades de execução precisam ser absorvidas por vigas de travamento nas duas direções.');
+  } else {
+    // ---- altura útil: θ entre 45° e 55° (faixa de Blévot)
+    const lim = { 2: [0.5, 0.71], 3: [0.58, 0.825], 4: [0.71, 1.0] }[n];
+    const base = esp - (n === 2 ? ap : apEq) / 2;
+    const dMin = lim[0] * base, dMax = lim[1] * base;
+    const braco = { 2: esp / 2 - ap / 4, 3: esp * Math.sqrt(3) / 3 - 0.3 * apEq, 4: esp * Math.SQRT2 / 2 - apEq * Math.SQRT2 / 4 }[n];
+    const KR = 0.95;
+    const limPil = { 2: 1.4, 3: 1.75, 4: 2.1 }[n] * KR * fcd, limEst = 0.85 * KR * fcd;
+    const Ap = ap * bp, Ae = Math.PI * phiE ** 2 / 4;
+    let d = Math.ceil(Math.max(dMin, lbPilar * 0.7 + 5 - 10)), sol = null;
+    for (; d <= Math.max(dMax, dMin) + 60; d += 1) {
+      const theta = Math.atan(d / braco), s2 = Math.sin(theta) ** 2;
+      const sPil = Nd / (Ap * s2), sEst = Nd / (n * Ae * s2);
+      if (sPil <= limPil && sEst <= limEst) { sol = { d, theta, sPil, sEst }; break; }
+    }
+    if (!sol) { const theta = Math.atan(dMax / braco), s2 = Math.sin(theta) ** 2; sol = { d: Math.ceil(dMax), theta, sPil: Nd / (Ap * s2), sEst: Nd / (n * Ae * s2) };
+      erros.push('Tensões nas bielas acima do limite mesmo com θ = 55°: aumente a seção do pilar, o diâmetro das estacas ou o fck.'); }
+    const thetaGraus = sol.theta * 180 / Math.PI;
+    if (thetaGraus > 55.5) avisos.push(`Ângulo das bielas de ${thetaGraus.toFixed(0)}° (acima de 55°) por causa da ancoragem do pilar: aceitável, mas o bloco fica mais alto que o necessário.`);
+    // ---- tirantes (com acréscimo de 15% de Blévot)
+    let Rs, AsTir, descricao;
+    if (n === 2) { Rs = Nd * (2 * esp - ap) / (8 * sol.d); descricao = 'sobre as estacas, na direção do eixo'; }
+    else if (n === 3) { const Rrad = Nd / 3 * (esp / Math.sqrt(3) - 0.3 * apEq) / sol.d; Rs = Rrad / Math.sqrt(3); descricao = 'nos três lados, sobre as estacas'; }
+    else { Rs = Nd * (2 * esp - apEq) / (16 * sol.d); descricao = 'nos quatro lados, sobre as estacas'; }
+    AsTir = 1.15 * Rs / fyd;
+    const h = r5(sol.d + c + 5);
+    res = { tipo: 'bielas', ...sol, thetaGraus, dMin, dMax, braco, limPil, limEst, Rs, As: AsTir, descricao, h };
+  }
+
+  // ---- escolha das barras dos tirantes (faixa sobre a estaca: largura ~ 1,2·φe)
+  let barras = null;
+  const faixa = n === 1 ? geo.A - 2 * c : 1.2 * phiE;
+  const opcoes = B_BIT.map(phi => {
+    const nb = Math.max(n === 1 ? 4 : 3, Math.ceil(res.As / bA(phi) - 1e-9));
+    const s = (faixa - phi / 10) / Math.max(nb - 1, 1);
+    return { phi, n: nb, As: nb * bA(phi), s, cabe: s >= Math.max(2, phi / 10) + phi / 10 };
+  }).filter(o => o.cabe);
+  barras = opcoes.find(o => o.n <= 6) || opcoes[opcoes.length - 1] || { phi: 25, n: Math.ceil(res.As / bA(25)), As: Math.ceil(res.As / bA(25)) * bA(25), s: 0 };
+  if (!opcoes.length) erros.push('O tirante não cabe na faixa sobre as estacas: aumente o diâmetro das estacas ou distribua em duas camadas.');
+  // ancoragem dos tirantes: gancho vertical na face; disponível = medida além do eixo da estaca
+  const lbTir = Math.max(barras.phi / 40 * fyd / fbd, 25 * barras.phi / 10);
+  const lbNec = 0.7 * lbTir * Math.min(1, res.As / barras.As);
+  // armaduras complementares (construtivas)
+  const AsSup = 0.2 * barras.As * Math.max(1, n === 4 ? 2 : 1);
+  const AsPele = n === 1 ? 0 : 0.10 / 100 * geo.B * res.h / 2; // por face (usual: 0,075% a 0,10%·b·h)
+  const malhaInf = n >= 3 ? 'malha Ø8,0 c/15 entre as faixas, nas duas direções (suspensão)' : 'estribos verticais Ø8,0 c/15 e barras longitudinais nas faces';
+  // quantitativos
+  const vol = (geo.A / 100) * (geo.B / 100) * (res.h / 100) * (n === 3 ? 0.82 : 1);
+  const magro = (geo.A / 100 + 0.1) * (geo.B / 100 + 0.1) * 0.05;
+  const compTir = (n === 2 || n === 1 ? geo.A : esp + 2 * (phiE / 2 + borda)) - 2 * c + 2 * (res.h - 2 * c);
+  const nFaixas = { 1: 2, 2: 1, 3: 3, 4: 4 }[n];
+  const pesoTir = nFaixas * barras.n * compTir / 100 * bA(barras.phi) * 0.785;
+
+  if (e.Mk && e.Mk > 0) avisos.push('Há momento na base do pilar: este módulo considera carga centrada. Verifique a reação máxima por estaca com o momento antes de adotar o bloco.');
+
+  return { ok: erros.length === 0, erros: [...new Set(erros)], avisos: [...new Set(avisos)], entrada: { ...e, c },
+    mat: { fcd, fyd, fctd, fbd }, n, Ntot, cargaEst, Nd, esp, eMin, borda, geo, lbPilar, res, barras, lbTir, lbNec, AsSup, AsPele, malhaInf,
+    quant: { vol, magro, compTir, nFaixas, pesoTir } };
+}
+
+
+</script>
+<script>
+// ---------- utilidades comuns às páginas de módulo ----------
+const $ = id => document.getElementById(id);
+const nf = (v, d = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const bit = p => nf(p, 1);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const asciiPdf = t => String(t).replace(/ρmín/g, 'rho_min').replace(/ρ/g, 'rho').replace(/αb/g, 'alfa_b').replace(/α/g, 'alfa').replace(/λ1/g, 'lambda1').replace(/λ/g, 'lambda')
+  .replace(/ν/g, 'nu').replace(/γn/g, 'gama_n').replace(/γ/g, 'gama').replace(/σ/g, 'sig').replace(/τ/g, 'tau').replace(/φ/g, 'Ø')
+  .replace(/≤/g, '<=').replace(/≥/g, '>=').replace(/[−–—]/g, '-').replace(/→/g, '->').replace(/√/g, 'raiz').replace(/′/g, "'").replace(/²/g, '2').replace(/³/g, '3').replace(/₁/g, '1').replace(/₀/g, '0');
+function msg(t) { $('expMsg').textContent = t; }
+async function salvar(filename, data) { FC.baixar(filename, data); msg('Arquivo baixado.'); }
+function renderMemoria(secoes, alvoId, abrirPadrao) {
+  const abertos = new Set([...document.querySelectorAll(`#${alvoId} details.memo[open]`)].map(d => d.dataset.k));
+  if (!document.querySelector(`#${alvoId} details.memo`)) abertos.add(abrirPadrao);
+  $(alvoId).innerHTML = secoes.map(sec => `<details class="memo" data-k="${esc(sec.t)}" ${abertos.has(sec.t) ? 'open' : ''}><summary>${esc(sec.t)}</summary>
+    <div class="tbl"><table><thead><tr><th>Item</th><th>Expressão</th>${sec.cols.map(c => `<th class="v">${esc(c)}</th>`).join('')}<th>Ref.</th></tr></thead><tbody>
+    ${sec.l.map(l => `<tr><td>${l[0]}</td><td class="f">${l[1]}</td>${l[2].map(v => typeof v === 'object' ? `<td class="v${v.alerta ? ' alerta' : ''}">${v.v}</td>` : `<td class="v">${v}</td>`).join('')}<td class="r">${l[3]}</td></tr>`).join('')}
+    </tbody></table></div></details>`).join('');
+}
+// memória no PDF (retrato A4); devolve a posição y final
+function pdfMemoria(doc, secoes, titulo, subtitulo, r) {
+  const W = 210, HP = 297, M = 14; let y = FC.PDF.topo;
+  const novaPag = n => { if (y + n > HP - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } };
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(20); doc.text(asciiPdf(titulo), M, y + 4); y += 9;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90); doc.text(asciiPdf(subtitulo), M, y); y += 3;
+  doc.setDrawColor(20); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 6;
+  doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(r.erros.length ? 'VERIFICAR / REVISAR' : r.avisos.length ? 'ATENÇÃO' : 'VERIFICAÇÕES ATENDIDAS', M, y); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  [...r.erros, ...r.avisos].forEach(m => { const ls = doc.splitTextToSize('• ' + asciiPdf(m), W - 2 * M); novaPag(ls.length * 4); doc.text(ls, M, y); y += ls.length * 4; });
+  y += 2;
+  for (const sec of secoes) {
+    const nC = sec.cols.length, xExpr = M + 42, xVal0 = M + 42 + 56, xRef = W - M, larg = (xRef - 16 - xVal0) / nC;
+    novaPag(16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text(asciiPdf(sec.t).toUpperCase(), M, y);
+    doc.setFontSize(6.6); doc.setTextColor(110); sec.cols.forEach((c, i) => doc.text(asciiPdf(c), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }));
+    y += 1.6; doc.setLineWidth(0.2); doc.setDrawColor(150); doc.line(M, y, W - M, y); y += 3.6;
+    for (const l of sec.l) {
+      const ex = doc.splitTextToSize(asciiPdf(l[1]), 54); const hh = Math.max(1, ex.length) * 3.3 + 0.6; novaPag(hh);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(20); doc.text(doc.splitTextToSize(asciiPdf(l[0]), 40)[0], M, y);
+      doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(90); doc.text(ex, xExpr, y);
+      l[2].forEach((v, i) => { const o = typeof v === 'object' ? v : { v }; doc.setFont('courier', 'bold'); doc.setFontSize(nC > 3 ? 6.8 : 7.6); o.alerta ? doc.setTextColor(163, 18, 26) : doc.setTextColor(20); doc.text(asciiPdf(o.v), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }); });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.6); doc.setTextColor(110); doc.text(asciiPdf(l[3]), xRef, y, { align: 'right' });
+      y += hh;
+    }
+    y += 3;
+  }
+  return { y, novaPag };
+}
+function pdfRodape(doc, texto) { FC.finalizarPdf(doc, texto); }
+// DXF mínimo com camadas
+function novoDxf(camadas) {
+  const L = []; const p = (...a) => L.push(...a.map(String)); const f = v => (+v).toFixed(3);
+  p(0, 'SECTION', 2, 'TABLES', 0, 'TABLE', 2, 'LAYER', 70, Object.keys(camadas).length);
+  for (const [n, c] of Object.entries(camadas)) p(0, 'LAYER', 2, n, 70, 0, 62, c, 6, 'CONTINUOUS');
+  p(0, 'ENDTAB', 0, 'ENDSEC', 0, 'SECTION', 2, 'ENTITIES');
+  const txt = t => asciiPdf(t).replace(/Ø/g, '%%c').replace(/·/g, '-').replace(/[^\x20-\x7E]/g, ch => ({ 'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'é': 'e', 'ê': 'e', 'í': 'i', 'ó': 'o', 'õ': 'o', 'ô': 'o', 'ú': 'u', 'ç': 'c', '×': 'x' }[ch] || ''));
+  return {
+    linha: (x1, y1, x2, y2, l) => p(0, 'LINE', 8, l, 10, f(x1), 20, f(y1), 30, 0, 11, f(x2), 21, f(y2), 31, 0),
+    retangulo(x, y, w, h, l) { this.linha(x, y, x + w, y, l); this.linha(x + w, y, x + w, y + h, l); this.linha(x + w, y + h, x, y + h, l); this.linha(x, y + h, x, y, l); },
+    circulo: (x, y, r, l) => p(0, 'CIRCLE', 8, l, 10, f(x), 20, f(y), 30, 0, 40, f(r)),
+    texto: (x, y, alt, t, centro) => p(0, 'TEXT', 8, 'TEXTO', 10, f(x), 20, f(y), 30, 0, 40, f(alt), 1, txt(t), ...(centro ? [72, 1, 11, f(x), 21, f(y), 31, 0] : [])),
+    fim: () => { p(0, 'ENDSEC', 0, 'EOF'); return L.join('\r\n'); },
+  };
+}
+// projetos salvos (comum)
+function ligarProjetos(modulo, nomeSugerido) {
+  let projetoId = null;
+  $('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
+  $('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
+  (async () => {
+    const id = new URLSearchParams(location.search).get('p'); if (!id) return;
+    await new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
+    const p = FC.sessao && await FC.lerProjeto(id);
+    if (p && p.modulo === modulo) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+  })();
+}
+let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requestAnimationFrame(render); };
+
+const CAMPOS = ['ap', 'bp', 'Nk', 'phiPilar', 'Mk', 'phiE', 'cap', 'n', 'fatorEsp', 'ppPerc', 'fck', 'c'];
+function lerEntrada() { const e = {}; for (const k of CAMPOS) e[k] = +$(k).value; return e; }
+function aplicarEntrada(e) { for (const k of CAMPOS) if (e[k] != null) $(k).value = String(e[k]); render(); }
+(() => { const q = new URLSearchParams(location.search); if (q.get('p')) return; for (const k of CAMPOS) if (q.has(k) && $(k)) $(k).value = q.get(k); })();
+
+function memoria(r) {
+  const e = r.entrada, s = r.res, b = r.barras;
+  const out = [{ t: 'Estacas e geometria', cols: ['Valor'], l: [
+    ['Carga total', `Nk · (1 + ${nf((r.Ntot / e.Nk - 1) * 100, 0)}%)`, [`${nf(r.Ntot, 1)} kN`], ''],
+    ['Número de estacas', 'Ntot / capacidade', [`${r.n}`], 'NBR 6122'],
+    ['Carga por estaca', '≤ capacidade', [{ v: `${nf(r.cargaEst, 1)} kN ≤ ${nf(e.cap, 0)} kN`, alerta: r.cargaEst > e.cap * 1.0001 }], ''],
+    ['Espaçamento entre eixos', `e ≥ ${nf(e.fatorEsp, 1)}·φ`, [r.n > 1 ? `${r.esp} cm` : '—'], ''],
+    ['Bloco', 'A × B × h', [`${r.geo.A} × ${r.geo.B} × ${s.h} cm`], ''],
+    ['Ancoragem do pilar', 'lb (Ø' + bit(e.phiPilar) + ')', [`${nf(r.lbPilar, 0)} cm`], '9.4.2.4'],
+  ]}];
+  if (s.tipo === 'bielas') out.push({ t: 'Bielas e tirantes (Blévot)', cols: ['Valor'], l: [
+    ['Força normal de cálculo', 'Nd = 1,4 · Nk', [`${nf(r.Nd, 1)} kN`], ''],
+    ['Altura útil', `θ entre 45° e 55° (${nf(s.dMin, 0)} a ${nf(s.dMax, 0)} cm)`, [`${s.d} cm`], '22.7.2'],
+    ['Ângulo das bielas', 'tg θ = d / braço', [`${nf(s.thetaGraus, 1)}°`], ''],
+    ['Biela junto ao pilar', `σ = Nd / (Ap · sen²θ) ≤ ${{ 2: '1,40', 3: '1,75', 4: '2,10' }[r.n]}·KR·fcd`, [{ v: `${nf(s.sPil * 10, 2)} ≤ ${nf(s.limPil * 10, 2)} MPa`, alerta: s.sPil > s.limPil }], ''],
+    ['Biela junto à estaca', 'σ = Nd / (n · Ae · sen²θ) ≤ 0,85·KR·fcd', [{ v: `${nf(s.sEst * 10, 2)} ≤ ${nf(s.limEst * 10, 2)} MPa`, alerta: s.sEst > s.limEst }], ''],
+    ['Força no tirante', { 2: 'Rs = Nd·(2e − ap)/(8d)', 3: 'Rs = Nd·(e/√3 − 0,3a)/(3√3·d)', 4: 'Rs = Nd·(2e − a)/(16d)' }[r.n], [`${nf(s.Rs, 1)} kN`], ''],
+    ['Armadura do tirante', 'As = 1,15 · Rs / fyd', [`${nf(s.As)} cm²`], ''],
+    ['Adotado', `${s.descricao}`, [`${b.n} Ø${bit(b.phi)} (${nf(b.As)} cm²)`], ''],
+  ]});
+  else out.push({ t: 'Bloco de transição (1 estaca)', cols: ['Valor'], l: [
+    ['Força normal de cálculo', 'Nd = 1,4 · Nk', [`${nf(r.Nd, 1)} kN`], ''],
+    ['Altura', 'h ≥ máx(0,7·lb + 10 ; 1,2·φ ; 40 cm)', [`${s.h} cm`], ''],
+    ['Fretagem (horizontal)', 'As = 0,25 · Nd / fyd (prática usual)', [`${nf(s.As)} cm²`], ''],
+    ['Adotado', 'estribos horizontais em cada direção', [`${b.n} Ø${bit(b.phi)}`], ''],
+  ]});
+  out.push({ t: 'Armaduras complementares', cols: ['Valor'], l: [
+    ['Ancoragem dos tirantes', 'gancho vertical nas faces, 0,7·lb', [`${nf(r.lbNec, 0)} cm`], '9.4.2.5'],
+    ['Armadura superior', '≥ 20% do tirante (construtiva)', [`${nf(r.AsSup)} cm²`], ''],
+    ['Armadura de pele', r.n > 1 ? '0,10% · B · h/2 por face (construtiva)' : '—', [r.n > 1 ? `${nf(r.AsPele)} cm²/face` : '—'], ''],
+    ['Suspensão / estribos', '', [r.malhaInf], ''],
+  ]});
+  return out;
+}
+
+function svgPlanta(r) {
+  const e = r.entrada, g = r.geo, k = 260 / Math.max(g.A, g.B), pad = 30;
+  const W = g.A * k + 2 * pad, H = g.B * k + 2 * pad;
+  const X = x => pad + (x + g.A / 2) * k, Y = y => pad + (g.B / 2 - (y - g.deslocY)) * k;
+  let o = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Planta do bloco">`;
+  o += `<polygon class="conc" points="${g.contorno.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ')}"/>`;
+  // tirantes entre estacas
+  const est = g.est;
+  const ligar = (a, b) => { o += `<line x1="${X(a[0])}" y1="${Y(a[1])}" x2="${X(b[0])}" y2="${Y(b[1])}" stroke="var(--steel)" stroke-width="${Math.max(3, 0.6 * e.phiE * k)}" stroke-opacity=".35"/>`; };
+  if (r.n === 2) ligar(est[0], est[1]);
+  if (r.n >= 3) for (let i = 0; i < est.length; i++) ligar(est[i], est[(i + 1) % est.length]);
+  for (const s of est) o += `<circle cx="${X(s[0])}" cy="${Y(s[1])}" r="${e.phiE / 2 * k}" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+  o += `<rect x="${X(-e.ap / 2)}" y="${Y(e.bp / 2)}" width="${e.ap * k}" height="${e.bp * k}" fill="var(--ink)" opacity=".85"/>`;
+  o += `<text x="${pad + g.A * k / 2}" y="${H - 8}" font-size="12" text-anchor="middle" class="mut">A = ${g.A}</text>`;
+  o += `<text x="${pad - 10}" y="${pad + g.B * k / 2}" font-size="12" text-anchor="middle" class="mut" transform="rotate(-90 ${pad - 10} ${pad + g.B * k / 2})">B = ${g.B}</text>`;
+  return o + '</svg>';
+}
+function svgCorte(r) {
+  const e = r.entrada, g = r.geo, h = r.res.h, k = 260 / g.A, pad = 26, hp = 50, he = 60;
+  const W = g.A * k + 2 * pad + 50, H = (h + hp + he) * k + 2 * pad;
+  const X = x => pad + (x + g.A / 2) * k, Y = y => pad + (h + hp - y) * k;
+  let o = `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Corte do bloco">`;
+  o += `<rect class="conc" x="${X(-g.A / 2)}" y="${Y(h)}" width="${g.A * k}" height="${h * k}"/>`;
+  o += `<rect class="conc" x="${X(-e.ap / 2)}" y="${Y(h + hp)}" width="${e.ap * k}" height="${hp * k}"/>`;
+  const xs = r.n === 1 ? [0] : r.n === 3 ? [-r.esp / 2, r.esp / 2] : [-r.esp / 2, r.esp / 2];
+  for (const x of xs) o += `<rect x="${X(x - e.phiE / 2)}" y="${Y(10)}" width="${e.phiE * k}" height="${(he + 10) * k}" fill="var(--beam)" stroke="var(--ink)" stroke-width=".8"/>`;
+  const yb = 10 + e.c * 0.3 + 2;
+  o += `<polyline points="${X(-g.A / 2 + e.c)},${Y(h - e.c - 4)} ${X(-g.A / 2 + e.c)},${Y(yb)} ${X(g.A / 2 - e.c)},${Y(yb)} ${X(g.A / 2 - e.c)},${Y(h - e.c - 4)}" fill="none" stroke="var(--steel)" stroke-width="2.2"/>`;
+  if (r.res.theta) for (const x of xs) o += `<line x1="${X(Math.sign(x) * e.ap / 4)}" y1="${Y(h - 5)}" x2="${X(x)}" y2="${Y(yb)}" stroke="var(--steel2)" stroke-width="1" stroke-dasharray="5 3"/>`;
+  o += `<text x="${X(g.A / 2) + 6}" y="${Y(h / 2)}" font-size="11" class="mut">h = ${h}</text>`;
+  if (r.res.thetaGraus) o += `<text x="${X(0)}" y="${Y(h * 0.45)}" font-size="11" text-anchor="middle" class="mut">θ = ${nf(r.res.thetaGraus, 0)}°</text>`;
+  return o + '</svg>';
+}
+
+function render() {
+  const e = lerEntrada();
+  if (!(e.ap > 0 && e.bp > 0 && e.Nk > 0 && e.phiE > 0 && e.cap > 0)) return;
+  const r = calcularBloco(e); window.__r = r; const s = r.res, b = r.barras;
+  const msgs = [...r.erros, ...r.avisos];
+  $('status').className = 'status ' + (r.erros.length ? 'bad' : r.avisos.length ? 'warn' : 'ok');
+  $('status').innerHTML = `<b>${r.erros.length ? 'Bloco inadequado' : r.avisos.length ? 'Atenção' : 'Verificações atendidas'}</b>
+    ${msgs.length ? `<ul class="msgs">${msgs.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '<span style="margin-left:8px;color:var(--ink);font-weight:400">Carga nas estacas, bielas e tirantes dentro dos limites.</span>'}`;
+  $('keys').innerHTML = `
+    <div><dt>Estacas</dt><dd>${r.n} × φ${e.phiE}<small>${nf(r.cargaEst, 0)} kN por estaca · cap. ${nf(e.cap, 0)}</small></dd></div>
+    <div><dt>Bloco</dt><dd>${r.geo.A} × ${r.geo.B}<small>h = ${s.h} cm${r.n > 1 ? ` · e = ${r.esp} cm` : ''}</small></dd></div>
+    <div><dt>Tirante</dt><dd>${b.n} Ø${bit(b.phi)}<small>${r.n === 1 ? 'fretagem, em cada direção' : r.n === 2 ? 'sobre as estacas' : `em cada um dos ${r.n} lados`}</small></dd></div>
+    <div><dt>Bielas</dt><dd>${s.thetaGraus ? nf(s.thetaGraus, 0) + '°' : '—'}<small>${s.sPil ? `pilar ${nf(s.sPil / s.limPil * 100, 0)}% · estaca ${nf(s.sEst / s.limEst * 100, 0)}%` : 'bloco de transição'}</small></dd></div>`;
+  $('planta').innerHTML = svgPlanta(r);
+  $('corteB').innerHTML = svgCorte(r);
+  $('legenda').textContent = `Tirantes ${b.n} Ø${bit(b.phi)} ${s.descricao || 'em malha'} com gancho vertical · ${r.malhaInf} · cotas em cm`;
+  renderMemoria(memoria(r), 'memoria', s.tipo === 'bielas' ? 'Bielas e tirantes (Blévot)' : 'Bloco de transição (1 estaca)');
+  const q = r.quant;
+  $('quant').innerHTML = `<thead><tr><th>Item</th><th class="v">Quantidade</th><th>Observação</th></tr></thead><tbody>
+    <tr><td>Tirantes Ø${bit(b.phi)}</td><td class="v">${q.nFaixas} × ${b.n} barras</td><td>${nf(q.compTir / 100)} m cada (com ganchos) · ${nf(q.pesoTir, 1)} kg</td></tr>
+    <tr><td>Concreto C${e.fck}</td><td class="v">${nf(q.vol, 3)} m³</td><td>sem perdas</td></tr>
+    <tr><td>Concreto magro (lastro 5 cm)</td><td class="v">${nf(q.magro, 3)} m³</td><td></td></tr>
+    <tr><td>Armaduras complementares</td><td class="v">—</td><td>superior ${nf(r.AsSup)} cm², pele e suspensão conforme memória</td></tr></tbody>`;
+}
+
+function gerarPdf() {
+  const r = window.__r; if (!r || !window.jspdf) { msg('Gerador de PDF não carregou. Recarregue a página.'); return null; }
+  const e = r.entrada, b = r.barras, g = r.geo;
+  const doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+  let { y } = pdfMemoria(doc, memoria(r), 'Memória de cálculo · Bloco sobre estacas',
+    `Pilar ${e.ap}×${e.bp} cm · Nk = ${nf(e.Nk, 0)} kN · ${r.n} estaca(s) φ${e.phiE} cm · C${e.fck} / CA-50`, r);
+  const novaPag = n => { if (y + n > 297 - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } };
+  novaPag(85);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text('PLANTA', 14, y); y += 4;
+  const k = 60 / Math.max(g.A, g.B), cx = 14 + g.A * k / 2, cy = y + g.B * k / 2;
+  const P = (px, py) => [cx + px * k, cy - (py - g.deslocY) * k];
+  doc.setDrawColor(40); doc.setLineWidth(0.35);
+  for (let i = 0; i < g.contorno.length; i++) { const a = P(...g.contorno[i]), c2 = P(...g.contorno[(i + 1) % g.contorno.length]); doc.line(a[0], a[1], c2[0], c2[1]); }
+  doc.setDrawColor(90); doc.setLineWidth(0.25); doc.setLineDashPattern([1.2, 0.8], 0);
+  g.est.forEach(s => { const p = P(...s); doc.circle(p[0], p[1], e.phiE / 2 * k); });
+  doc.setLineDashPattern([], 0);
+  doc.setFillColor(30); const pp = P(-e.ap / 2, e.bp / 2); doc.rect(pp[0], pp[1], e.ap * k, e.bp * k, 'F');
+  doc.setDrawColor(196, 22, 28); doc.setLineWidth(0.8);
+  if (r.n === 2) { const a = P(...g.est[0]), c2 = P(...g.est[1]); doc.line(a[0], a[1], c2[0], c2[1]); }
+  if (r.n >= 3) for (let i = 0; i < g.est.length; i++) { const a = P(...g.est[i]), c2 = P(...g.est[(i + 1) % g.est.length]); doc.line(a[0], a[1], c2[0], c2[1]); }
+  y += g.B * k + 8;
+  doc.setFont('courier', 'normal'); doc.setFontSize(7.6); doc.setTextColor(20);
+  [`Bloco ${g.A} x ${g.B} x ${r.res.h} cm · ${r.n} estaca(s) φ${e.phiE}${r.n > 1 ? ' · e = ' + r.esp + ' cm' : ''}`,
+   `Tirantes: ${r.quant.nFaixas} x ${b.n} Ø${bit(b.phi)} C=${nf(r.quant.compTir, 0)} cm (com ganchos) · ${nf(r.quant.pesoTir, 1)} kg`,
+   `Concreto ${nf(r.quant.vol, 3)} m³ · Lastro ${nf(r.quant.magro, 3)} m³`].forEach(t => { doc.text(asciiPdf(t), 14, y); y += 4; });
+  pdfRodape(doc, 'Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos pelo responsável técnico. Bloco rígido, carga centrada; capacidade das estacas conforme projeto geotécnico (NBR 6122).');
+  return doc.output('arraybuffer');
+}
+function gerarDxf() {
+  const r = window.__r, e = r.entrada, g = r.geo; const d = novoDxf({ BLOCO: 7, ESTACA: 8, PILAR: 8, TIRANTE: 1, TEXTO: 3 });
+  for (let i = 0; i < g.contorno.length; i++) { const a = g.contorno[i], b = g.contorno[(i + 1) % g.contorno.length]; d.linha(a[0], a[1], b[0], b[1], 'BLOCO'); }
+  g.est.forEach(s => d.circulo(s[0], s[1], e.phiE / 2, 'ESTACA'));
+  d.retangulo(-e.ap / 2, -e.bp / 2, e.ap, e.bp, 'PILAR');
+  if (r.n === 2) d.linha(g.est[0][0], g.est[0][1], g.est[1][0], g.est[1][1], 'TIRANTE');
+  if (r.n >= 3) for (let i = 0; i < g.est.length; i++) { const a = g.est[i], b = g.est[(i + 1) % g.est.length]; d.linha(a[0], a[1], b[0], b[1], 'TIRANTE'); }
+  d.texto(-g.A / 2, g.B / 2 + 15, 5, `BLOCO ${g.A}x${g.B} h=${r.res.h} - ${r.n} estaca(s) φ${e.phiE} - C${e.fck} / CA-50 - cotas em cm`);
+  d.texto(-g.A / 2, -g.B / 2 - 15, 4, `Tirantes ${r.barras.n} Ø${bit(r.barras.phi)} por faixa`);
+  return d.fim();
+}
+$('btnPdf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar a memória de cálculo em PDF'))) return; FC.registrarExport('bloco', 'pdf'); msg('Gerando PDF…'); const b = gerarPdf(); if (b) await salvar(`memoria-bloco-${window.__r.n}-estacas.pdf`, b); });
+$('btnDxf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar o desenho em DXF'))) return; FC.registrarExport('bloco', 'dxf');
+  if (!window.JSZip) { msg('Compactador não carregou. Recarregue a página.'); return; }
+  const nome = `bloco-${window.__r.n}-estacas`, z = new JSZip(); z.file(nome + '.dxf', gerarDxf()); await salvar(nome + '-dxf.zip', await z.generateAsync({ type: 'blob' })); });
+ligarProjetos('bloco', () => `Bloco ${$('ap').value}×${$('bp').value} · Nk ${$('Nk').value} kN`);
+$('f').addEventListener('input', agendar); $('f').addEventListener('change', agendar); $('f').addEventListener('submit', ev => ev.preventDefault());
+render();
+</script>
+</body>
+</html>

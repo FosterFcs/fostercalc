@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="description" content="Dimensionamento de laje treliçada (vigota + lajota cerâmica ou EPS) pela NBR 6118, com escolha automática da altura. Foster Calc.">
+<title>Laje treliçada · Foster Calc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: prancheta técnica — entrada à esquerda, folha de resultados à direita */
+:root{
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --beam:#b8babd; --steel:#c4161c; --steel2:#3a3d42;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#a3121a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:20px}
+header.top h1{font:700 2rem/1 var(--f-display);letter-spacing:.01em;margin:0}
+header.top h1 span{color:var(--accent)}
+header.top p{margin:0;color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+aside.inputs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside.inputs{position:static}}
+fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+legend{font:600 .78rem/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 0 8px;grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+label.full{grid-column:1/-1}
+input,select{font:500 .95rem var(--f-mono);color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.unit{position:relative}.unit input{padding-right:52px}
+.unit i{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:400 .75rem var(--f-mono);color:var(--muted);font-style:normal;pointer-events:none}
+.bordas{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;gap:6px;align-items:center;justify-items:center}
+.bordas select{padding:5px 4px;font-size:.8rem;width:100%;max-width:110px}
+.bordas .b-sup{grid-column:2;grid-row:1}.bordas .b-esq{grid-column:1;grid-row:2;justify-self:end}
+.bordas .b-dir{grid-column:3;grid-row:2;justify-self:start}.bordas .b-inf{grid-column:2;grid-row:3}
+.croqui{grid-column:2;grid-row:2;width:100%;max-width:120px}
+.croqui svg{width:100%;height:auto;display:block}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+h2{font:600 1.35rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 12px}
+.status{padding:12px 16px;border-radius:6px;font-weight:500}
+.status.ok{background:var(--ok-soft);color:var(--ok)}.status.warn{background:var(--warn-soft);color:var(--warn)}.status.bad{background:var(--bad-soft);color:var(--bad)}
+.status b{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.msgs{margin:8px 0 0;padding-left:18px;font-size:.88rem;color:var(--ink);font-weight:400}
+.pill{display:inline-block;font:600 .66rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.duo{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+@media (max-width:700px){.duo{grid-template-columns:minmax(0,1fr)}}
+.planta svg{width:100%;height:auto;display:block}
+svg .conc{fill:var(--concrete);stroke:none}
+svg .viga{fill:var(--beam);stroke:var(--ink);stroke-width:.8}
+svg .eng{stroke:var(--ink);stroke-width:3;fill:none}
+svg .hatch{stroke:var(--muted);stroke-width:.8}
+svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .dist{stroke:var(--steel2);stroke-width:1.2;fill:none;stroke-dasharray:6 4}
+svg .dim{stroke:var(--muted);stroke-width:.8;fill:none}
+svg text{fill:var(--ink);font-family:var(--f-mono)}
+svg text.mut{fill:var(--muted)}
+.reac{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.reac div{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.reac dt{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.reac dd{margin:2px 0 0;font:600 1.3rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.reac dd small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:3px}
+details.memo{border-top:1px solid var(--line)}
+details.memo:last-of-type{border-bottom:1px solid var(--line)}
+details.memo summary{cursor:pointer;padding:10px 2px;font:600 1.05rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.memo summary::-webkit-details-marker{display:none}
+details.memo summary::after{content:"+";font-family:var(--f-mono);color:var(--muted)}
+details.memo[open] summary::after{content:"–"}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+th.v{text-align:right}
+td.f{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);min-width:170px}
+td.v{font-family:var(--f-mono);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+td.v.alerta{color:var(--bad);font-weight:600}
+td.r{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.memo .tbl{padding-bottom:12px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.pri{font:600 .9rem var(--f-body);border-radius:4px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--sheet)}
+button.pri.ghost{background:transparent;color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted)}
+.disclaimer{font-size:.8rem;color:var(--muted);border-left:3px solid var(--line);padding:4px 0 4px 12px;max-width:72ch}
+ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
+
+.secao svg,.desenhos svg{width:100%;height:auto;display:block;max-width:420px}
+#corte svg{width:100%;height:auto;display:block}
+.desenhos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:700px){.desenhos{grid-template-columns:minmax(0,1fr)}}
+.cap{font:500 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.reac dd{font-size:1.2rem}
+.reac4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:800px){.reac4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body data-pagina="trelicada">
+<div class="wrap">
+<div id="fc-bar"></div>
+<header class="top">
+  <h1>Laje treliçada <span>· NBR 6118</span></h1>
+  <p>Vigota treliçada com lajota cerâmica ou EPS, unidirecional · NBR 6118:2023</p>
+</header>
+
+<div class="grid">
+<aside class="inputs" aria-label="Dados de entrada">
+  <form id="f" class="sheet" style="display:flex;flex-direction:column;gap:18px" autocomplete="off">
+    <fieldset>
+      <legend>Geometria</legend>
+      <label>Vão das vigotas L<span class="unit"><input id="L" type="number" step="0.05" min="1" value="4.00"><i>m</i></span></label>
+      <label>Largura B<span class="unit"><input id="B" type="number" step="0.05" min="0.5" value="3.50"><i>m</i></span></label>
+      <label class="full">Largura das vigas de apoio<span class="unit"><input id="apoio" type="number" step="1" min="10" value="15"><i>cm</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">L entre eixos das vigas onde as vigotas apoiam, em geral o menor vão. B é a medida perpendicular, para os quantitativos.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Sistema</legend>
+      <label class="full">Enchimento<select id="ench"><option value="ceramica" selected>Lajota cerâmica · intereixo 42 cm</option><option value="eps">EPS (isopor) · intereixo 50 cm</option></select></label>
+      <label class="full">Altura da laje<select id="altura"><option value="auto" selected>Automática (menor que atende)</option><option value="LT12">LT12 · H8 + 4 · TR8</option><option value="LT16">LT16 · H12 + 4 · TR12</option><option value="LT20">LT20 · H16 + 4 · TR16</option><option value="LT25">LT25 · H20 + 5 · TR20</option><option value="LT30">LT30 · H25 + 5 · TR25</option></select></label>
+    </fieldset>
+    <fieldset>
+      <legend>Cargas (além do peso próprio)</legend>
+      <label>Permanente g<span class="unit"><input id="g" type="number" step="0.1" min="0" value="1.0"><i>kN/m²</i></span></label>
+      <label>Acidental q<span class="unit"><input id="q" type="number" step="0.1" min="0" value="1.5"><i>kN/m²</i></span></label>
+      <label class="full">Uso<select id="psi2"><option value="0.3">Residencial (q = 1,5 kN/m² típico)</option><option value="0.4">Comercial / escritórios</option><option value="0.6">Garagem / biblioteca</option></select></label>
+      <p class="note" style="grid-column:1/-1;margin:0">g: contrapiso, revestimento, forro e paredes leves distribuídas. Paredes pesadas sobre a laje pedem verificação à parte.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Materiais</legend>
+      <label>Concreto da capa<select id="fck"><option>20</option><option selected>25</option><option>30</option></select></label>
+      <label>Agressividade<select id="caa"><option value="I">CAA I · c=2,0</option><option value="II" selected>CAA II · c=2,5</option><option value="III">CAA III · c=3,5</option></select></label>
+    </fieldset>
+    <p class="note" style="margin:0">Treliça em CA-60 e barras adicionais em CA-50. Pesos de enchimento são típicos: confira com o fabricante.</p>
+  </form>
+</aside>
+
+<main>
+  <section id="status" class="status ok" aria-live="polite"></section>
+
+  <section class="sheet">
+    <h2>Resultado</h2>
+    <dl class="reac reac4" id="keys"></dl>
+    <h2 style="margin-top:22px">Corte da laje</h2>
+    <div id="corte" style="max-width:820px"></div>
+    <p class="note" id="legenda" style="margin:6px 0 0"></p>
+  </section>
+
+  <section class="sheet">
+    <h2>Comparativo de alturas</h2>
+    <div class="tbl"><table id="comparativo"></table></div>
+    <p class="note" style="margin:8px 0 0">Mesmo vão e cargas. A coluna "Situação" indica o que impede cada altura, quando for o caso.</p>
+  </section>
+
+  <section class="sheet">
+    <h2>Reações nas vigas de apoio</h2>
+    <dl class="reac" id="reacoes"></dl>
+    <p class="note" style="margin:8px 0 0">Valores característicos por metro, em cada uma das duas vigas onde as vigotas apoiam. As vigas paralelas às vigotas recebem apenas uma pequena faixa: considere a carga da parede ou de meia nervura.</p>
+  </section>
+
+  <section class="sheet">
+    <h2>Memória de cálculo</h2>
+    <div id="memoria"></div>
+    <p class="note" style="margin:12px 0 4px"><b>Hipóteses e limites deste módulo:</b></p>
+    <ul class="todo note">
+      <li>Laje unidirecional biapoiada; cada nervura dimensionada como viga T (mesa = capa), sem armadura negativa de continuidade</li>
+      <li>Intereixo ≤ 65 cm: cisalhamento verificado como laje e mesa sem verificação à flexão (13.2.4.2)</li>
+      <li>Escoramento, contraflecha e nervuras de travamento conforme as recomendações do fabricante das vigotas</li>
+    </ul>
+  </section>
+
+  <section class="sheet">
+    <h2>Quantitativos</h2>
+    <div class="tbl"><table id="quant"></table></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Projeto e exportação</h2>
+    <div class="actions">
+      <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
+      <button type="button" class="pri ghost" id="btnAbrir">Meus projetos</button>
+      <button type="button" class="pri" id="btnPdf">Baixar memória (PDF)</button>
+      <button type="button" class="pri ghost" id="btnDxf">Baixar desenho (DXF em .zip)</button>
+      <span class="note" id="expMsg" role="status"></span>
+    </div>
+    <p class="note" style="margin:10px 0 0">O cálculo é livre. Memória em PDF e desenho em DXF fazem parte do plano Pro.</p>
+  </section>
+
+  <p class="disclaimer">Ferramenta de apoio ao dimensionamento. Os resultados devem ser conferidos por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT. Coeficientes: γc = 1,4; γs = 1,15; γf = 1,4. Vigotas conforme ABNT NBR 14859.</p>
+</main>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// Motor de cálculo — Laje treliçada unidirecional (vigota treliçada + enchimento), NBR 6118:2023
+// Cada nervura é dimensionada como viga T biapoiada (mesa = capa, alma = nervura).
+// Intereixo ≤ 65 cm: cisalhamento verificado como laje (13.2.4.2). Unidades internas: cm, kN.
+
+const T_ES = 21000;
+// alturas comerciais: enchimento H + capa, treliça e banzos (mm). Aço da treliça CA-60.
+const T_ALTURAS = [
+  { id: 'LT12', H: 8, capa: 4, tr: 'TR 08644', sup: 6.0, inf: 4.2 },
+  { id: 'LT16', H: 12, capa: 4, tr: 'TR 12645', sup: 6.0, inf: 5.0 },
+  { id: 'LT20', H: 16, capa: 4, tr: 'TR 16745', sup: 7.0, inf: 5.0 },
+  { id: 'LT25', H: 20, capa: 5, tr: 'TR 20745', sup: 7.0, inf: 5.0 },
+  { id: 'LT30', H: 25, capa: 5, tr: 'TR 25856', sup: 8.0, inf: 6.0 },
+];
+// enchimentos: intereixo (cm), largura da nervura de cálculo (cm), comprimento da peça (cm), peso típico (kN/m² por cm de altura)
+const T_ENCH = {
+  ceramica: { nome: 'Lajota cerâmica', i: 42, bw: 9, comp: 20, pesoPorCm: 0.075 },
+  eps: { nome: 'EPS (isopor)', i: 50, bw: 10, comp: 100, pesoPorCm: 0.002 },
+};
+const T_COB = { I: 2.0, II: 2.5, III: 3.5, IV: 4.5 };
+const T_RHO = { 20: 0.150, 25: 0.150, 30: 0.150, 35: 0.164, 40: 0.179 };
+const T_ADIC = [6.3, 8, 10, 12.5, 16];
+const tA = phi => Math.PI * (phi / 10) ** 2 / 4;
+
+function secaoT(bf, bw, hf, h) {
+  const A = bf * hf + bw * (h - hf);
+  const yb = (bf * hf * (h - hf / 2) + bw * (h - hf) * (h - hf) / 2) / A;   // CG a partir da base
+  const I = bf * hf ** 3 / 12 + bf * hf * (h - hf / 2 - yb) ** 2 + bw * (h - hf) ** 3 / 12 + bw * (h - hf) * ((h - hf) / 2 - yb) ** 2;
+  return { A, yb, yt: h - yb, I };
+}
+function estadioII(bf, bw, hf, d, As, ae) {
+  // linha neutra fissurada da seção T (compressão no topo)
+  let x = (-ae * As + Math.sqrt((ae * As) ** 2 + 2 * bf * ae * As * d)) / bf;
+  if (x > hf) {
+    const a = bw / 2, b = (bf - bw) * hf + ae * As, c = -((bf - bw) * hf * hf / 2 + ae * As * d);
+    x = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
+    const I = bw * x ** 3 / 3 + (bf - bw) * hf ** 3 / 12 + (bf - bw) * hf * (x - hf / 2) ** 2 + ae * As * (d - x) ** 2;
+    return { x, I };
+  }
+  return { x, I: bf * x ** 3 / 3 + ae * As * (d - x) ** 2 };
+}
+
+function avaliarAltura(alt, e, ctx) {
+  const { fcd, fyd, fctm, fctd, Ecs, ench, c } = ctx;
+  const h = alt.H + alt.capa, hf = alt.capa, i = ench.i, bw = ench.bw;
+  const L = e.L * 100;
+  const bf = Math.min(i, bw + 0.2 * L);                   // 14.6.2.2 (b1 ≤ 0,1a, a = L)
+  // cargas (kN/m²)
+  const bwVol = (12 + bw) / 2;
+  const tConc = hf + bwVol * alt.H / i;                     // espessura equivalente de concreto (cm)
+  const ppConc = 25 * tConc / 100, ppEnch = ench.pesoPorCm * alt.H * (i - 12) / i;
+  const pp = ppConc + ppEnch;
+  const gk = pp + e.g, qk = e.q, pk = gk + qk;
+  const pd = 1.4 * pk * i / 100;                            // kN/m por nervura
+  const Md = pd * (L / 100) ** 2 / 8 * 100;                 // kN·cm
+  const Vd = pd * (L / 100) / 2;                            // kN
+  // flexão: armadura da treliça (CA-60) + adicional (CA-50)
+  const AsTr = 2 * tA(alt.inf);
+  const fydTr = 60 / 1.15;
+  const rmin = (T_RHO[e.fck] ?? 0.15) / 100;
+  const sec = secaoT(bf, bw, hf, h);
+  const AsMin = rmin * sec.A;
+  let melhor = null;
+  for (const n of [0, 1, 2]) {
+    for (const phi of (n === 0 ? [0] : T_ADIC)) {
+      const AsAd = n * tA(phi);
+      const phiMax = Math.max(alt.inf, phi);
+      const d = h - c - phiMax / 20;
+      // força resistente do aço e linha neutra
+      const Fs = AsTr * fydTr + AsAd * fyd;
+      let x = Fs / (0.85 * fcd * bf * 0.8);
+      let MRd;
+      if (0.8 * x <= hf) MRd = Fs * (d - 0.4 * x);
+      else {
+        const Ff = 0.85 * fcd * (bf - bw) * hf;
+        x = (Fs - Ff) / (0.85 * fcd * bw * 0.8);
+        MRd = Ff * (d - hf / 2) + (Fs - Ff) * (d - 0.4 * x);
+      }
+      const AsEq = AsTr * 60 / 50 + AsAd;                   // área equivalente em CA-50
+      const ok = MRd >= Md && x / d <= 0.45 && AsEq >= AsMin;
+      if (ok) { melhor = { n, phi, AsAd, AsTr, AsEq, d, x, xd: x / d, MRd }; break; }
+    }
+    if (melhor) break;
+  }
+  const res = { alt, h, hf, i, bw, bf, L, tConc, ppConc, ppEnch, pp, gk, qk, pk, pd, Md, Vd, sec, AsMin, flex: melhor, ok: !!melhor, motivos: [] };
+  if (!melhor) { res.motivos.push('flexão'); return res; }
+  // cisalhamento como laje (19.4.1), por nervura
+  const dm = melhor.d / 100, kk = Math.max(1, 1.6 - dm), rho1 = Math.min(melhor.AsEq / (bw * melhor.d), 0.02);
+  const VRd1 = 0.25 * fctd * kk * (1.2 + 40 * rho1) * bw * melhor.d;
+  res.cis = { VRd1, k: kk, rho1, ok: Vd <= VRd1 };
+  if (!res.cis.ok) res.motivos.push('cisalhamento');
+  // flecha (Branson, seção T; α = 1,2 para seção T, 17.3.1)
+  const pqp = (gk + e.psi2 * qk) * i / 100;                 // kN/m por nervura
+  const Ma = pqp * (L / 100) ** 2 / 8 * 100;
+  const Mr = 1.2 * fctm * sec.I / sec.yb;
+  const ae = T_ES / Ecs;
+  const II = estadioII(bf, bw, hf, melhor.d, melhor.AsEq, ae);
+  const Ieq = Ma <= Mr ? sec.I : Math.min(sec.I, (Mr / Ma) ** 3 * sec.I + (1 - (Mr / Ma) ** 3) * II.I);
+  const a0 = 5 * (pqp / 100) * L ** 4 / (384 * Ecs * Ieq);
+  const alfaF = 2 - 0.68 * 0.996;
+  const aTot = a0 * (1 + alfaF), aLim = L / 250, cfMax = L / 350;
+  let contraflecha = 0;
+  if (aTot > aLim) contraflecha = Math.ceil((aTot - aLim) * 10 - 1e-9) / 10;   // arredonda para cima, em mm
+  const flechaOk = aTot <= aLim || contraflecha <= cfMax;
+  res.flecha = { pqp, Ma, Mr, xII: II.x, III: II.I, Ieq, a0, alfaF, aTot, aLim, contraflecha, cfMax, ok: flechaOk };
+  if (!flechaOk) res.motivos.push('flecha');
+  res.ok = res.motivos.length === 0;
+  return res;
+}
+
+function calcularTrelicada(e0) {
+  const e = { ...e0 };
+  const erros = [], avisos = [];
+  const ench = T_ENCH[e.ench] || T_ENCH.ceramica;
+  const c = T_COB[e.caa] ?? 2.5; e.c = c;
+  const fcd = e.fck / 14, fyd = 50 / 1.15, fctm = 0.03 * e.fck ** (2 / 3), fctd = 0.7 * fctm / 1.4;
+  const Ecs = Math.min(1, 0.8 + 0.2 * e.fck / 80) * 560 * Math.sqrt(e.fck);
+  const ctx = { fcd, fyd, fctm, fctd, Ecs, ench, c };
+  const todas = T_ALTURAS.map(a => avaliarAltura(a, e, ctx));
+  let r;
+  if (e.altura && e.altura !== 'auto') r = todas.find(t => t.alt.id === e.altura);
+  else r = todas.find(t => t.ok) || todas[todas.length - 1];
+  if (!r.ok) {
+    if (r.motivos.includes('flexão')) erros.push(`${r.alt.id}: a nervura não resiste à flexão com até 2 barras adicionais. Escolha uma altura maior ou reduza o vão.`);
+    if (r.motivos.includes('cisalhamento')) erros.push(`${r.alt.id}: cortante acima do resistido pela nervura (VRd1). Faça faixa maciça junto aos apoios ou aumente a altura.`);
+    if (r.motivos.includes('flecha')) erros.push(`${r.alt.id}: flecha acima do limite mesmo com contraflecha de L/350. Use uma altura maior.`);
+  }
+  if (e.L > 8) avisos.push('Vão acima de 8 m é incomum para laje treliçada unidirecional: confirme com o fabricante.');
+  if (r.flecha && r.flecha.contraflecha > 0 && r.flecha.ok) avisos.push(`Prever contraflecha de ${String(r.flecha.contraflecha).replace('.', ',')} cm no meio do vão, no escoramento (13.3).`);
+  const travamento = e.L > 4 ? Math.ceil(e.L / 2 - 1e-9) - 1 : 0;
+  if (travamento > 0) avisos.push(`Vão maior que 4 m: prever ${travamento} nervura(s) de travamento transversal (prática usual de fabricantes, espaçamento ≤ 2 m).`);
+  if (e.q > 5) avisos.push('Carga acidental alta para laje treliçada: confira a viabilidade com o fabricante.');
+
+  // capa: armadura de distribuição (adotado: ≥ 0,9 cm²/m e ≥ 1/5 da principal por metro)
+  let capa = null, quant = null, reacao = null;
+  if (r.flex) {
+    const AsPrincM = r.flex.AsEq * 100 / r.i;
+    const AsCapa = Math.max(0.9, 0.2 * AsPrincM);
+    const sCapa = Math.min(33, Math.floor(tA(5) / AsCapa * 100));
+    capa = { AsPrincM, AsCapa, phi: 5, s: Math.min(20, sCapa) };
+    const B = e.B * 100, L = r.L, apoio = e.apoio;
+    const nVig = Math.max(1, Math.round(B / r.i));
+    const compVig = L + apoio;                                     // apoia meia largura de cada lado
+    const linhas = Math.max(0, nVig - 1) + 1;
+    const pecas = linhas * Math.ceil(L / ench.comp);
+    const area = (B / 100) * (L / 100);
+    const volMoldado = area * (r.tConc / 100) - nVig * (compVig / 100) * 0.12 * 0.03; // desconta a base pré-moldada das vigotas
+    const pesoAdic = r.flex.n * tA(r.flex.phi || 0) * 0.785 * (compVig - 2 * c) / 100 * nVig;
+    const pesoCapa = 2 * area * (100 / capa.s) * tA(5) * 0.785;    // malha nas duas direções
+    quant = { nVig, compVig, linhas, pecas, area, volMoldado, pesoAdic, pesoCapa };
+    reacao = { gk: r.gk * e.L / 2, qk: r.qk * e.L / 2 };          // kN/m nas vigas de apoio
+  }
+  return { ok: erros.length === 0, erros, avisos, entrada: e, ench, mat: ctx, todas, r, capa, quant, reacao, travamento };
+}
+
+
+</script>
+<script>
+// ---------- utilidades comuns às páginas de módulo ----------
+const $ = id => document.getElementById(id);
+const nf = (v, d = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const bit = p => nf(p, 1);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const asciiPdf = t => String(t).replace(/ρmín/g, 'rho_min').replace(/ρ/g, 'rho').replace(/αb/g, 'alfa_b').replace(/α/g, 'alfa').replace(/λ1/g, 'lambda1').replace(/λ/g, 'lambda')
+  .replace(/ν/g, 'nu').replace(/γn/g, 'gama_n').replace(/γ/g, 'gama').replace(/σ/g, 'sig').replace(/τ/g, 'tau').replace(/φ/g, 'Ø')
+  .replace(/≤/g, '<=').replace(/≥/g, '>=').replace(/[−–—]/g, '-').replace(/→/g, '->').replace(/√/g, 'raiz').replace(/′/g, "'").replace(/²/g, '2').replace(/³/g, '3').replace(/₁/g, '1').replace(/₀/g, '0');
+function msg(t) { $('expMsg').textContent = t; }
+async function salvar(filename, data) { FC.baixar(filename, data); msg('Arquivo baixado.'); }
+function renderMemoria(secoes, alvoId, abrirPadrao) {
+  const abertos = new Set([...document.querySelectorAll(`#${alvoId} details.memo[open]`)].map(d => d.dataset.k));
+  if (!document.querySelector(`#${alvoId} details.memo`)) abertos.add(abrirPadrao);
+  $(alvoId).innerHTML = secoes.map(sec => `<details class="memo" data-k="${esc(sec.t)}" ${abertos.has(sec.t) ? 'open' : ''}><summary>${esc(sec.t)}</summary>
+    <div class="tbl"><table><thead><tr><th>Item</th><th>Expressão</th>${sec.cols.map(c => `<th class="v">${esc(c)}</th>`).join('')}<th>Ref.</th></tr></thead><tbody>
+    ${sec.l.map(l => `<tr><td>${l[0]}</td><td class="f">${l[1]}</td>${l[2].map(v => typeof v === 'object' ? `<td class="v${v.alerta ? ' alerta' : ''}">${v.v}</td>` : `<td class="v">${v}</td>`).join('')}<td class="r">${l[3]}</td></tr>`).join('')}
+    </tbody></table></div></details>`).join('');
+}
+// memória no PDF (retrato A4); devolve a posição y final
+function pdfMemoria(doc, secoes, titulo, subtitulo, r) {
+  const W = 210, HP = 297, M = 14; let y = FC.PDF.topo;
+  const novaPag = n => { if (y + n > HP - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } };
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(20); doc.text(asciiPdf(titulo), M, y + 4); y += 9;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90); doc.text(asciiPdf(subtitulo), M, y); y += 3;
+  doc.setDrawColor(20); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 6;
+  doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(r.erros.length ? 'VERIFICAR / REVISAR' : r.avisos.length ? 'ATENÇÃO' : 'VERIFICAÇÕES ATENDIDAS', M, y); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  [...r.erros, ...r.avisos].forEach(m => { const ls = doc.splitTextToSize('• ' + asciiPdf(m), W - 2 * M); novaPag(ls.length * 4); doc.text(ls, M, y); y += ls.length * 4; });
+  y += 2;
+  for (const sec of secoes) {
+    const nC = sec.cols.length, xExpr = M + 42, xVal0 = M + 42 + 56, xRef = W - M, larg = (xRef - 16 - xVal0) / nC;
+    novaPag(16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text(asciiPdf(sec.t).toUpperCase(), M, y);
+    doc.setFontSize(6.6); doc.setTextColor(110); sec.cols.forEach((c, i) => doc.text(asciiPdf(c), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }));
+    y += 1.6; doc.setLineWidth(0.2); doc.setDrawColor(150); doc.line(M, y, W - M, y); y += 3.6;
+    for (const l of sec.l) {
+      const ex = doc.splitTextToSize(asciiPdf(l[1]), 54); const hh = Math.max(1, ex.length) * 3.3 + 0.6; novaPag(hh);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(20); doc.text(doc.splitTextToSize(asciiPdf(l[0]), 40)[0], M, y);
+      doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(90); doc.text(ex, xExpr, y);
+      l[2].forEach((v, i) => { const o = typeof v === 'object' ? v : { v }; doc.setFont('courier', 'bold'); doc.setFontSize(nC > 3 ? 6.8 : 7.6); o.alerta ? doc.setTextColor(163, 18, 26) : doc.setTextColor(20); doc.text(asciiPdf(o.v), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }); });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.6); doc.setTextColor(110); doc.text(asciiPdf(l[3]), xRef, y, { align: 'right' });
+      y += hh;
+    }
+    y += 3;
+  }
+  return { y, novaPag };
+}
+function pdfRodape(doc, texto) { FC.finalizarPdf(doc, texto); }
+// DXF mínimo com camadas
+function novoDxf(camadas) {
+  const L = []; const p = (...a) => L.push(...a.map(String)); const f = v => (+v).toFixed(3);
+  p(0, 'SECTION', 2, 'TABLES', 0, 'TABLE', 2, 'LAYER', 70, Object.keys(camadas).length);
+  for (const [n, c] of Object.entries(camadas)) p(0, 'LAYER', 2, n, 70, 0, 62, c, 6, 'CONTINUOUS');
+  p(0, 'ENDTAB', 0, 'ENDSEC', 0, 'SECTION', 2, 'ENTITIES');
+  const txt = t => asciiPdf(t).replace(/Ø/g, '%%c').replace(/·/g, '-').replace(/[^\x20-\x7E]/g, ch => ({ 'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'é': 'e', 'ê': 'e', 'í': 'i', 'ó': 'o', 'õ': 'o', 'ô': 'o', 'ú': 'u', 'ç': 'c', '×': 'x' }[ch] || ''));
+  return {
+    linha: (x1, y1, x2, y2, l) => p(0, 'LINE', 8, l, 10, f(x1), 20, f(y1), 30, 0, 11, f(x2), 21, f(y2), 31, 0),
+    retangulo(x, y, w, h, l) { this.linha(x, y, x + w, y, l); this.linha(x + w, y, x + w, y + h, l); this.linha(x + w, y + h, x, y + h, l); this.linha(x, y + h, x, y, l); },
+    circulo: (x, y, r, l) => p(0, 'CIRCLE', 8, l, 10, f(x), 20, f(y), 30, 0, 40, f(r)),
+    texto: (x, y, alt, t, centro) => p(0, 'TEXT', 8, 'TEXTO', 10, f(x), 20, f(y), 30, 0, 40, f(alt), 1, txt(t), ...(centro ? [72, 1, 11, f(x), 21, f(y), 31, 0] : [])),
+    fim: () => { p(0, 'ENDSEC', 0, 'EOF'); return L.join('\r\n'); },
+  };
+}
+// projetos salvos (comum)
+function ligarProjetos(modulo, nomeSugerido) {
+  let projetoId = null;
+  $('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
+  $('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
+  (async () => {
+    const id = new URLSearchParams(location.search).get('p'); if (!id) return;
+    await new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
+    const p = FC.sessao && await FC.lerProjeto(id);
+    if (p && p.modulo === modulo) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+  })();
+}
+let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requestAnimationFrame(render); };
+
+const CAMPOS = ['L', 'B', 'apoio', 'ench', 'altura', 'g', 'q', 'psi2', 'fck', 'caa'];
+function lerEntrada() { const e = {}; for (const k of CAMPOS) { const v = $(k).value; e[k] = ['ench', 'altura', 'caa'].includes(k) ? v : +v; } return e; }
+function aplicarEntrada(e) { for (const k of CAMPOS) if (e[k] != null) $(k).value = String(e[k]); render(); }
+const adicTxt = f => f.n ? `${f.n} Ø${bit(f.phi)}` : 'sem adicional';
+
+function memoria(R) {
+  const e = R.entrada, r = R.r, f = r.flex, fl = r.flecha;
+  const out = [{ t: 'Sistema e cargas', cols: ['Valor'], l: [
+    ['Laje', `${r.alt.id} · enchimento H${r.alt.H} + capa ${r.alt.capa}`, [`h = ${r.h} cm`], ''],
+    ['Vigota', 'treliça (CA-60) · banzo sup. / inf.', [`${r.alt.tr} · Ø${bit(r.alt.sup)} / 2 Ø${bit(r.alt.inf)}`], 'NBR 14859'],
+    ['Enchimento', '', [`${R.ench.nome}`], ''],
+    ['Intereixo', 'i', [`${r.i} cm`], '13.2.4.2'],
+    ['Nervura (cálculo)', 'bw', [`${r.bw} cm`], ''],
+    ['Mesa colaborante', 'bf = mín(i ; bw + 0,2·L)', [`${nf(r.bf, 1)} cm`], '14.6.2.2'],
+    ['Peso próprio', `concreto (${nf(r.tConc, 1)} cm equiv.) + enchimento`, [`${nf(r.pp)} kN/m²`], ''],
+    ['Permanente total', 'gk = pp + g', [`${nf(r.gk)} kN/m²`], ''],
+    ['Acidental', 'qk', [`${nf(r.qk)} kN/m²`], 'NBR 6120'],
+    ['Carga de cálculo por nervura', 'pd = 1,4 · (gk + qk) · i', [`${nf(r.pd, 3)} kN/m`], ''],
+  ]}];
+  if (f) out.push({ t: 'Flexão da nervura (seção T)', cols: ['Valor'], l: [
+    ['Momento de cálculo', 'Md = pd · L² / 8', [`${nf(r.Md / 100)} kN·m`], ''],
+    ['Altura útil', 'd = h − c − φ/2', [`${nf(f.d)} cm`], ''],
+    ['Armadura da treliça', '2 Ø banzo inferior (CA-60)', [`${nf(f.AsTr, 3)} cm²`], ''],
+    ['Armadura adicional', 'barras CA-50 na vigota', [`${adicTxt(f)} (${nf(f.AsAd, 2)} cm²)`], ''],
+    ['Linha neutra', 'x/d ≤ 0,45', [nf(f.xd, 3)], '14.6.4.3'],
+    ['Momento resistente', 'MRd ≥ Md', [`${nf(f.MRd / 100)} kN·m`], '17.2'],
+    ['Armadura mínima', 'ρmín · Ac (seção T)', [`${nf(r.AsMin, 3)} cm² ≤ ${nf(f.AsEq, 3)} cm² (equiv. CA-50)`], 'Tab. 17.3'],
+  ]});
+  if (r.cis) out.push({ t: 'Cisalhamento da nervura (como laje)', cols: ['Valor'], l: [
+    ['Cortante de cálculo', 'Vd = pd · L / 2', [`${nf(r.Vd)} kN`], ''],
+    ['Resistência sem estribos', 'VRd1 = τRd · k · (1,2 + 40ρ1) · bw · d', [{ v: `${nf(r.cis.VRd1)} kN`, alerta: !r.cis.ok }], '19.4.1'],
+  ]});
+  if (fl) out.push({ t: 'Flecha (ELS-DEF)', cols: ['Valor'], l: [
+    ['Carga quase permanente por nervura', '(gk + ψ2·qk) · i', [`${nf(fl.pqp, 3)} kN/m`], '11.8.3.2'],
+    ['Momento de fissuração', 'Mr = 1,2 · fctm · Ic / yb (seção T)', [`${nf(fl.Mr / 100)} kN·m`], '17.3.1'],
+    ['Momento atuante', 'Ma', [`${nf(fl.Ma / 100)} kN·m`], ''],
+    ['Inércia equivalente', 'Branson', [`${nf(fl.Ieq, 0)} cm⁴`], '17.3.2.1.1'],
+    ['Flecha total', 'a = a0 · (1 + αf)', [`${nf(fl.aTot)} cm`], '17.3.2.1.2'],
+    ['Limite', 'L / 250', [`${nf(fl.aLim)} cm`], 'Tab. 13.3'],
+    ['Contraflecha', 'necessária ≤ L/350', [{ v: fl.contraflecha ? `${nf(fl.contraflecha, 1)} cm (máx. ${nf(fl.cfMax, 2)})` : 'dispensada', alerta: !fl.ok }], '13.3'],
+  ]});
+  if (R.capa) out.push({ t: 'Capa e detalhes', cols: ['Valor'], l: [
+    ['Armadura de distribuição na capa', '≥ 0,9 cm²/m e ≥ 20% da principal (adotado)', [`Ø5,0 c/${R.capa.s} nas duas direções`], ''],
+    ['Nervuras de travamento', 'vão > 4 m: a cada ≤ 2 m (prática usual)', [R.travamento ? `${R.travamento} nervura(s)` : 'dispensadas'], ''],
+  ]});
+  return out;
+}
+
+function svgCorte(R) {
+  const r = R.r; const i = r.i, h = r.h, hf = r.alt.capa, H = r.alt.H, n = 3, W = n * i, k = 400 / W, pad = 16;
+  const X = x => pad + x * k, Y = y => pad + (h - y) * k;
+  let o = `<svg viewBox="0 0 ${(W * k + 2 * pad + 50).toFixed(0)} ${(h * k + 2 * pad + 16).toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Corte da laje treliçada">`;
+  o += `<rect class="conc" x="${X(0)}" y="${Y(h)}" width="${W * k}" height="${h * k}"/>`;
+  const encW = i - 12;
+  for (let j = 0; j < n; j++) {
+    const x0 = j * i + 6;
+    const cer = R.entrada.ench === 'ceramica';
+    o += `<rect x="${X(x0 + 0.5)}" y="${Y(H)}" width="${(encW - 1) * k}" height="${(H - 0.5) * k}" fill="${cer ? 'var(--beam)' : 'var(--sheet)'}" stroke="var(--muted)" stroke-width="1"/>`;
+    if (cer) for (let c = 1; c < 3; c++) o += `<line x1="${X(x0 + 0.5 + c * (encW - 1) / 3)}" y1="${Y(H)}" x2="${X(x0 + 0.5 + c * (encW - 1) / 3)}" y2="${Y(0.5)}" stroke="var(--muted)" stroke-width=".6"/>`;
+  }
+  for (let j = 0; j <= n; j++) {
+    const xc = j * i;
+    if (xc - 6 < 0 || xc + 6 > W) continue;
+    o += `<rect x="${X(xc - 6)}" y="${Y(3)}" width="${12 * k}" height="${3 * k}" fill="var(--concrete)" stroke="var(--ink)" stroke-width=".8"/>`;
+    o += `<polyline points="${X(xc - 3)},${Y(1.8)} ${X(xc)},${Y(h - hf - 0.5)} ${X(xc + 3)},${Y(1.8)}" fill="none" stroke="var(--muted)" stroke-width="1"/>`;
+    o += `<circle cx="${X(xc)}" cy="${Y(h - hf - 0.5)}" r="${Math.max(r.alt.sup / 20 * k, 1.6)}" fill="var(--steel2)"/>`;
+    for (const dx of [-3, 3]) o += `<circle cx="${X(xc + dx)}" cy="${Y(1.8)}" r="${Math.max(r.alt.inf / 20 * k, 1.4)}" fill="var(--steel)"/>`;
+    if (r.flex && r.flex.n) for (let b = 0; b < r.flex.n; b++) o += `<circle cx="${X(xc + (r.flex.n === 1 ? 0 : (b ? 1.5 : -1.5)))}" cy="${Y(1.8)}" r="${Math.max(r.flex.phi / 20 * k, 1.8)}" fill="var(--steel)" stroke="var(--sheet)" stroke-width=".6"/>`;
+  }
+  o += `<line x1="${X(0)}" y1="${Y(h - hf / 2)}" x2="${X(W)}" y2="${Y(h - hf / 2)}" stroke="var(--steel2)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  o += `<text x="${X(W) + 6}" y="${Y(h - hf / 2) + 4}" font-size="11" class="mut">capa ${hf}</text><text x="${X(W) + 6}" y="${Y(H / 2) + 4}" font-size="11" class="mut">H${H}</text>`;
+  o += `<text x="${X(i)}" y="${Y(0) + 13}" font-size="11" text-anchor="middle" class="mut">intereixo ${i}</text>`;
+  return o + '</svg>';
+}
+
+function render() {
+  const e = lerEntrada();
+  if (!(e.L > 0 && e.B > 0)) return;
+  const R = calcularTrelicada(e); window.__r = R; const r = R.r, f = r.flex;
+  const msgs = [...R.erros, ...R.avisos];
+  $('status').className = 'status ' + (R.erros.length ? 'bad' : R.avisos.length ? 'warn' : 'ok');
+  $('status').innerHTML = `<b>${R.erros.length ? 'Laje inadequada' : R.avisos.length ? 'Atenção' : 'Verificações atendidas'}</b>
+    ${msgs.length ? `<ul class="msgs">${msgs.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '<span style="margin-left:8px;color:var(--ink);font-weight:400">Flexão, cisalhamento e flecha dentro dos limites.</span>'}`;
+  $('keys').innerHTML = `
+    <div><dt>Laje</dt><dd>${r.alt.id}<small>H${r.alt.H} + ${r.alt.capa} · h = ${r.h} cm</small></dd></div>
+    <div><dt>Vigota</dt><dd>${r.alt.tr}<small>${f ? '+ ' + adicTxt(f) + ' por vigota' : '—'}</small></dd></div>
+    <div><dt>Contraflecha</dt><dd>${r.flecha ? (r.flecha.contraflecha ? nf(r.flecha.contraflecha, 1) + ' cm' : 'dispensada') : '—'}<small>flecha ${r.flecha ? nf(r.flecha.aTot) : '—'} · lim. ${r.flecha ? nf(r.flecha.aLim) : '—'} cm</small></dd></div>
+    <div><dt>Peso próprio</dt><dd>${nf(r.pp)} kN/m²<small>${R.ench.nome.toLowerCase()} · intereixo ${r.i} cm</small></dd></div>`;
+  $('corte').innerHTML = svgCorte(R);
+  $('legenda').textContent = `Vigota ${r.alt.tr}${f && f.n ? ' + ' + adicTxt(f) : ''} a cada ${r.i} cm · capa ${r.alt.capa} cm com Ø5,0 c/${R.capa ? R.capa.s : 20} · cotas em cm`;
+  const pill = (ok, t) => `<span class="pill ${ok ? 'ok' : 'bad'}">${t}</span>`;
+  $('comparativo').innerHTML = `<thead><tr><th>Altura</th><th class="v">h (cm)</th><th class="v">Peso próprio</th><th class="v">Armadura adicional</th><th class="v">Flecha / lim. (cm)</th><th class="v">Contraflecha</th><th>Situação</th></tr></thead><tbody>
+    ${R.todas.map(t => `<tr${t === r ? ' style="font-weight:600"' : ''}><td>${t.alt.id}</td><td class="v">${t.h}</td><td class="v">${nf(t.pp)} kN/m²</td><td class="v">${t.flex ? adicTxt(t.flex) : '—'}</td><td class="v">${t.flecha ? nf(t.flecha.aTot) + ' / ' + nf(t.flecha.aLim) : '—'}</td><td class="v">${t.flecha && t.flecha.contraflecha ? nf(t.flecha.contraflecha, 1) + ' cm' : '—'}</td><td>${t.ok ? pill(true, 'atende') : pill(false, t.motivos.join(', '))}</td></tr>`).join('')}</tbody>`;
+  $('reacoes').innerHTML = R.reacao ? `
+    <div><dt>Permanente g</dt><dd>${nf(R.reacao.gk)} kN/m<small>em cada viga de apoio</small></dd></div>
+    <div><dt>Acidental q</dt><dd>${nf(R.reacao.qk)} kN/m<small>em cada viga de apoio</small></dd></div>` : '';
+  renderMemoria(memoria(R), 'memoria', 'Flexão da nervura (seção T)');
+  const q = R.quant;
+  $('quant').innerHTML = q ? `<thead><tr><th>Item</th><th class="v">Quantidade</th><th>Observação</th></tr></thead><tbody>
+    <tr><td>Vigotas ${r.alt.tr}</td><td class="v">${q.nVig} × ${nf(q.compVig / 100)} m</td><td>${f && f.n ? 'com ' + adicTxt(f) + ' adicional cada' : 'sem armadura adicional'}</td></tr>
+    <tr><td>${R.ench.nome} H${r.alt.H}</td><td class="v">≈ ${q.pecas} peças</td><td>${q.linhas} fiadas · confirme a medida da peça com o fabricante</td></tr>
+    <tr><td>Concreto C${e.fck} moldado no local</td><td class="v">${nf(q.volMoldado, 2)} m³</td><td>capa + nervuras, sem perdas</td></tr>
+    <tr><td>Aço adicional CA-50</td><td class="v">${nf(q.pesoAdic, 1)} kg</td><td>barras das vigotas</td></tr>
+    <tr><td>Malha da capa Ø5,0 c/${R.capa.s}</td><td class="v">${nf(q.pesoCapa, 1)} kg</td><td>ou tela soldada equivalente · ${nf(q.area, 2)} m²</td></tr>
+    <tr><td>Área da laje</td><td class="v">${nf(q.area, 2)} m²</td><td>escoramento a cada 1,0 a 1,3 m (conforme fabricante)</td></tr></tbody>` : '';
+}
+
+function gerarPdf() {
+  const R = window.__r; if (!R || !window.jspdf) { msg('Gerador de PDF não carregou. Recarregue a página.'); return null; }
+  const e = R.entrada, r = R.r;
+  const doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+  let { y } = pdfMemoria(doc, memoria(R), 'Memória de cálculo · Laje treliçada',
+    `${r.alt.id} · L = ${nf(e.L)} m · B = ${nf(e.B)} m · ${R.ench.nome} · C${e.fck} · NBR 6118:2023`, R);
+  const novaPag = n => { if (y + n > 297 - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } };
+  novaPag(60 + R.todas.length * 4);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text('COMPARATIVO DE ALTURAS', 14, y); y += 5;
+  doc.setFont('courier', 'normal'); doc.setFontSize(7.4);
+  R.todas.forEach(t => { doc.text(asciiPdf(`${t.alt.id}  h=${String(t.h).padStart(2)} cm  pp=${nf(t.pp)} kN/m2  adicional: ${(t.flex ? adicTxt(t.flex) : '-').padEnd(13)}  flecha ${t.flecha ? nf(t.flecha.aTot) : '-'} cm  ${t.ok ? 'atende' : t.motivos.join(', ')}${t === r ? '  <- adotada' : ''}`), 14, y); y += 3.6; });
+  y += 4;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.text('QUANTITATIVOS E REAÇÕES', 14, y); y += 5;
+  doc.setFont('courier', 'normal'); doc.setFontSize(7.4);
+  const q = R.quant;
+  if (q) [`Vigotas ${r.alt.tr}: ${q.nVig} x ${nf(q.compVig / 100)} m${r.flex && r.flex.n ? ' com ' + adicTxt(r.flex) + ' adicional' : ''}`,
+    `${R.ench.nome} H${r.alt.H}: ~${q.pecas} pecas`, `Concreto moldado no local: ${nf(q.volMoldado, 2)} m3 · Aco adicional ${nf(q.pesoAdic, 1)} kg · Malha da capa ${nf(q.pesoCapa, 1)} kg`,
+    `Contraflecha: ${r.flecha && r.flecha.contraflecha ? nf(r.flecha.contraflecha, 1) + ' cm' : 'dispensada'} · Nervuras de travamento: ${R.travamento || 'dispensadas'}`,
+    `Reacao em cada viga de apoio: g = ${nf(R.reacao.gk)} kN/m · q = ${nf(R.reacao.qk)} kN/m`].forEach(t => { doc.text(asciiPdf(t), 14, y); y += 4; });
+  pdfRodape(doc, 'Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos pelo responsável técnico. Laje unidirecional biapoiada; escoramento e contraflecha conforme o fabricante.');
+  return doc.output('arraybuffer');
+}
+function gerarDxf() {
+  const R = window.__r, e = R.entrada, r = R.r; const d = novoDxf({ LAJE: 7, VIGOTA: 1, ENCHIMENTO: 8, TEXTO: 3 });
+  const B = e.B * 100, L = r.L;
+  d.retangulo(0, 0, B, L, 'LAJE');
+  for (let k = 0; k < R.quant.nVig; k++) { const x = r.i / 2 + k * r.i; if (x > B) break; d.linha(x, -e.apoio / 2, x, L + e.apoio / 2, 'VIGOTA'); }
+  d.texto(0, L + 25, 8, `LAJE TRELICADA ${r.alt.id} (H${r.alt.H}+${r.alt.capa}) - ${r.alt.tr}${r.flex && r.flex.n ? ' + ' + adicTxt(r.flex) : ''} - intereixo ${r.i} cm`);
+  d.texto(0, L + 12, 6, `Capa ${r.alt.capa} cm com Ø5,0 c/${R.capa.s} - contraflecha ${r.flecha && r.flecha.contraflecha ? nf(r.flecha.contraflecha, 1) + ' cm' : 'dispensada'} - cotas em cm`);
+  return d.fim();
+}
+$('btnPdf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar a memória de cálculo em PDF'))) return; FC.registrarExport('trelicada', 'pdf'); msg('Gerando PDF…'); const b = gerarPdf(); if (b) await salvar(`memoria-laje-trelicada-${window.__r.r.alt.id}.pdf`, b); });
+$('btnDxf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar o desenho em DXF'))) return; FC.registrarExport('trelicada', 'dxf');
+  if (!window.JSZip) { msg('Compactador não carregou. Recarregue a página.'); return; }
+  const nome = `laje-trelicada-${window.__r.r.alt.id}`, z = new JSZip(); z.file(nome + '.dxf', gerarDxf()); await salvar(nome + '-dxf.zip', await z.generateAsync({ type: 'blob' })); });
+ligarProjetos('trelicada', () => `Laje treliçada ${$('L').value} × ${$('B').value} m`);
+$('f').addEventListener('input', agendar); $('f').addEventListener('change', agendar); $('f').addEventListener('submit', ev => ev.preventDefault());
+render();
+</script>
+</body>
+</html>

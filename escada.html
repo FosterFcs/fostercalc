@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="description" content="Dimensionamento de escadas de concreto armado de lance reto com patamar pela NBR 6118, com espessura automática. Foster Calc.">
+<title>Escadas · Foster Calc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: prancheta técnica — entrada à esquerda, folha de resultados à direita */
+:root{
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --beam:#b8babd; --steel:#c4161c; --steel2:#3a3d42;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#a3121a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:20px}
+header.top h1{font:700 2rem/1 var(--f-display);letter-spacing:.01em;margin:0}
+header.top h1 span{color:var(--accent)}
+header.top p{margin:0;color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+aside.inputs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside.inputs{position:static}}
+fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+legend{font:600 .78rem/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 0 8px;grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+label.full{grid-column:1/-1}
+input,select{font:500 .95rem var(--f-mono);color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.unit{position:relative}.unit input{padding-right:52px}
+.unit i{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:400 .75rem var(--f-mono);color:var(--muted);font-style:normal;pointer-events:none}
+.bordas{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;gap:6px;align-items:center;justify-items:center}
+.bordas select{padding:5px 4px;font-size:.8rem;width:100%;max-width:110px}
+.bordas .b-sup{grid-column:2;grid-row:1}.bordas .b-esq{grid-column:1;grid-row:2;justify-self:end}
+.bordas .b-dir{grid-column:3;grid-row:2;justify-self:start}.bordas .b-inf{grid-column:2;grid-row:3}
+.croqui{grid-column:2;grid-row:2;width:100%;max-width:120px}
+.croqui svg{width:100%;height:auto;display:block}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+h2{font:600 1.35rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 12px}
+.status{padding:12px 16px;border-radius:6px;font-weight:500}
+.status.ok{background:var(--ok-soft);color:var(--ok)}.status.warn{background:var(--warn-soft);color:var(--warn)}.status.bad{background:var(--bad-soft);color:var(--bad)}
+.status b{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.msgs{margin:8px 0 0;padding-left:18px;font-size:.88rem;color:var(--ink);font-weight:400}
+.pill{display:inline-block;font:600 .66rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.duo{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+@media (max-width:700px){.duo{grid-template-columns:minmax(0,1fr)}}
+.planta svg{width:100%;height:auto;display:block}
+svg .conc{fill:var(--concrete);stroke:none}
+svg .viga{fill:var(--beam);stroke:var(--ink);stroke-width:.8}
+svg .eng{stroke:var(--ink);stroke-width:3;fill:none}
+svg .hatch{stroke:var(--muted);stroke-width:.8}
+svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+svg .dist{stroke:var(--steel2);stroke-width:1.2;fill:none;stroke-dasharray:6 4}
+svg .dim{stroke:var(--muted);stroke-width:.8;fill:none}
+svg text{fill:var(--ink);font-family:var(--f-mono)}
+svg text.mut{fill:var(--muted)}
+.reac{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.reac div{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.reac dt{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.reac dd{margin:2px 0 0;font:600 1.3rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.reac dd small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:3px}
+details.memo{border-top:1px solid var(--line)}
+details.memo:last-of-type{border-bottom:1px solid var(--line)}
+details.memo summary{cursor:pointer;padding:10px 2px;font:600 1.05rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.memo summary::-webkit-details-marker{display:none}
+details.memo summary::after{content:"+";font-family:var(--f-mono);color:var(--muted)}
+details.memo[open] summary::after{content:"–"}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+th.v{text-align:right}
+td.f{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);min-width:170px}
+td.v{font-family:var(--f-mono);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+td.v.alerta{color:var(--bad);font-weight:600}
+td.r{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.memo .tbl{padding-bottom:12px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.pri{font:600 .9rem var(--f-body);border-radius:4px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--sheet)}
+button.pri.ghost{background:transparent;color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted)}
+.disclaimer{font-size:.8rem;color:var(--muted);border-left:3px solid var(--line);padding:4px 0 4px 12px;max-width:72ch}
+ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
+
+.secao svg,.desenhos svg{width:100%;height:auto;display:block;max-width:420px}
+#corte svg{width:100%;height:auto;display:block}
+.desenhos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:700px){.desenhos{grid-template-columns:minmax(0,1fr)}}
+.cap{font:500 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.reac dd{font-size:1.2rem}
+.reac4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:800px){.reac4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body data-pagina="escada">
+<div class="wrap">
+<div id="fc-bar"></div>
+<header class="top">
+  <h1>Escada CA <span>· NBR 6118</span></h1>
+  <p>Lance reto armado longitudinalmente, com patamar · NBR 6118:2023</p>
+</header>
+
+<div class="grid">
+<aside class="inputs" aria-label="Dados de entrada">
+  <form id="f" class="sheet" style="display:flex;flex-direction:column;gap:18px" autocomplete="off">
+    <fieldset>
+      <legend>Degraus</legend>
+      <label>Altura a vencer<span class="unit"><input id="H" type="number" step="0.01" min="0.5" value="2.80"><i>m</i></span></label>
+      <label>Piso p<span class="unit"><input id="piso" type="number" step="0.5" min="20" value="28"><i>cm</i></span></label>
+      <label class="full">Número de espelhos<span class="unit"><input id="nEsp" type="number" step="1" min="0" value="0"><i>0 = auto</i></span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Laje e apoios</legend>
+      <label>Largura da escada<span class="unit"><input id="b" type="number" step="0.05" min="0.6" value="1.00"><i>m</i></span></label>
+      <label>Espessura h<span class="unit"><input id="h" type="number" step="1" min="0" value="0"><i>0 = auto</i></span></label>
+      <label>Patamar inferior<span class="unit"><input id="patInf" type="number" step="0.05" min="0" value="0"><i>m</i></span></label>
+      <label>Patamar superior<span class="unit"><input id="patSup" type="number" step="0.05" min="0" value="1.20"><i>m</i></span></label>
+      <label class="full">Largura das vigas de apoio<span class="unit"><input id="apoio" type="number" step="1" min="10" value="15"><i>cm</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">A escada é biapoiada nas duas extremidades (vigas ou laje do pavimento). Patamares em balanço ou apoiados nas laterais pedem outro modelo.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Cargas</legend>
+      <label>Revestimento g<span class="unit"><input id="g" type="number" step="0.1" min="0" value="1.0"><i>kN/m²</i></span></label>
+      <label>Acidental q<span class="unit"><input id="q" type="number" step="0.5" min="0" value="2.5"><i>kN/m²</i></span></label>
+      <label class="full">Uso<select id="psi2"><option value="0.3">Residencial (q = 2,5 kN/m²)</option><option value="0.4">Uso público (q = 3,0 kN/m²)</option></select></label>
+    </fieldset>
+    <fieldset>
+      <legend>Materiais</legend>
+      <label>Concreto<select id="fck"><option>20</option><option selected>25</option><option>30</option><option>35</option></select></label>
+      <label>Agressividade<select id="caa"><option value="I">CAA I · c=2,0</option><option value="II" selected>CAA II · c=2,5</option><option value="III">CAA III · c=3,5</option></select></label>
+    </fieldset>
+    <p class="note" style="margin:0">Aço CA-50. Carga acidental de escadas pela NBR 6120.</p>
+  </form>
+</aside>
+
+<main>
+  <section id="status" class="status ok" aria-live="polite"></section>
+
+  <section class="sheet">
+    <h2>Resultado</h2>
+    <dl class="reac reac4" id="keys"></dl>
+    <h2 style="margin-top:22px">Perfil da escada</h2>
+    <div id="corte" style="max-width:820px"></div>
+    <p class="note" id="legenda" style="margin:6px 0 0"></p>
+  </section>
+
+  <section class="sheet">
+    <h2>Reações nas vigas de apoio</h2>
+    <dl class="reac" id="reacoes"></dl>
+    <p class="note" style="margin:8px 0 0">Valores característicos por metro de viga. Multiplique pela largura da escada se a viga receber só a escada.</p>
+  </section>
+
+  <section class="sheet">
+    <h2>Memória de cálculo</h2>
+    <div id="memoria"></div>
+    <p class="note" style="margin:12px 0 4px"><b>Hipóteses e limites deste módulo:</b></p>
+    <ul class="todo note">
+      <li>Lance reto armado longitudinalmente, biapoiado nas extremidades; cálculo por metro de largura sobre a projeção horizontal</li>
+      <li>Patamares no prolongamento do lance (mesma direção); não cobre escadas em L, U, caracol nem patamares em balanço</li>
+      <li>Revestimento aplicado no piso e no espelho; peso dos degraus de concreto incluído</li>
+    </ul>
+  </section>
+
+  <section class="sheet">
+    <h2>Quantitativos</h2>
+    <div class="tbl"><table id="quant"></table></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Projeto e exportação</h2>
+    <div class="actions">
+      <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
+      <button type="button" class="pri ghost" id="btnAbrir">Meus projetos</button>
+      <button type="button" class="pri" id="btnPdf">Baixar memória (PDF)</button>
+      <button type="button" class="pri ghost" id="btnDxf">Baixar desenho (DXF em .zip)</button>
+      <span class="note" id="expMsg" role="status"></span>
+    </div>
+    <p class="note" style="margin:10px 0 0">O cálculo é livre. Memória em PDF e desenho em DXF fazem parte do plano Pro.</p>
+  </section>
+
+  <p class="disclaimer">Ferramenta de apoio ao dimensionamento. Os resultados devem ser conferidos por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT. Coeficientes: γc = 1,4; γs = 1,15; γf = 1,4.</p>
+</main>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// Motor de cálculo — Escada de lance reto armada longitudinalmente, com patamar opcional (NBR 6118:2023)
+// Laje inclinada biapoiada calculada por metro de largura sobre a projeção horizontal.
+// Unidades internas: cm, kN.
+
+const E_COB = { I: 2.0, II: 2.5, III: 3.5, IV: 4.5 };
+const E_RHO = { 20: 0.150, 25: 0.150, 30: 0.150, 35: 0.164, 40: 0.179 };
+const E_BIT = [6.3, 8, 10, 12.5, 16];
+const eA = phi => Math.PI * (phi / 10) ** 2 / 4;
+
+function calcularEscada(e0) {
+  if (!(e0.h > 0)) {                                        // espessura automática: menor h (cm) que atende
+    let ultimo = null;
+    for (let h = 10; h <= 30; h++) { const r = calcularEscadaH({ ...e0, h }); ultimo = r; if (r.ok && r.flecha && r.flecha.ok) { r.hAuto = true; return r; } }
+    ultimo.hAuto = true; return ultimo;
+  }
+  return calcularEscadaH(e0);
+}
+function calcularEscadaH(e0) {
+  const e = { ...e0 };
+  const erros = [], avisos = [];
+  const c = E_COB[e.caa] ?? 2.5; e.c = c;
+  const fcd = e.fck / 14, fyd = 50 / 1.15, fctm = 0.03 * e.fck ** (2 / 3), fctd = 0.7 * fctm / 1.4;
+  const Ecs = Math.min(1, 0.8 + 0.2 * e.fck / 80) * 560 * Math.sqrt(e.fck);
+
+  // ---- geometria dos degraus
+  const H = e.H * 100;
+  const nEsp = e.nEsp && e.nEsp > 0 ? Math.round(e.nEsp) : Math.max(2, Math.round(H / 17.5));
+  const esp = H / nEsp, piso = e.piso;
+  const nPisos = nEsp - 1;                                  // o último "piso" é o pavimento/patamar
+  const Lh = nPisos * piso;                                 // projeção horizontal do lance (cm)
+  const alfa = Math.atan(esp / piso), cosA = Math.cos(alfa);
+  const blondel = 2 * esp + piso;
+  if (blondel < 60 || blondel > 66) avisos.push(`Fórmula de Blondel: 2e + p = ${blondel.toFixed(1)} cm, fora da faixa confortável de 63 a 64 cm (aceitável de 60 a 66).`);
+  if (esp > 19) avisos.push(`Espelho de ${esp.toFixed(1)} cm acima de 19 cm: escada desconfortável. Aumente o número de degraus.`);
+  if (piso < 25) avisos.push('Piso menor que 25 cm: abaixo do mínimo usual de conforto e de normas de acessibilidade e segurança contra incêndio.');
+  const Lpi = e.patInf * 100, Lps = e.patSup * 100;          // patamares (cm), horizontais
+  const Ltot = Lpi + Lh + Lps;
+  const h = e.h, b = e.b * 100;
+  if (h < 10) avisos.push('Espessura menor que 10 cm é incomum para escadas de concreto armado.');
+
+  // ---- cargas por m² de projeção horizontal (kN/m²)
+  const ppLance = 25 * (h / 100) / cosA + 25 * (esp / 100) / 2;
+  const revLance = e.g * (1 + esp / piso);                  // revestimento no piso e no espelho
+  const gL = ppLance + revLance, gP = 25 * h / 100 + e.g;
+  const q = e.q;
+  // trechos ao longo de x (cm, horizontal): [x0, x1, g, q]
+  const trechos = [];
+  if (Lpi > 0) trechos.push([0, Lpi, gP, q, 'patamar inferior']);
+  trechos.push([Lpi, Lpi + Lh, gL, q, 'lance']);
+  if (Lps > 0) trechos.push([Lpi + Lh, Ltot, gP, q, 'patamar superior']);
+
+  // ---- esforços (viga biapoiada, faixa de 1 m) por integração numérica
+  const N = 400, dx = Ltot / N;
+  const carga = (x, comb) => { for (const t of trechos) if (x >= t[0] - 1e-9 && x <= t[1] + 1e-9) return comb === 'd' ? 1.4 * (t[2] + t[3]) : comb === 'qp' ? t[2] + e.psi2 * t[3] : t[2] + t[3]; return 0; };
+  const esforcos = comb => {
+    // reação esquerda por momentos em torno do apoio direito (kN/m de largura; x em m)
+    let P = 0, Mx = 0;
+    for (let i = 0; i < N; i++) { const x = (i + 0.5) * dx; const w = carga(x, comb) * dx / 100; P += w; Mx += w * (Ltot - x) / 100; }
+    const RA = Mx / (Ltot / 100), RB = P - RA;
+    const pts = [{ x: 0, V: RA, M: 0 }]; let V = RA, Mi = 0;
+    for (let i = 0; i < N; i++) { const x = (i + 0.5) * dx; const w = carga(x, comb) * dx / 100; Mi += (V - w / 2) * dx / 100; V -= w; pts.push({ x: (i + 1) * dx, V, M: Mi }); }
+    const Mmax = Math.max(...pts.map(p => p.M));
+    return { RA, RB, P, pts, Mmax, xMmax: pts.find(p => p.M === Mmax).x };
+  };
+  const D = esforcos('d'), K = esforcos('k'), QP = esforcos('qp');
+
+  // ---- flexão por metro (armadura principal ao longo do lance)
+  const bw = 100, rmin = (E_RHO[e.fck] ?? 0.15) / 100;
+  const AsMin = rmin * bw * h;
+  let flex = null;
+  for (const phi of E_BIT) {
+    if (phi / 10 > h / 8) break;
+    const d = h - c - phi / 20;
+    const Md = D.Mmax * 100;
+    const xlim = 0.45 * d, Mlim = 0.68 * bw * xlim * fcd * (d - 0.4 * xlim);
+    if (Md > Mlim) continue;
+    const x = 1.25 * d * (1 - Math.sqrt(1 - Md / (0.425 * bw * d * d * fcd)));
+    const As = Md / (fyd * (d - 0.4 * x));
+    const AsAd = Math.max(As, AsMin);
+    const smax = Math.min(2 * h, 20);
+    let s = Math.min(smax, Math.floor(eA(phi) / AsAd * 100));
+    if (s >= 10) { flex = { phi, d, x, xd: x / d, As, AsMin, AsAd, s, AsEf: eA(phi) * 100 / s, smax, Md }; break; }
+  }
+  if (!flex) { erros.push('A espessura não comporta o momento com espaçamento ≥ 10 cm: aumente a espessura da laje da escada.'); }
+
+  // ---- distribuição (20.1, laje armada em uma direção)
+  let dist = null;
+  if (flex) {
+    const AsDist = Math.max(0.2 * flex.AsEf, 0.9, 0.5 * AsMin);
+    const phiD = AsDist > eA(5) * 100 / 20 ? 6.3 : 5;
+    const sD = Math.min(33, Math.floor(eA(phiD) / AsDist * 100));
+    dist = { AsDist, phi: phiD, s: sD };
+  }
+
+  // ---- cisalhamento sem estribos
+  let cis = null;
+  if (flex) {
+    const Vd = Math.max(D.RA, D.RB) * cosA;                 // componente perpendicular ao eixo da laje
+    const dm = flex.d / 100, kk = Math.max(1, 1.6 - dm), rho1 = Math.min(flex.AsEf / (bw * flex.d), 0.02);
+    const VRd1 = 0.25 * fctd * kk * (1.2 + 40 * rho1) * bw * flex.d;
+    cis = { Vd, VRd1, ok: Vd <= VRd1 };
+    if (!cis.ok) erros.push(`Cortante ${Vd.toFixed(1)} kN/m acima de VRd1 = ${VRd1.toFixed(1)} kN/m: aumente a espessura.`);
+  }
+
+  // ---- flecha (Branson + fluência) por integração da curvatura, rigidez na direção inclinada
+  let flecha = null;
+  if (flex) {
+    const Ic = bw * h ** 3 / 12, Mr = 1.5 * fctm * Ic / (h / 2), ae = 21000 / Ecs;
+    const As = flex.AsEf, d = flex.d;
+    const xII = (-ae * As + Math.sqrt((ae * As) ** 2 + 2 * bw * ae * As * d)) / bw;
+    const III = bw * xII ** 3 / 3 + ae * As * (d - xII) ** 2;
+    const Ma = QP.Mmax * 100;
+    const Ieq = Ma <= Mr ? Ic : Math.min(Ic, (Mr / Ma) ** 3 * Ic + (1 - (Mr / Ma) ** 3) * III);
+    // w'' = -M/EI; integra duas vezes e impõe w(0) = w(L) = 0
+    const k = QP.pts.map(p => p.M * 100 / (Ecs * Ieq));    // 1/cm
+    const th = [0], w = [0];
+    for (let i = 1; i < k.length; i++) th.push(th[i - 1] + (k[i - 1] + k[i]) / 2 * dx);
+    for (let i = 1; i < k.length; i++) w.push(w[i - 1] + (th[i - 1] + th[i]) / 2 * dx);
+    const corr = w[w.length - 1] / Ltot;
+    const def = w.map((v, i) => -(v - corr * i * dx));     // deslocamento para baixo positivo
+    const a0 = Math.max(...def) / cosA;                       // flecha medida perpendicular ao lance (aproximação)
+    const alfaF = 2 - 0.68 * 0.996, aTot = a0 * (1 + alfaF), aLim = Ltot / 250;
+    flecha = { Ic, Mr, Ma, xII, III, Ieq, a0, alfaF, aTot, aLim, ok: aTot <= aLim };
+    if (!flecha.ok) avisos.push(`Flecha ${aTot.toFixed(2)} cm acima de L/250 = ${aLim.toFixed(2)} cm: aumente a espessura.`);
+  }
+
+  // ---- quantitativos
+  let quant = null;
+  if (flex && dist) {
+    const Linc = Lh / cosA;
+    const vol = (b / 100) * ((Linc / 100) * (h / 100) + nPisos * (piso / 100) * (esp / 100) / 2 + ((Lpi + Lps) / 100) * (h / 100));
+    const ancor = 2 * Math.max(10 * flex.phi / 10, e.apoio / 2);
+    const compPrinc = Lpi + Lps + Linc - 2 * c + ancor;
+    const nPrinc = Math.floor((b - 2 * c) / flex.s) + 1;
+    const nDist = Math.floor((Lpi + Lps + Linc - 2 * c) / dist.s) + 1;
+    const compDist = b - 2 * c;
+    const massa = (n, L, phi) => n * L / 100 * eA(phi) * 0.785;
+    const pesoPrinc = massa(nPrinc, compPrinc, flex.phi), pesoDist = massa(nDist, compDist, dist.phi);
+    const forma = (b / 100) * ((Linc + Lpi + Lps) / 100) + 2 * ((Linc / 100) * (h / 100) + nPisos * (piso / 100) * (esp / 100) / 2) + nPisos * (esp / 100) * (b / 100);
+    quant = { Linc, vol, compPrinc, nPrinc, nDist, compDist, pesoPrinc, pesoDist, pesoTotal: pesoPrinc + pesoDist, forma, taxa: (pesoPrinc + pesoDist) / vol };
+  }
+  if (Lpi > 0 || Lps > 0) avisos.push('No encontro do lance com o patamar, as barras inferiores devem se cruzar e seguir retas até ancorar (não dobrar a armadura no ângulo reentrante).');
+
+  return { ok: erros.length === 0, erros, avisos, entrada: e, mat: { fcd, fyd, fctm, fctd, Ecs },
+    geo: { H, nEsp, esp, piso, nPisos, Lh, alfa, cosA, blondel, Lpi, Lps, Ltot, h, b },
+    cargas: { ppLance, revLance, gL, gP, q, trechos }, D, K, QP, flex, dist, cis, flecha, quant,
+    reacao: (() => { const Q = esforcosQ(K, D, trechos, Ltot); return { A: { g: K.RA - Q.A, q: Q.A }, B: { g: K.RB - Q.B, q: Q.B } }; })() };
+}
+// separa a parcela acidental das reações características (para levar às vigas)
+function esforcosQ(K, D, trechos, Ltot) {
+  let P = 0, Mx = 0;
+  for (const t of trechos) { const L = (t[1] - t[0]) / 100, xc = (t[0] + t[1]) / 200; P += t[3] * L; Mx += t[3] * L * (Ltot / 100 - xc); }
+  const A = Mx / (Ltot / 100); return { A, B: P - A };
+}
+
+
+</script>
+<script>
+// ---------- utilidades comuns às páginas de módulo ----------
+const $ = id => document.getElementById(id);
+const nf = (v, d = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const bit = p => nf(p, 1);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const asciiPdf = t => String(t).replace(/ρmín/g, 'rho_min').replace(/ρ/g, 'rho').replace(/αb/g, 'alfa_b').replace(/α/g, 'alfa').replace(/λ1/g, 'lambda1').replace(/λ/g, 'lambda')
+  .replace(/ν/g, 'nu').replace(/γn/g, 'gama_n').replace(/γ/g, 'gama').replace(/σ/g, 'sig').replace(/τ/g, 'tau').replace(/φ/g, 'Ø')
+  .replace(/≤/g, '<=').replace(/≥/g, '>=').replace(/[−–—]/g, '-').replace(/→/g, '->').replace(/√/g, 'raiz').replace(/′/g, "'").replace(/²/g, '2').replace(/³/g, '3').replace(/₁/g, '1').replace(/₀/g, '0');
+function msg(t) { $('expMsg').textContent = t; }
+async function salvar(filename, data) { FC.baixar(filename, data); msg('Arquivo baixado.'); }
+function renderMemoria(secoes, alvoId, abrirPadrao) {
+  const abertos = new Set([...document.querySelectorAll(`#${alvoId} details.memo[open]`)].map(d => d.dataset.k));
+  if (!document.querySelector(`#${alvoId} details.memo`)) abertos.add(abrirPadrao);
+  $(alvoId).innerHTML = secoes.map(sec => `<details class="memo" data-k="${esc(sec.t)}" ${abertos.has(sec.t) ? 'open' : ''}><summary>${esc(sec.t)}</summary>
+    <div class="tbl"><table><thead><tr><th>Item</th><th>Expressão</th>${sec.cols.map(c => `<th class="v">${esc(c)}</th>`).join('')}<th>Ref.</th></tr></thead><tbody>
+    ${sec.l.map(l => `<tr><td>${l[0]}</td><td class="f">${l[1]}</td>${l[2].map(v => typeof v === 'object' ? `<td class="v${v.alerta ? ' alerta' : ''}">${v.v}</td>` : `<td class="v">${v}</td>`).join('')}<td class="r">${l[3]}</td></tr>`).join('')}
+    </tbody></table></div></details>`).join('');
+}
+// memória no PDF (retrato A4); devolve a posição y final
+function pdfMemoria(doc, secoes, titulo, subtitulo, r) {
+  const W = 210, HP = 297, M = 14; let y = FC.PDF.topo;
+  const novaPag = n => { if (y + n > HP - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } };
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(20); doc.text(asciiPdf(titulo), M, y + 4); y += 9;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90); doc.text(asciiPdf(subtitulo), M, y); y += 3;
+  doc.setDrawColor(20); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 6;
+  doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(r.erros.length ? 'VERIFICAR / REVISAR' : r.avisos.length ? 'ATENÇÃO' : 'VERIFICAÇÕES ATENDIDAS', M, y); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  [...r.erros, ...r.avisos].forEach(m => { const ls = doc.splitTextToSize('• ' + asciiPdf(m), W - 2 * M); novaPag(ls.length * 4); doc.text(ls, M, y); y += ls.length * 4; });
+  y += 2;
+  for (const sec of secoes) {
+    const nC = sec.cols.length, xExpr = M + 42, xVal0 = M + 42 + 56, xRef = W - M, larg = (xRef - 16 - xVal0) / nC;
+    novaPag(16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text(asciiPdf(sec.t).toUpperCase(), M, y);
+    doc.setFontSize(6.6); doc.setTextColor(110); sec.cols.forEach((c, i) => doc.text(asciiPdf(c), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }));
+    y += 1.6; doc.setLineWidth(0.2); doc.setDrawColor(150); doc.line(M, y, W - M, y); y += 3.6;
+    for (const l of sec.l) {
+      const ex = doc.splitTextToSize(asciiPdf(l[1]), 54); const hh = Math.max(1, ex.length) * 3.3 + 0.6; novaPag(hh);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(20); doc.text(doc.splitTextToSize(asciiPdf(l[0]), 40)[0], M, y);
+      doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(90); doc.text(ex, xExpr, y);
+      l[2].forEach((v, i) => { const o = typeof v === 'object' ? v : { v }; doc.setFont('courier', 'bold'); doc.setFontSize(nC > 3 ? 6.8 : 7.6); o.alerta ? doc.setTextColor(163, 18, 26) : doc.setTextColor(20); doc.text(asciiPdf(o.v), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }); });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.6); doc.setTextColor(110); doc.text(asciiPdf(l[3]), xRef, y, { align: 'right' });
+      y += hh;
+    }
+    y += 3;
+  }
+  return { y, novaPag };
+}
+function pdfRodape(doc, texto) { FC.finalizarPdf(doc, texto); }
+// DXF mínimo com camadas
+function novoDxf(camadas) {
+  const L = []; const p = (...a) => L.push(...a.map(String)); const f = v => (+v).toFixed(3);
+  p(0, 'SECTION', 2, 'TABLES', 0, 'TABLE', 2, 'LAYER', 70, Object.keys(camadas).length);
+  for (const [n, c] of Object.entries(camadas)) p(0, 'LAYER', 2, n, 70, 0, 62, c, 6, 'CONTINUOUS');
+  p(0, 'ENDTAB', 0, 'ENDSEC', 0, 'SECTION', 2, 'ENTITIES');
+  const txt = t => asciiPdf(t).replace(/Ø/g, '%%c').replace(/·/g, '-').replace(/[^\x20-\x7E]/g, ch => ({ 'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'é': 'e', 'ê': 'e', 'í': 'i', 'ó': 'o', 'õ': 'o', 'ô': 'o', 'ú': 'u', 'ç': 'c', '×': 'x' }[ch] || ''));
+  return {
+    linha: (x1, y1, x2, y2, l) => p(0, 'LINE', 8, l, 10, f(x1), 20, f(y1), 30, 0, 11, f(x2), 21, f(y2), 31, 0),
+    retangulo(x, y, w, h, l) { this.linha(x, y, x + w, y, l); this.linha(x + w, y, x + w, y + h, l); this.linha(x + w, y + h, x, y + h, l); this.linha(x, y + h, x, y, l); },
+    circulo: (x, y, r, l) => p(0, 'CIRCLE', 8, l, 10, f(x), 20, f(y), 30, 0, 40, f(r)),
+    texto: (x, y, alt, t, centro) => p(0, 'TEXT', 8, 'TEXTO', 10, f(x), 20, f(y), 30, 0, 40, f(alt), 1, txt(t), ...(centro ? [72, 1, 11, f(x), 21, f(y), 31, 0] : [])),
+    fim: () => { p(0, 'ENDSEC', 0, 'EOF'); return L.join('\r\n'); },
+  };
+}
+// projetos salvos (comum)
+function ligarProjetos(modulo, nomeSugerido) {
+  let projetoId = null;
+  $('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
+  $('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
+  (async () => {
+    const id = new URLSearchParams(location.search).get('p'); if (!id) return;
+    await new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
+    const p = FC.sessao && await FC.lerProjeto(id);
+    if (p && p.modulo === modulo) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+  })();
+}
+let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requestAnimationFrame(render); };
+
+const CAMPOS = ['H', 'piso', 'nEsp', 'b', 'h', 'patInf', 'patSup', 'apoio', 'g', 'q', 'psi2', 'fck', 'caa'];
+function lerEntrada() { const e = {}; for (const k of CAMPOS) e[k] = k === 'caa' ? $(k).value : +$(k).value; return e; }
+function aplicarEntrada(e) { for (const k of CAMPOS) if (e[k] != null) $(k).value = String(e[k]); render(); }
+
+function memoria(r) {
+  const g = r.geo, c = r.cargas, f = r.flex, fl = r.flecha;
+  const out = [{ t: 'Geometria', cols: ['Valor'], l: [
+    ['Espelhos', 'n = H / e', [`${g.nEsp} × ${nf(g.esp, 1)} cm`], ''],
+    ['Pisos no lance', 'n − 1', [`${g.nPisos} × ${nf(g.piso, 1)} cm`], ''],
+    ['Fórmula de Blondel', '63 ≤ 2e + p ≤ 64 cm', [{ v: `${nf(g.blondel, 1)} cm`, alerta: g.blondel < 60 || g.blondel > 66 }], ''],
+    ['Inclinação', 'α = arctg(e/p)', [`${nf(g.alfa * 180 / Math.PI, 1)}°`], ''],
+    ['Projeção do lance', 'Lh = (n − 1) · p', [`${nf(g.Lh / 100)} m`], ''],
+    ['Vão total', 'patamares + lance', [`${nf(g.Ltot / 100)} m`], ''],
+    ['Espessura', r.hAuto ? 'h (automática)' : 'h', [`${g.h} cm`], ''],
+  ]}, { t: 'Cargas (projeção horizontal)', cols: ['Lance', 'Patamar'], l: [
+    ['Peso próprio', '25·h/cos α + 25·e/2 · patamar 25·h', [nf(c.ppLance), nf(25 * g.h / 100)], 'kN/m²'],
+    ['Revestimento', 'g·(1 + e/p) · patamar g', [nf(c.revLance), nf(r.entrada.g)], 'kN/m²'],
+    ['Permanente total', 'gk', [nf(c.gL), nf(c.gP)], 'kN/m²'],
+    ['Acidental', 'qk', [nf(c.q), nf(c.q)], 'NBR 6120'],
+  ]}, { t: 'Esforços (faixa de 1 m)', cols: ['Valor'], l: [
+    ['Momento máximo de cálculo', 'Md (viga biapoiada)', [`${nf(r.D.Mmax)} kN·m/m`], ''],
+    ['Posição', 'x a partir do apoio inferior', [`${nf(r.D.xMmax / 100)} m`], ''],
+    ['Reações de cálculo', 'RA ; RB', [`${nf(r.D.RA)} ; ${nf(r.D.RB)} kN/m`], ''],
+  ]}];
+  if (f) out.push({ t: 'Flexão e armaduras', cols: ['Valor'], l: [
+    ['Altura útil', 'd = h − c − φ/2', [`${nf(f.d)} cm`], ''],
+    ['Linha neutra', 'x/d ≤ 0,45', [nf(f.xd, 3)], '14.6.4.3'],
+    ['Armadura calculada', 'As = Md / [fyd·(d − 0,4x)]', [`${nf(f.As)} cm²/m`], ''],
+    ['Armadura mínima', 'ρmín · b · h', [`${nf(f.AsMin)} cm²/m`], 'Tab. 17.3'],
+    ['Armadura principal', 's ≤ mín(2h ; 20 cm)', [`Ø${bit(f.phi)} c/${f.s} (${nf(f.AsEf)} cm²/m)`], '20.1'],
+    ['Distribuição', '≥ máx(20% As ; 0,9 cm²/m ; 0,5·As,mín)', [`Ø${bit(r.dist.phi)} c/${r.dist.s}`], '20.1'],
+  ]});
+  if (r.cis) out.push({ t: 'Cisalhamento', cols: ['Valor'], l: [
+    ['Cortante de cálculo', 'Vd · cos α', [`${nf(r.cis.Vd)} kN/m`], ''],
+    ['Resistência sem estribos', 'VRd1', [{ v: `${nf(r.cis.VRd1)} kN/m`, alerta: !r.cis.ok }], '19.4.1'],
+  ]});
+  if (fl) out.push({ t: 'Flecha (ELS-DEF)', cols: ['Valor'], l: [
+    ['Momento de fissuração', 'Mr = 1,5 · fctm · Ic / yt', [`${nf(fl.Mr / 100)} kN·m/m`], '17.3.1'],
+    ['Momento atuante (q. perm.)', 'Ma', [`${nf(fl.Ma / 100)} kN·m/m`], ''],
+    ['Inércia equivalente', 'Branson', [`${nf(fl.Ieq, 0)} cm⁴/m`], '17.3.2.1.1'],
+    ['Flecha total', 'a = a0 · (1 + αf)', [{ v: `${nf(fl.aTot)} cm`, alerta: !fl.ok }], '17.3.2.1.2'],
+    ['Limite', 'L / 250', [`${nf(fl.aLim)} cm`], 'Tab. 13.3'],
+  ]});
+  return out;
+}
+
+function svgPerfil(r) {
+  const g = r.geo, h = g.h; const k = 620 / (g.Ltot + 40), pad = 20;
+  const tot = g.H + h + 30;
+  const X = x => pad + x * k, Y = y => pad + (g.H + 10 - y) * k;
+  const cos = g.cosA, hv = h / cos;                         // espessura vertical da laje inclinada
+  let pts = [];
+  // contorno superior: patamar inferior, degraus, patamar superior
+  pts.push([0, 0]); pts.push([g.Lpi, 0]);
+  for (let i = 0; i < g.nPisos; i++) { const x = g.Lpi + i * g.piso; pts.push([x, (i + 1) * g.esp]); pts.push([x + g.piso, (i + 1) * g.esp]); }
+  pts.push([g.Lpi + g.Lh, g.H]); pts.push([g.Ltot, g.H]);
+  // contorno inferior
+  const inf = [[g.Ltot, g.H - h], [g.Lpi + g.Lh + (g.Lps > 0 ? 0 : 0), g.H - h], [g.Lpi, -h], [0, -h]];
+  // ajusta o fundo do lance: reta paralela ao lance
+  const yFundo = x => (x - g.Lpi) * Math.tan(g.alfa) - hv + g.esp * 0;
+  const fundo = [[g.Ltot, g.H - h]];
+  if (g.Lps > 0) fundo.push([g.Lpi + g.Lh + h * Math.tan(g.alfa / 2), g.H - h]);
+  fundo.push([g.Lpi + g.Lh, g.Lh * Math.tan(g.alfa) - hv]);
+  fundo.push([g.Lpi + (hv - h) / Math.tan(g.alfa), -h]);
+  fundo.push([0, -h]);
+  const poli = [...pts, ...fundo].map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ');
+  let o = `<svg viewBox="0 0 ${(g.Ltot * k + 2 * pad + 40).toFixed(0)} ${(tot * k + 2 * pad).toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Perfil da escada">`;
+  o += `<polygon class="conc" points="${poli}"/>`;
+  // armadura principal (inferior, paralela ao fundo)
+  const cc = r.entrada.c + 0.5;
+  const arm = [[r.entrada.c, -h + cc]];
+  arm.push([g.Lpi + (hv - h) / Math.tan(g.alfa), -h + cc]);
+  arm.push([g.Lpi + g.Lh, g.Lh * Math.tan(g.alfa) - hv + cc / cos]);
+  arm.push([g.Ltot - r.entrada.c, g.H - h + cc]);
+  o += `<polyline points="${arm.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--steel)" stroke-width="2"/>`;
+  o += `<text x="${X(g.Ltot / 2)}" y="${Y(-h) + 16}" font-size="11" text-anchor="middle" class="mut">vão ${nf(g.Ltot / 100)} m · ${g.nEsp} espelhos de ${nf(g.esp, 1)} cm · piso ${nf(g.piso, 0)} cm</text>`;
+  o += `<text x="${X(g.Ltot) + 6}" y="${Y(g.H / 2)}" font-size="11" class="mut">H = ${nf(g.H / 100)} m</text>`;
+  return o + '</svg>';
+}
+
+function render() {
+  const e = lerEntrada();
+  if (!(e.H > 0 && e.piso > 0 && e.b > 0)) return;
+  const r = calcularEscada(e); window.__r = r; const g = r.geo, f = r.flex;
+  const msgs = [...r.erros, ...r.avisos];
+  $('status').className = 'status ' + (r.erros.length ? 'bad' : r.avisos.length ? 'warn' : 'ok');
+  $('status').innerHTML = `<b>${r.erros.length ? 'Escada inadequada' : r.avisos.length ? 'Atenção' : 'Verificações atendidas'}</b>
+    ${msgs.length ? `<ul class="msgs">${msgs.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '<span style="margin-left:8px;color:var(--ink);font-weight:400">Conforto, flexão, cisalhamento e flecha dentro dos limites.</span>'}`;
+  $('keys').innerHTML = `
+    <div><dt>Degraus</dt><dd>${g.nEsp} × ${nf(g.esp, 1)}<small>piso ${nf(g.piso, 0)} cm · 2e+p = ${nf(g.blondel, 1)}</small></dd></div>
+    <div><dt>Espessura</dt><dd>${g.h} cm<small>${r.hAuto ? 'automática' : 'informada'} · vão ${nf(g.Ltot / 100)} m</small></dd></div>
+    <div><dt>Armadura principal</dt><dd>${f ? `Ø${bit(f.phi)} c/${f.s}` : '—'}<small>${f ? nf(f.AsEf) + ' cm²/m' : ''}</small></dd></div>
+    <div><dt>Distribuição</dt><dd>${r.dist ? `Ø${bit(r.dist.phi)} c/${r.dist.s}` : '—'}<small>flecha ${r.flecha ? nf(r.flecha.aTot) : '—'} / ${r.flecha ? nf(r.flecha.aLim) : '—'} cm</small></dd></div>`;
+  $('corte').innerHTML = svgPerfil(r);
+  $('legenda').textContent = f ? `Armadura principal Ø${bit(f.phi)} c/${f.s} na face inferior, contínua do apoio inferior ao superior · distribuição Ø${bit(r.dist.phi)} c/${r.dist.s} · cobrimento ${nf(r.entrada.c, 1)} cm` : '';
+  $('reacoes').innerHTML = `<div><dt>Apoio inferior</dt><dd>g ${nf(r.reacao.A.g)} · q ${nf(r.reacao.A.q)}<small>kN/m de largura</small></dd></div>
+    <div><dt>Apoio superior</dt><dd>g ${nf(r.reacao.B.g)} · q ${nf(r.reacao.B.q)}<small>kN/m de largura</small></dd></div>`;
+  renderMemoria(memoria(r), 'memoria', 'Flexão e armaduras');
+  const q = r.quant;
+  $('quant').innerHTML = q ? `<thead><tr><th>Pos.</th><th>Descrição</th><th class="v">Qtd.</th><th class="v">Ø (mm)</th><th class="v">Compr. unit.</th><th class="v">Massa</th></tr></thead><tbody>
+    <tr><td>N1</td><td>principal c/${f.s}</td><td class="v">${q.nPrinc}</td><td class="v">${bit(f.phi)}</td><td class="v">${nf(q.compPrinc / 100)} m</td><td class="v">${nf(q.pesoPrinc, 1)} kg</td></tr>
+    <tr><td>N2</td><td>distribuição c/${r.dist.s}</td><td class="v">${q.nDist}</td><td class="v">${bit(r.dist.phi)}</td><td class="v">${nf(q.compDist / 100)} m</td><td class="v">${nf(q.pesoDist, 1)} kg</td></tr>
+    <tr><td></td><td><b>Aço CA-50 total</b> (sem perdas)</td><td></td><td></td><td></td><td class="v"><b>${nf(q.pesoTotal, 1)} kg</b></td></tr>
+    <tr><td></td><td>Concreto C${e.fck} (laje + degraus)</td><td></td><td></td><td></td><td class="v">${nf(q.vol, 3)} m³</td></tr>
+    <tr><td></td><td>Fôrma (fundo, laterais e espelhos)</td><td></td><td></td><td></td><td class="v">${nf(q.forma)} m²</td></tr>
+    <tr><td></td><td>Taxa de armadura</td><td></td><td></td><td></td><td class="v">${nf(q.taxa, 0)} kg/m³</td></tr></tbody>` : '';
+}
+
+function gerarPdf() {
+  const r = window.__r; if (!r || !window.jspdf) { msg('Gerador de PDF não carregou. Recarregue a página.'); return null; }
+  const e = r.entrada, g = r.geo, f = r.flex;
+  const doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+  let { y } = pdfMemoria(doc, memoria(r), 'Memória de cálculo · Escada',
+    `H = ${nf(e.H)} m · ${g.nEsp} espelhos de ${nf(g.esp, 1)} cm · piso ${nf(g.piso, 0)} cm · h = ${g.h} cm · C${e.fck} / CA-50`, r);
+  const novaPag = n => { if (y + n > 297 - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } };
+  novaPag(80);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text('PERFIL', 14, y); y += 4;
+  const k = 170 / (g.Ltot + 20), Y0 = y + (g.H + 10) * k;
+  const P = (x, yy) => [14 + x * k, Y0 - yy * k];
+  doc.setDrawColor(40); doc.setLineWidth(0.3);
+  let ant = P(0, 0); const seg = (x, yy) => { const p = P(x, yy); doc.line(ant[0], ant[1], p[0], p[1]); ant = p; };
+  seg(g.Lpi, 0); for (let i = 0; i < g.nPisos; i++) { const x = g.Lpi + i * g.piso; seg(x, (i + 1) * g.esp); seg(x + g.piso, (i + 1) * g.esp); }
+  seg(g.Ltot, g.H);
+  doc.setDrawColor(196, 22, 28); doc.setLineWidth(0.45);
+  const hv = g.h / g.cosA, cc = e.c + 0.5;
+  const a = [[e.c, -g.h + cc], [g.Lpi + (hv - g.h) / Math.tan(g.alfa), -g.h + cc], [g.Lpi + g.Lh, g.Lh * Math.tan(g.alfa) - hv + cc / g.cosA], [g.Ltot - e.c, g.H - g.h + cc]];
+  for (let i = 1; i < a.length; i++) { const p1 = P(...a[i - 1]), p2 = P(...a[i]); doc.line(p1[0], p1[1], p2[0], p2[1]); }
+  y = Y0 + 8;
+  doc.setFont('courier', 'normal'); doc.setFontSize(7.6); doc.setTextColor(20);
+  if (f && r.quant) [`N1  ${r.quant.nPrinc} Ø${bit(f.phi)} c/${f.s}  C=${nf(r.quant.compPrinc, 0)} cm  (principal, face inferior)`,
+    `N2  ${r.quant.nDist} Ø${bit(r.dist.phi)} c/${r.dist.s}  C=${nf(r.quant.compDist, 0)} cm  (distribuição)`,
+    `Aço ${nf(r.quant.pesoTotal, 1)} kg · Concreto ${nf(r.quant.vol, 3)} m³ · Fôrma ${nf(r.quant.forma)} m²`,
+    `Reações (kN/m): inferior g ${nf(r.reacao.A.g)} q ${nf(r.reacao.A.q)} · superior g ${nf(r.reacao.B.g)} q ${nf(r.reacao.B.q)}`].forEach(t => { doc.text(asciiPdf(t), 14, y); y += 4; });
+  pdfRodape(doc, 'Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos pelo responsável técnico. Lance reto biapoiado; armadura inferior contínua, sem dobra no ângulo reentrante.');
+  return doc.output('arraybuffer');
+}
+function gerarDxf() {
+  const r = window.__r, e = r.entrada, g = r.geo; const d = novoDxf({ ESCADA: 7, ARMADURA: 1, TEXTO: 3 });
+  let px = 0, py = 0; const seg = (x, y) => { d.linha(px, py, x, y, 'ESCADA'); px = x; py = y; };
+  seg(g.Lpi, 0); for (let i = 0; i < g.nPisos; i++) { const x = g.Lpi + i * g.piso; seg(x, (i + 1) * g.esp); seg(x + g.piso, (i + 1) * g.esp); }
+  seg(g.Ltot, g.H);
+  const hv = g.h / g.cosA, cc = e.c + 0.5;
+  const a = [[e.c, -g.h + cc], [g.Lpi + (hv - g.h) / Math.tan(g.alfa), -g.h + cc], [g.Lpi + g.Lh, g.Lh * Math.tan(g.alfa) - hv + cc / g.cosA], [g.Ltot - e.c, g.H - g.h + cc]];
+  for (let i = 1; i < a.length; i++) d.linha(a[i - 1][0], a[i - 1][1], a[i][0], a[i][1], 'ARMADURA');
+  d.texto(0, g.H + 30, 6, `ESCADA h=${g.h} cm - ${g.nEsp} espelhos ${nf(g.esp, 1)} cm - piso ${nf(g.piso, 0)} cm - C${e.fck} / CA-50 - cotas em cm`);
+  if (r.flex) d.texto(0, -g.h - 20, 5, `N1 Ø${bit(r.flex.phi)} c/${r.flex.s} principal - N2 Ø${bit(r.dist.phi)} c/${r.dist.s} distribuicao`);
+  return d.fim();
+}
+$('btnPdf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar a memória de cálculo em PDF'))) return; FC.registrarExport('escada', 'pdf'); msg('Gerando PDF…'); const b = gerarPdf(); if (b) await salvar('memoria-escada.pdf', b); });
+$('btnDxf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar o desenho em DXF'))) return; FC.registrarExport('escada', 'dxf');
+  if (!window.JSZip) { msg('Compactador não carregou. Recarregue a página.'); return; }
+  const z = new JSZip(); z.file('escada.dxf', gerarDxf()); await salvar('escada-dxf.zip', await z.generateAsync({ type: 'blob' })); });
+ligarProjetos('escada', () => `Escada H ${$('H').value} m`);
+$('f').addEventListener('input', agendar); $('f').addEventListener('change', agendar); $('f').addEventListener('submit', ev => ev.preventDefault());
+render();
+</script>
+</body>
+</html>
