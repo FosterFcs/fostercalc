@@ -57,6 +57,8 @@ where id = (select id from auth.users where email = 'cliente@exemplo.com');
 
 Plano anual: use `interval '365 days'` no lugar de `'30 days'`.
 
+Plano Estudante: `set plano = 'estudante'` (mesmos intervalos). PDF e DXF saem com a marca de uso acadêmico, sem cabeçalho profissional nem carimbo.
+
 Para cancelar: `set plano = 'gratis', plano_ate = null`.
 Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automaticamente.
 

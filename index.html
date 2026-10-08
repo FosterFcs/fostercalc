@@ -80,8 +80,9 @@ h2{font:600 1.7rem/1.1 var(--f-display);text-transform:uppercase;letter-spacing:
 .lista button:hover{color:var(--bad)}
 .vazio{padding:22px 18px;color:var(--muted)}
 .tbl{overflow-x:auto}
-.planos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-@media (max-width:820px){.planos{grid-template-columns:minmax(0,1fr)}}
+.planos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:1060px){.planos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.planos{grid-template-columns:minmax(0,1fr)}}
 .plano{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column}
 .plano ul{flex:1}
 .plano .etiqueta{align-self:flex-start;font:600 .66rem var(--f-body);letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:var(--accent);color:var(--sheet);margin-bottom:8px}
@@ -197,9 +198,13 @@ footer p{margin:0;max-width:70ch}
     <div class="plano"><h3>Grátis</h3><div class="preco">R$ 0</div>
       <ul><li>Todos os módulos de cálculo</li><li>Resultados e verificações na tela</li><li>Projetos salvos na conta</li></ul>
       <a class="bt ghost" href="viga.html">Começar</a></div>
+    <div class="plano"><span class="etiqueta sobria">Para estudantes</span><h3>Estudante</h3><div class="preco">R$ 9,90/mês</div>
+      <p class="sub">ou R$ 79/ano</p>
+      <ul><li>Tudo do Grátis</li><li>PDF e DXF com marca “uso acadêmico”</li><li>Modo didático: explicação de cada fórmula</li><li>50% de desconto no 1º ano do Pro ao se formar</li></ul>
+      <button class="bt ghost" type="button" data-assinar="est-anual">Assinar Estudante</button></div>
     <div class="plano"><span class="etiqueta sobria">Preço de lançamento</span><h3>Pro mensal</h3><div class="preco" id="precoPro">R$ 29,90/mês</div>
       <p class="sub">Cancele quando quiser</p>
-      <ul><li>Tudo do Grátis</li><li>Memória de cálculo em PDF</li><li>Detalhamento em DXF por camadas</li><li>Novos módulos antes</li></ul>
+      <ul><li>Tudo do Grátis</li><li>Memória em PDF com seu cabeçalho, logo e carimbo</li><li>Detalhamento em DXF por camadas</li><li>Novos módulos antes</li></ul>
       <button class="bt ghost" type="button" data-assinar="mensal">Assinar mensal</button></div>
     <div class="plano pro"><span class="etiqueta">2 meses grátis</span><h3>Pro anual</h3><div class="preco" id="precoAnual">R$ 299/ano</div>
       <p class="sub" id="anualEquivale">Equivale a R$ 24,92/mês</p>

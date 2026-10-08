@@ -7,10 +7,12 @@
     precoPro: 'R$ 29,90/mês',                         // plano mensal (preço de lançamento)
     precoAnual: 'R$ 299/ano',                         // plano anual
     anualEquivale: 'R$ 24,92/mês',                    // anual dividido por 12
+    precoEst: 'R$ 9,90/mês',                          // plano Estudante mensal
+    precoEstAnual: 'R$ 79/ano',                       // plano Estudante anual
     whatsapp: '5524992096103',                        // contato comercial para assinar o Pro
   };
   const sb = window.supabase ? window.supabase.createClient(CONFIG.url, CONFIG.chave) : null;
-  let sessao = null, perfil = null, pro = false;
+  let sessao = null, perfil = null, pro = false, plano = 'gratis';
   const ouvintes = [];
 
   // ---------- estilos da barra e dos diálogos ----------
@@ -29,6 +31,7 @@
   .fc-btn:disabled{opacity:.5;cursor:wait}
   .fc-plano{font:600 .66rem var(--f-body,system-ui);letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--muted)}
   .fc-plano.pro{background:var(--accent);color:var(--sheet)}
+  .fc-plano.est{background:var(--ink);color:var(--sheet)}
   .fc-mail{color:var(--muted);font-size:.82rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .fc-dlg{border:1px solid var(--line);border-radius:8px;padding:0;background:var(--sheet);color:var(--ink);width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
   .fc-dlg::backdrop{background:rgb(10 14 12 / .45)}
@@ -46,6 +49,8 @@
   .fc-toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:9px 14px;border-radius:6px;font:500 .88rem var(--f-body,system-ui);z-index:50;max-width:calc(100vw - 32px)}
   .fc-plans{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .fc-plans div{border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:.84rem;cursor:pointer}
+  .fc-grupo{margin:12px 0 6px!important;font:600 .74rem var(--f-body,system-ui);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+  .fc-nota{font-size:.8rem;color:var(--muted)}
   .fc-plans div:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .fc-plans div.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
   .fc-plans b{display:block;font:600 1.05rem var(--f-display,system-ui);text-transform:uppercase}
@@ -78,11 +83,14 @@
 
   // ---------- sessão e plano ----------
   async function carregarPerfil() {
-    perfil = null; pro = false;
+    perfil = null; pro = false; plano = 'gratis';
     if (!sb || !sessao) return;
     const { data } = await sb.from('perfis').select('nome, registro_profissional, empresa, telefone, email_contato, cidade, logo_path, plano, plano_ate').eq('id', sessao.user.id).maybeSingle();
     perfil = data;
-    const r = await sb.rpc('plano_ativo'); pro = !!r.data;
+    const r = await sb.rpc('plano_atual');
+    if (!r.error && typeof r.data === 'string') plano = r.data;
+    else { const r2 = await sb.rpc('plano_ativo'); plano = r2.data ? 'pro' : 'gratis'; }
+    pro = plano === 'pro';
     await carregarLogo();
   }
   let logo = null, logoPath = null;                      // { data: dataURL, w, h }
@@ -204,14 +212,15 @@
   const PDF = { topo: 30, base: 24 };
   function txtPdf(t) { return String(t ?? '').replace(/[−–—]/g, '-').replace(/[^\x00-\xFF]/g, ''); }
   function finalizarPdf(doc, aviso) {
-    const n = doc.getNumberOfPages(), o = dadosObra(), p = perfil || {};
+    const academico = !pro && plano === 'estudante';
+    const n = doc.getNumberOfPages(), o = dadosObra(), p = academico ? { nome: perfil?.nome ? 'Estudante: ' + perfil.nome : 'Uso acadêmico' } : (perfil || {});
     const data = new Date().toLocaleDateString('pt-BR');
     for (let i = 1; i <= n; i++) {
       doc.setPage(i);
       const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = W > H ? 12 : 14;
       // cabeçalho
       let xt = M;
-      if (logo) {
+      if (logo && !academico) {
         const bw = 36, bh = 15, k = Math.min(bw / logo.w, bh / logo.h), w = logo.w * k, h = logo.h * k;
         try { doc.addImage(logo.data, 'PNG', M, 7 + (bh - h) / 2, w, h, 'logo-fc', 'FAST'); xt = M + w + 5; } catch (e) { xt = M; }
       }
@@ -236,6 +245,26 @@
       doc.text(doc.splitTextToSize(txtPdf(aviso), W - 2 * M - 46), M, H - 7.5);
       doc.setFont('helvetica', 'normal'); doc.text('Gerado no Foster Calc · fostercalc.com.br', W - M, H - 7.5, { align: 'right' });
       doc.setFontSize(5.6); doc.text(txtPdf(`© ${new Date().getFullYear()} Foster Engenharia & Construção`), W - M, H - 4.5, { align: 'right' });
+      if (academico) {                                   // marca d'água do plano Estudante
+        try { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.13 })); } catch (e) {}
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(196, 22, 28); doc.setFontSize(W > H ? 46 : 40);
+        doc.text('USO ACADÊMICO', W / 2, H / 2 - 6, { align: 'center', angle: 35 });
+        doc.setFontSize(W > H ? 22 : 19); doc.text(txtPdf('NÃO VÁLIDO PARA ART/RRT'), W / 2 + 12, H / 2 + 14, { align: 'center', angle: 35 });
+        try { doc.restoreGraphicsState(); } catch (e) {}
+        doc.setTextColor(20);
+      }
+    }
+    if (academico) {                                     // sem carimbo de responsabilidade técnica
+      doc.setPage(n);
+      const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = W > H ? 12 : 14;
+      const y0 = H - 23, larg = Math.min(150, W - 2 * M), x0 = W - M - larg;
+      doc.setFillColor(255, 255, 255); doc.rect(x0, y0, larg, 11, 'F');
+      doc.setDrawColor(196, 22, 28); doc.setLineWidth(0.4); doc.rect(x0, y0, larg, 11);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.6); doc.setTextColor(196, 22, 28);
+      doc.text(txtPdf('DOCUMENTO DE USO ACADÊMICO · NÃO VÁLIDO PARA ART/RRT'), x0 + larg / 2, y0 + 5, { align: 'center' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.2); doc.setTextColor(90);
+      doc.text(txtPdf('Gerado no plano Estudante do Foster Calc. Para projetos profissionais, use o plano Pro.'), x0 + larg / 2, y0 + 8.8, { align: 'center' });
+      return;
     }
     // carimbo de responsabilidade técnica na última folha
     doc.setPage(n);
@@ -272,7 +301,7 @@
     alvo.innerHTML = `<a class="fc-logo" href="./"><b>FC</b>Foster Calc</a>
       <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'lajes')}${link('viga.html', 'Vigas', 'vigas')}${link('pilar.html', 'Pilares', 'pilares')}${link('sapata.html', 'Fundações', 'fundacoes')}${link('escada.html', 'Escadas', 'escadas')}${link('muro.html', 'Muros', 'muros')}${link('./#projetos', 'Meus projetos', '-')}</nav>
       <div class="fc-user">${sessao
-        ? `<span class="fc-plano ${pro ? 'pro' : ''}">${pro ? 'Pro' : 'Grátis'}</span><button class="fc-nome" type="button" data-fc="perfil" title="Meu perfil · ${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</button><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
+        ? `<span class="fc-plano ${pro ? 'pro' : plano === 'estudante' ? 'est' : ''}">${pro ? 'Pro' : plano === 'estudante' ? 'Estudante' : 'Grátis'}</span><button class="fc-nome" type="button" data-fc="perfil" title="Meu perfil · ${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</button><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
         : `<button class="fc-btn" type="button" data-fc="entrar">Entrar</button>`}</div>`;
     alvo.querySelector('[data-fc="entrar"]')?.addEventListener('click', () => entrar());
     alvo.querySelector('[data-fc="perfil"]')?.addEventListener('click', () => telaPerfil());
@@ -346,18 +375,27 @@
   }
 
   function telaPlanos(motivo, planoInicial) {
-    let plano = planoInicial === 'mensal' ? 'mensal' : 'anual';
-    const d = dialogo(`<div class="fc-in"><h3>Foster Calc Pro</h3><p>${esc(motivo)}</p>
-      <div class="fc-plans" role="radiogroup" aria-label="Escolha o plano">
-        <div data-plano="mensal" role="radio" tabindex="0"><b>Mensal</b>${esc(CONFIG.precoPro)}<ul><li>Preço de lançamento</li><li>Cancele quando quiser</li></ul></div>
-        <div data-plano="anual" role="radio" tabindex="0"><b>Anual</b>${esc(CONFIG.precoAnual)}<ul><li>2 meses grátis</li><li>Equivale a ${esc(CONFIG.anualEquivale)}</li></ul></div></div>
-      <p>Inclui memória de cálculo em PDF, detalhamento em DXF e os novos módulos primeiro. A assinatura é ativada pelo nosso atendimento no WhatsApp <b>(24) 99209-6103</b>.</p>
+    const OP = {
+      mensal: { grupo: 'Pro', nome: 'Pro mensal', preco: CONFIG.precoPro, itens: ['Preço de lançamento', 'Cancele quando quiser'] },
+      anual: { grupo: 'Pro', nome: 'Pro anual', preco: CONFIG.precoAnual, itens: ['2 meses grátis', 'Equivale a ' + CONFIG.anualEquivale] },
+      'est-mensal': { grupo: 'Estudante', nome: 'Estudante mensal', preco: CONFIG.precoEst, itens: ['PDF e DXF com marca acadêmica', 'Modo didático'] },
+      'est-anual': { grupo: 'Estudante', nome: 'Estudante anual', preco: CONFIG.precoEstAnual, itens: ['O ano letivo inteiro', 'Desconto no Pro ao se formar'] },
+    };
+    let plano = OP[planoInicial] ? planoInicial : 'anual';
+    const cartao = k => `<div data-plano="${k}" role="radio" tabindex="0"><b>${esc(OP[k].nome)}</b>${esc(OP[k].preco)}<ul>${OP[k].itens.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`;
+    const d = dialogo(`<div class="fc-in"><h3>Planos Foster Calc</h3><p>${esc(motivo)}</p>
+      <p class="fc-grupo">Profissional · PDF com seu cabeçalho, logo e carimbo para a ART</p>
+      <div class="fc-plans" role="radiogroup" aria-label="Plano profissional">${cartao('mensal')}${cartao('anual')}</div>
+      <p class="fc-grupo">Estudante · para aprender e conferir exercícios</p>
+      <div class="fc-plans" role="radiogroup" aria-label="Plano estudante">${cartao('est-mensal')}${cartao('est-anual')}</div>
+      <p class="fc-nota">No plano Estudante, PDF e DXF saem com a marca “uso acadêmico, não válido para ART/RRT”. A assinatura é ativada pelo nosso atendimento no WhatsApp <b>(24) 99209-6103</b>.</p>
       <div class="fc-row"><a class="fc-btn" style="text-decoration:none" data-wa target="_blank" rel="noopener">Assinar pelo WhatsApp</a><button class="fc-btn ghost" type="button" data-fechar>Agora não</button></div></div>`);
     const wa = d.querySelector('[data-wa]');
     const marcar = () => {
       d.querySelectorAll('[data-plano]').forEach(el => { const on = el.dataset.plano === plano; el.classList.toggle('on', on); el.setAttribute('aria-checked', on); });
-      const nome = plano === 'anual' ? `anual (${CONFIG.precoAnual})` : `mensal (${CONFIG.precoPro})`;
-      wa.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(`Olá! Quero assinar o Foster Calc Pro, plano ${nome}. Meu e-mail de cadastro é ${sessao?.user.email || ''}.`)}`;
+      const o = OP[plano];
+      const extra = o.grupo === 'Estudante' ? ' Declaro que sou estudante e vou usar o plano só para fins acadêmicos.' : '';
+      wa.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(`Olá! Quero assinar o Foster Calc, plano ${o.nome} (${o.preco}). Meu e-mail de cadastro é ${sessao?.user.email || ''}.${extra}`)}`;
     };
     d.querySelectorAll('[data-plano]').forEach(el => {
       el.onclick = () => { plano = el.dataset.plano; marcar(); };
@@ -371,9 +409,25 @@
     if (!sb) { toast('Sem conexão com o servidor. Tente novamente.'); return false; }
     if (!sessao && !(await entrar(`Entre na sua conta para ${acao}.`))) return false;
     await carregarPerfil(); desenharBarra();
-    if (!pro) { telaPlanos(`Para ${acao}, é preciso o plano Pro.`); return false; }
+    if (!pro && plano === 'estudante') { marcarDxfAcademico(); toast('Plano Estudante: o arquivo sai com a marca "uso acadêmico".'); return true; }
+    if (!pro) { telaPlanos(`Para ${acao}, é preciso um plano pago (Estudante ou Pro).`); return false; }
     if (!perfil?.nome) toast('Dica: preencha seu perfil (clique no seu nome no topo) para sair com nome, CREA e logo no PDF.');
     return true;
+  }
+  // DXF do plano Estudante: acrescenta um texto de uso acadêmico na seção de entidades
+  function marcarDxfAcademico() {
+    const Z = window.JSZip; if (!Z || Z.prototype.__fcMarca) return;
+    const orig = Z.prototype.file; Z.prototype.__fcMarca = true;
+    Z.prototype.file = function (nome, dados, ...r) {
+      if (arguments.length < 2) return orig.apply(this, arguments);
+      if (typeof dados === 'string' && /\.dxf$/i.test(nome) && !pro && plano === 'estudante') {
+        const nl = dados.includes('\r\n') ? '\r\n' : '\n';
+        const t = ['0', 'TEXT', '8', 'USO_ACADEMICO', '62', '1', '10', '0', '20', '-80', '30', '0', '40', '12', '1', 'USO ACADEMICO - NAO VALIDO PARA ART/RRT - Foster Calc plano Estudante'].join(nl) + nl;
+        const k = dados.lastIndexOf('0' + nl + 'ENDSEC');
+        if (k > 0) dados = dados.slice(0, k) + t + dados.slice(k);
+      }
+      return orig.call(this, nome, dados, ...r);
+    };
   }
   async function registrarExport(modulo, formato) { try { await sb.from('exportacoes').insert({ modulo, formato }); } catch (e) { /* métrica não bloqueia o download */ } }
 
@@ -441,7 +495,7 @@
   window.FC = {
     sb, toast, dialogo, entrar, exigirPro, registrarExport, baixar, salvarProjeto, abrirProjeto, listarProjetos, lerProjeto, apagarProjeto, telaPlanos,
     telaPerfil, finalizarPdf, dadosObra, PDF,
-    get sessao() { return sessao; }, get pro() { return pro; }, get perfil() { return perfil; },
+    get sessao() { return sessao; }, get pro() { return pro; }, get plano() { return plano; }, get perfil() { return perfil; },
     aoMudar: f => ouvintes.push(f), CONFIG,
   };
   function rodapeAutoria() {
