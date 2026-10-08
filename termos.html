@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141414">
+<title>Termos de uso e privacidade · Foster Calc</title>
+<meta name="description" content="Termos de uso e política de privacidade (LGPD) do Foster Calc, da Foster Engenharia & Construção.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: capa de prancha — título forte com selo de norma, módulos como folhas lado a lado, projetos em lista */
+:root{
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --steel:#c4161c; --steel2:#3a3d42;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --bad:#a3121a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--f-body)}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:6px 56px}
+.hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:center;padding-block:36px 40px;border-bottom:2px solid var(--ink)}
+@media (max-width:820px){.hero{grid-template-columns:minmax(0,1fr)}}
+.selo{display:inline-flex;gap:8px;align-items:center;font:600 .74rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:3px 8px}
+.hero h1{font:700 clamp(2.4rem,6vw,4.2rem)/.95 var(--f-display);letter-spacing:.005em;margin:14px 0 14px;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{font-size:1.05rem;color:var(--muted);max-width:52ch;margin:0 0 22px}
+.ctas{display:flex;flex-wrap:wrap;gap:10px}
+.bt{display:inline-block;font:600 .95rem var(--f-body);border-radius:4px;padding:11px 18px;text-decoration:none;border:1px solid var(--accent);background:var(--accent);color:var(--sheet);cursor:pointer}
+.bt.ghost{background:transparent;color:var(--accent)}
+.bt:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.prancha{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:14px}
+.prancha svg{width:100%;height:auto;display:block}
+.prancha small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:8px}
+svg .conc{fill:var(--concrete);stroke:var(--ink);stroke-width:1}
+svg .stir{stroke:var(--muted);stroke-width:1}
+svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round}
+svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round}
+svg .mpos{fill:var(--steel);fill-opacity:.15;stroke:var(--steel);stroke-width:1.3}
+svg .mneg{fill:var(--steel2);fill-opacity:.15;stroke:var(--steel2);stroke-width:1.3}
+svg .sup{fill:var(--muted)}
+svg text{fill:var(--muted);font:11px var(--f-mono)}
+h2{font:600 1.7rem/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:0 0 6px}
+.sec{padding-block:36px 4px}
+.sec > p{color:var(--muted);margin:0 0 18px;max-width:62ch}
+.mods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:1060px){.mods{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.mods{grid-template-columns:minmax(0,1fr)}}
+.mod{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.mod h3{font:600 1.35rem/1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0}
+.mod ul{margin:0;padding-left:18px;color:var(--muted);font-size:.9rem;flex:1}
+.mod ul li+li{margin-top:3px}
+.mod.breve{background:transparent;border-style:dashed}
+.mod .tag{font:600 .66rem var(--f-body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.lista{background:var(--sheet);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.lista table{width:100%;border-collapse:collapse;font-size:.9rem}
+.lista th,.lista td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)}
+.lista th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.lista tr:last-child td{border-bottom:0}
+.lista td.acoes{white-space:nowrap;text-align:right}
+.lista a{color:var(--accent);font-weight:600;text-decoration:none}
+.lista button{background:none;border:0;color:var(--muted);cursor:pointer;font:500 .85rem var(--f-body);margin-left:12px}
+.lista button:hover{color:var(--bad)}
+.vazio{padding:22px 18px;color:var(--muted)}
+.tbl{overflow-x:auto}
+.planos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:820px){.planos{grid-template-columns:minmax(0,1fr)}}
+.plano{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column}
+.plano ul{flex:1}
+.plano .etiqueta{align-self:flex-start;font:600 .66rem var(--f-body);letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:var(--accent);color:var(--sheet);margin-bottom:8px}
+.plano .etiqueta.sobria{background:var(--ink)}
+.plano .sub{font-size:.82rem;color:var(--muted);margin:-4px 0 10px}
+.plano.pro{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.plano h3{font:600 1.3rem var(--f-display);text-transform:uppercase;margin:0}
+.plano .preco{font:700 1.9rem/1.1 var(--f-display);margin:4px 0 8px}
+.plano ul{margin:0 0 14px;padding-left:18px;color:var(--muted);font-size:.9rem}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;font-size:.82rem;color:var(--muted)}
+footer p{margin:0;max-width:70ch}
+
+.legal{max-width:760px;margin:24px 0 0}
+.legal h1{font:700 2.2rem/1.1 var(--f-display);margin:0 0 6px}
+.legal .atual{color:var(--muted);font-size:.85rem;margin:0 0 18px}
+.legal h2{font:700 1.5rem/1.2 var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:36px 0 8px;padding-top:12px;border-top:2px solid var(--ink)}
+.legal h3{font:600 1rem var(--f-body);margin:22px 0 6px}
+.legal p,.legal li{max-width:70ch}
+.legal ul{padding-left:20px}
+.legal li{margin:4px 0}
+.legal a{color:var(--accent)}
+.legal .destaque{border-left:4px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 6px 6px 0}
+.legal .destaque p{margin:0}
+.indice{display:flex;flex-wrap:wrap;gap:8px}
+.indice a{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.85rem;text-decoration:none;color:var(--ink)}
+</style>
+</head>
+<body data-pagina="termos">
+<div class="wrap">
+<div id="fc-bar"></div>
+<article class="legal">
+<h1>Termos de uso e política de privacidade</h1>
+<p class="atual">Última atualização: 7 de outubro de 2026</p>
+
+<nav class="indice" aria-label="Sumário">
+<a href="#termos">Termos de uso</a><a href="#privacidade">Política de privacidade</a><a href="#contato">Contato</a>
+</nav>
+
+<h2 id="termos">Termos de uso</h2>
+
+<h3>1. Quem somos</h3>
+<p>O <b>Foster Calc</b> (fostercalc.com.br) é uma plataforma de cálculo estrutural de concreto armado desenvolvida e operada pela <b>Foster Engenharia &amp; Construção</b> (“Foster”, “nós”). Ao criar uma conta ou usar a plataforma, você declara que leu e concorda com estes termos.</p>
+
+<h3>2. O que a plataforma faz</h3>
+<p>O Foster Calc oferece módulos de pré-dimensionamento e dimensionamento de elementos de concreto armado com base na ABNT NBR 6118 e normas correlatas (lajes maciças e treliçadas, vigas, pilares, escadas, sapatas e blocos sobre estacas), gerando memória de cálculo e desenhos de detalhamento. Cada módulo informa, na própria página, as hipóteses e os limites do cálculo.</p>
+
+<h3>3. Responsabilidade técnica</h3>
+<div class="destaque">
+<p>O Foster Calc é uma <b>ferramenta de apoio</b>. Ele não substitui o projeto estrutural nem o julgamento do engenheiro. Todo resultado deve ser conferido por profissional legalmente habilitado (CREA/CAU), que assume integralmente a responsabilidade técnica pelo projeto e emite a respectiva ART ou RRT.</p>
+</div>
+<ul>
+<li>Os dados de entrada (cargas, vãos, materiais, capacidade das estacas, tensão admissível do solo etc.) são de responsabilidade de quem os informa.</li>
+<li>A capacidade das estacas e a tensão admissível do solo devem vir de investigação geotécnica e do projeto de fundações (NBR 6122 e NBR 8036).</li>
+<li>Cabe ao usuário verificar se a situação de projeto está dentro das hipóteses e limitações de cada módulo, incluindo estabilidade global, ações de vento e situações especiais não cobertas pela plataforma.</li>
+</ul>
+
+<h3>4. Conta de usuário</h3>
+<p>Você é responsável pela veracidade dos dados cadastrados, pela guarda da sua senha e por toda atividade realizada na sua conta. A conta é pessoal; o compartilhamento de acesso de uma assinatura entre várias pessoas não é permitido.</p>
+
+<h3>5. Planos, pagamento e cancelamento</h3>
+<ul>
+<li><b>Grátis:</b> acesso ao cálculo nos módulos, sem exportação de memória em PDF e desenho em DXF.</li>
+<li><b>Pro mensal e Pro anual:</b> incluem a exportação de memória em PDF e desenho em DXF, com os preços exibidos na página de planos no momento da contratação.</li>
+<li>O plano Pro é liberado após a confirmação do pagamento e vale pelo período contratado. Não há renovação automática: ao fim do período, a conta volta ao plano Grátis até um novo pagamento, sem perda dos projetos salvos.</li>
+<li><b>Direito de arrependimento:</b> você pode desistir da contratação em até 7 (sete) dias corridos a partir do pagamento, com devolução integral do valor, conforme o art. 49 do Código de Defesa do Consumidor. Basta pedir pelo contato abaixo.</li>
+<li>Os preços podem mudar para novas contratações; o valor de um período já pago não é alterado.</li>
+</ul>
+
+<h3>6. Propriedade intelectual</h3>
+<p>O software, os motores de cálculo, a interface, os textos, os desenhos, a marca “Foster Calc” e a identidade visual pertencem à Foster Engenharia &amp; Construção e são protegidos pela Lei nº 9.609/1998 (Lei do Software) e pela Lei nº 9.610/1998 (Lei de Direitos Autorais). É proibido copiar, modificar, revender, fazer engenharia reversa ou usar o código ou a marca em outro produto sem autorização por escrito.</p>
+<p>Os <b>dados dos seus projetos</b> e os documentos que você gera (memórias em PDF e desenhos em DXF) são seus e podem ser usados livremente nos seus projetos e entregues aos seus clientes.</p>
+
+<h3>7. Usos não permitidos</h3>
+<ul>
+<li>Burlar ou tentar burlar o controle de acesso aos recursos do plano Pro.</li>
+<li>Usar a plataforma de forma automatizada (robôs, extração em massa) ou que prejudique o seu funcionamento.</li>
+<li>Apresentar documentos gerados pela plataforma como projeto assinado sem a devida responsabilidade técnica.</li>
+</ul>
+<p>O descumprimento destes termos pode levar à suspensão ou ao encerramento da conta.</p>
+
+<h3>8. Limitação de responsabilidade</h3>
+<p>A Foster se empenha para que os cálculos estejam corretos e de acordo com as normas, mas a plataforma é fornecida no estado em que se encontra e pode conter erros. Dentro do permitido pela lei, a Foster não responde por danos decorrentes de projetos, obras ou decisões tomadas com base nos resultados sem a conferência do responsável técnico, nem por indisponibilidades temporárias do serviço.</p>
+
+<h3>9. Alterações e foro</h3>
+<p>Estes termos podem ser atualizados; a data da última versão fica no topo desta página e mudanças relevantes serão avisadas na plataforma. Aplica-se a legislação brasileira. Para usuários consumidores, fica eleito o foro do domicílio do consumidor.</p>
+
+<h2 id="privacidade">Política de privacidade (LGPD)</h2>
+
+<h3>1. Controlador</h3>
+<p>A Foster Engenharia &amp; Construção é a controladora dos dados pessoais tratados no Foster Calc, nos termos da Lei nº 13.709/2018 (LGPD).</p>
+
+<h3>2. Dados que coletamos</h3>
+<ul>
+<li><b>Cadastro:</b> nome e e-mail.</li>
+<li><b>Perfil profissional (opcional):</b> registro profissional (CREA/CAU), empresa, telefone, e-mail de contato, cidade e logotipo — usados no cabeçalho das memórias em PDF.</li>
+<li><b>Projetos salvos:</b> os dados de entrada dos cálculos, nome da obra, cliente e número de ART que você decidir salvar.</li>
+<li><b>Uso:</b> registro de exportações de PDF e DXF (data e módulo), para controle do plano.</li>
+</ul>
+<p>Os cálculos são feitos no seu próprio navegador; os dados de um cálculo só são enviados aos nossos servidores quando você salva um projeto.</p>
+
+<h3>3. Para que usamos</h3>
+<ul>
+<li>Criar e manter sua conta, salvar e abrir seus projetos e gerar seus documentos (execução do contrato, art. 7º, V).</li>
+<li>Controlar o plano contratado e atender suas solicitações (execução do contrato).</li>
+<li>Cumprir obrigações legais, fiscais e de segurança (art. 7º, II).</li>
+</ul>
+<p>Não vendemos nem alugamos seus dados e não os usamos para publicidade de terceiros.</p>
+
+<h3>4. Com quem compartilhamos</h3>
+<ul>
+<li><b>Supabase</b> — banco de dados, autenticação e armazenamento dos logotipos. Os servidores podem estar fora do Brasil; a transferência internacional ocorre com as garantias do art. 33 da LGPD.</li>
+<li><b>GitHub Pages</b> — hospedagem das páginas do site.</li>
+<li><b>Meios de pagamento</b> — quando utilizados, recebem apenas os dados necessários para processar a cobrança.</li>
+<li>Autoridades públicas, quando exigido por lei ou ordem judicial.</li>
+</ul>
+
+<h3>5. Armazenamento local e cookies</h3>
+<p>Usamos o armazenamento do navegador para manter você conectado e lembrar preferências (como o nome da obra em uso). Não usamos cookies de publicidade ou rastreamento de terceiros.</p>
+
+<h3>6. Por quanto tempo guardamos</h3>
+<p>Enquanto sua conta estiver ativa. Ao excluir a conta, apagamos seus dados e projetos em até 30 dias, exceto o que a lei exigir que seja guardado por mais tempo (por exemplo, registros de pagamento).</p>
+
+<h3>7. Seus direitos</h3>
+<p>Você pode, a qualquer momento: confirmar se tratamos seus dados, acessá-los, corrigi-los, pedir a portabilidade, a anonimização ou a exclusão, saber com quem os compartilhamos e revogar consentimentos (art. 18 da LGPD). Dados do perfil podem ser editados diretamente na plataforma; para os demais pedidos, use o contato abaixo. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>
+
+<h3>8. Segurança</h3>
+<p>O acesso aos dados é protegido por autenticação e por regras que permitem a cada usuário ver apenas os próprios projetos e logotipo. Nenhum sistema é totalmente imune a incidentes; se algum ocorrer com risco relevante, você e a ANPD serão comunicados.</p>
+
+<h2 id="contato">Contato</h2>
+<p>Foster Engenharia &amp; Construção<br>
+E-mail: <a href="mailto:comercial@fosterconstrucoes.com.br">comercial@fosterconstrucoes.com.br</a><br>
+WhatsApp: <a href="https://wa.me/5524992096103">(24) 99209-6103</a></p>
+</article>
+
+<footer>
+  <p><b>Foster Calc</b> é um produto da Foster Engenharia &amp; Construção.</p>
+  <p>© 2026 Foster Engenharia &amp; Construção · Todos os direitos reservados</p>
+</footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

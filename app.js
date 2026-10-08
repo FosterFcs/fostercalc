@@ -57,6 +57,8 @@
   .fc-logo-prev{display:flex;align-items:center;gap:12px;border:1px dashed var(--line);border-radius:6px;padding:10px;min-height:64px}
   .fc-logo-prev img{max-width:150px;max-height:56px;object-fit:contain;background:#fff;border-radius:3px}
   .fc-abas{display:flex;gap:6px;margin:-8px 0 18px;flex-wrap:wrap}
+  .fc-copy{margin:28px 0 0;padding-top:12px;border-top:1px solid var(--line,#ddd);font-size:.78rem;color:var(--muted,#666);display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between}
+  .fc-copy a{color:inherit}
   .fc-abas a{font:600 .85rem var(--f-body,system-ui);text-decoration:none;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:5px 14px;background:var(--sheet)}
   .fc-abas a[aria-current="page"]{color:var(--sheet);background:var(--ink);border-color:var(--ink)}
   .fc-obra{display:grid;grid-template-columns:2fr 1.4fr 1fr;gap:10px;margin:0 0 14px}
@@ -233,6 +235,7 @@
       doc.setFont('helvetica', 'italic'); doc.setFontSize(6.4); doc.setTextColor(110);
       doc.text(doc.splitTextToSize(txtPdf(aviso), W - 2 * M - 46), M, H - 7.5);
       doc.setFont('helvetica', 'normal'); doc.text('Gerado no Foster Calc · fostercalc.com.br', W - M, H - 7.5, { align: 'right' });
+      doc.setFontSize(5.6); doc.text(txtPdf(`© ${new Date().getFullYear()} Foster Engenharia & Construção`), W - M, H - 4.5, { align: 'right' });
     }
     // carimbo de responsabilidade técnica na última folha
     doc.setPage(n);
@@ -285,6 +288,7 @@
         <label data-nome hidden>Nome<input name="nome" autocomplete="name"></label>
         <label>E-mail<input name="email" type="email" autocomplete="email" required></label>
         <label data-senha>Senha<input name="senha" type="password" autocomplete="current-password" minlength="6"></label>
+        <small data-aceite hidden style="display:block;font-size:.78rem;color:var(--muted,#666);margin:-2px 0 4px">Ao criar a conta, você concorda com os <a href="termos.html" target="_blank" rel="noopener" style="color:inherit">Termos de uso e a Política de privacidade</a>.</small>
         <span class="fc-erro" data-erro role="alert"></span>
         <div class="fc-row"><button class="fc-btn" data-ok>Entrar</button><button class="fc-btn ghost" type="button" data-fechar>Cancelar</button></div>
         <div class="fc-row"><button type="button" class="fc-link" data-alt>Criar conta grátis</button><button type="button" class="fc-link" data-esq>Esqueci a senha</button></div>
@@ -294,6 +298,7 @@
         d.querySelector('[data-t]').textContent = { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Recuperar senha' }[modo];
         d.querySelector('[data-ok]').textContent = { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Enviar link' }[modo];
         d.querySelector('[data-nome]').hidden = modo !== 'criar';
+        d.querySelector('[data-aceite]').hidden = modo !== 'criar';
         d.querySelector('[data-senha]').hidden = modo === 'esqueci';
         d.querySelector('[data-alt]').textContent = modo === 'entrar' ? 'Criar conta grátis' : 'Já tenho conta';
         f.senha.autocomplete = modo === 'criar' ? 'new-password' : 'current-password'; erro.textContent = '';
@@ -439,7 +444,14 @@
     get sessao() { return sessao; }, get pro() { return pro; }, get perfil() { return perfil; },
     aoMudar: f => ouvintes.push(f), CONFIG,
   };
-  const comecar = () => { abasSubtipo(); injetarCamposObra(); iniciar(); };
+  function rodapeAutoria() {
+    if (document.querySelector('.fc-copy') || document.body.dataset.pagina === 'inicio') return;
+    const p = document.createElement('p'); p.className = 'fc-copy';
+    p.innerHTML = `<span>© ${new Date().getFullYear()} Foster Engenharia &amp; Construção · Todos os direitos reservados</span><a href="termos.html">Termos de uso e privacidade</a>`;
+    const ref = document.querySelector('.disclaimer');
+    (ref ? ref.parentNode : (document.querySelector('.wrap') || document.body)).appendChild(p);
+  }
+  const comecar = () => { abasSubtipo(); injetarCamposObra(); rodapeAutoria(); iniciar(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comecar); else comecar();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

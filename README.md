@@ -15,6 +15,8 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `trelicada.html` | Módulo de lajes treliçadas unidirecionais (vigotas TR, enchimento cerâmico ou EPS) |
 | `escada.html` | Módulo de escadas de lance reto com patamares |
 | `bloco.html` | Módulo de blocos sobre 1 a 4 estacas (bielas e tirantes) |
+| `termos.html` | Termos de uso e política de privacidade (LGPD) |
+| `LICENSE` | Licença proprietária: © Foster Engenharia & Construção, todos os direitos reservados |
 | `app.js` | Login, plano, projetos salvos, barra superior e downloads |
 | `manifest.json`, `sw.js`, `icon-*.png` | Instalação como app e uso offline |
 

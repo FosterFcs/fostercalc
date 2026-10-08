@@ -1,0 +1,20 @@
+Foster Calc — Copyright (c) 2026 Foster Engenharia & Construção. Todos os direitos reservados.
+
+Este software, incluindo código-fonte, motores de cálculo, interface, textos, desenhos,
+marca "Foster Calc" e identidade visual, é propriedade exclusiva da Foster Engenharia &
+Construção e é protegido pela Lei nº 9.609/1998 (Lei do Software) e pela Lei nº 9.610/1998
+(Lei de Direitos Autorais).
+
+O fato de o código estar visível neste repositório NÃO concede licença de uso. É proibido,
+sem autorização prévia e por escrito do titular:
+  - copiar, reproduzir, modificar ou criar obras derivadas, no todo ou em parte;
+  - distribuir, sublicenciar, vender, hospedar ou disponibilizar a terceiros;
+  - usar o código, os motores de cálculo ou a marca em outro produto ou serviço.
+
+O uso da plataforma em https://fostercalc.com.br é regido pelos Termos de Uso publicados em
+https://fostercalc.com.br/termos.html.
+
+Bibliotecas de terceiros carregadas pela plataforma (supabase-js, jsPDF, JSZip) mantêm suas
+próprias licenças (MIT) e não estão incluídas neste aviso.
+
+Contato: comercial@fosterconstrucoes.com.br · (24) 99209-6103
