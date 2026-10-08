@@ -18,6 +18,7 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `associada.html` | Módulo de sapata associada (dois pilares, viga de rigidez) |
 | `muro.html` | Módulo de muro de arrimo de flexão |
 | `bloco.html` | Módulo de blocos sobre 1 a 4 estacas (bielas e tirantes) |
+| `validacao.html` | Comparação com exemplos resolvidos publicados (gerada por script a partir dos dados de validação) |
 | `termos.html` | Termos de uso e política de privacidade (LGPD) |
 | `LICENSE` | Licença proprietária: © Foster Engenharia & Construção, todos os direitos reservados |
 | `app.js` | Login, plano, projetos salvos, barra superior e downloads |

@@ -312,7 +312,8 @@ function calcularEscadaH(e0) {
   // ---- cisalhamento sem estribos
   let cis = null;
   if (flex) {
-    const Vd = Math.max(D.RA, D.RB) * cosA;                 // componente perpendicular ao eixo da laje
+    // componente perpendicular ao eixo só quando o apoio recebe o próprio lance; sob patamar a laje é horizontal
+    const Vd = Math.max(D.RA * (Lpi > 0 ? 1 : cosA), D.RB * (Lps > 0 ? 1 : cosA));
     const dm = flex.d / 100, kk = Math.max(1, 1.6 - dm), rho1 = Math.min(flex.AsEf / (bw * flex.d), 0.02);
     const VRd1 = 0.25 * fctd * kk * (1.2 + 40 * rho1) * bw * flex.d;
     cis = { Vd, VRd1, ok: Vd <= VRd1 };
@@ -335,7 +336,7 @@ function calcularEscadaH(e0) {
     for (let i = 1; i < k.length; i++) w.push(w[i - 1] + (th[i - 1] + th[i]) / 2 * dx);
     const corr = w[w.length - 1] / Ltot;
     const def = w.map((v, i) => -(v - corr * i * dx));     // deslocamento para baixo positivo
-    const a0 = Math.max(...def) / cosA;                       // flecha medida perpendicular ao lance (aproximação)
+    const a0 = Math.max(...def) / (cosA * cosA);              // flecha perpendicular ao lance: modelo projetado ÷ cos²α (a favor da segurança)
     const alfaF = 2 - 0.68 * 0.996, aTot = a0 * (1 + alfaF), aLim = Ltot / 250;
     flecha = { Ic, Mr, Ma, xII, III, Ieq, a0, alfaF, aTot, aLim, ok: aTot <= aLim };
     if (!flecha.ok) avisos.push(`Flecha ${aTot.toFixed(2)} cm acima de L/250 = ${aLim.toFixed(2)} cm: aumente a espessura.`);

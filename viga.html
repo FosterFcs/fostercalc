@@ -597,7 +597,11 @@ function calcularViga(e0) {
       if (a.extremo) {
         // 18.3.2.4: ancoragem no apoio extremo
         const { lb } = lbBasico(phiL, true, mat);
-        const Rst = s.cis.al / f.d * s.Vd;
+        // cortante no próprio apoio extremo (não o máximo do vão) e a decalagem correspondente
+        const si = S.indexOf(s), Pa = env.filter(p => p.seg === si && Math.abs(p.x - xa) < 1e-6);
+        const VdA = Pa.length ? Math.max(...Pa.map(p => Math.max(Math.abs(p.Vmax), Math.abs(p.Vmin)))) : s.Vd;
+        const VcA = s.cis.Vc, alA = Math.min(f.d, Math.max(0.5 * f.d, VdA <= VcA ? f.d : f.d * VdA / (2 * (VdA - VcA))));
+        const Rst = alA / f.d * VdA;
         const AsCalc = Math.max(Rst / mat.fyd, f.AsAdot / 3);
         const lbnec = Math.max(0.7 * lb * AsCalc / f.AsEf, 8 * phiL, 6);
         const disp = e.apoio - c;

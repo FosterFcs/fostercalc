@@ -241,8 +241,8 @@ function calcularAssociada(e0) {
   let L = aR5(2 * (Math.max(xR, l - xR) + folga));
   let esq = L / 2 - xR;                                      // balanço além do eixo de P1 (simétrico em torno de xR)
   if (e.limEsq > 0 && esq > e.limEsq * 100) {               // divisa à esquerda limita o balanço: arredonda para baixo
-    L = Math.floor(2 * (xR + e.limEsq * 100) / 5 + 1e-9) * 5; esq = L / 2 - xR;
-    if (esq < e.b1 / 2) erros.push('O balanço permitido não cobre o pilar P1: use viga alavanca (sapata de divisa).');
+    L = Math.floor(2 * (xR + e.limEsq * 100) + 1e-9); esq = L / 2 - xR;        // arredonda ao cm para não passar da divisa
+    if (esq < e.b1 / 2 - 0.5) erros.push('O balanço permitido não cobre o pilar P1: use viga alavanca (sapata de divisa).');
     if (L / 2 - (l - xR) < e.b2 / 2) erros.push('Com o balanço limitado à esquerda, a sapata não alcança P2 centrada na resultante: use viga alavanca (sapata de divisa).');
   }
   const dir = L - esq - l;
@@ -320,7 +320,7 @@ function calcularAssociada(e0) {
     const aswCalc = Math.max(0, (Vd - Vc) / (0.9 * d * fyw)) * 100, aswMin = 0.2 * fctm / 50 * bw * 100, asw = Math.max(aswCalc, aswMin);
     const smax = Vd <= 0.67 * VRd2 ? Math.min(0.6 * d, 30) : Math.min(0.3 * d, 20);
     let est = null;
-    for (const pt of [5, 6.3, 8, 10]) { const s = Math.floor(Math.min(smax, 2 * aA(pt) / asw * 100)); if (s >= 10) { est = { phi: pt, s, asw, aswMin, aswCalc }; break; } }
+    for (const ramos of bw >= 30 ? [2, 4] : [2]) { for (const pt of [5, 6.3, 8, 10, 12.5]) { const s = Math.floor(Math.min(smax, ramos * aA(pt) / asw * 100)); if (s >= 10) { est = { phi: pt, s, ramos, asw, aswMin, aswCalc }; break; } } if (est) break; }
     if (!est) continue;
     viga = { h, d, sup, inf, VRd2, Vc, est, smax, pele: h > 60 ? 0.001 * bw * h : 0 };
     break;
@@ -334,7 +334,7 @@ function calcularAssociada(e0) {
   let pesoViga = 0, nEst = 0, compEst = 0, compLong = 0;
   if (viga) {
     compLong = L - 2 * cv + 2 * (viga.h - 2 * cv);
-    nEst = Math.ceil(L / viga.est.s) + 1; compEst = 2 * (bw - 2 * cv) + 2 * (viga.h - 2 * cv) + 10;
+    nEst = Math.ceil(L / viga.est.s) + 1; compEst = (2 * (bw - 2 * cv) + 2 * (viga.h - 2 * cv) + 10) * (viga.est.ramos > 2 ? 1.75 : 1);   // 4 ramos: estribo externo + interno
     pesoViga = massa(viga.sup.n, compLong, viga.sup.phi) + massa(viga.inf.n, compLong, viga.inf.phi) + massa(nEst, compEst, viga.est.phi) + (viga.pele ? massa(2 * Math.ceil(viga.pele / aA(10)), L, 10) : 0);
   }
   const pesoSap = massa(princ.n, princ.comp, princ.phi) + massa(dist.n, dist.comp, dist.phi);
@@ -463,7 +463,7 @@ function memoria(r) {
     ['Armadura inferior', 'Md = 1,4·Mk', [`${nf(v.inf.As)} cm² → ${barras(v.inf)}`], ''],
     ['Cortante máximo', 'Vd = 1,4 · Vk', [`${nf(v.Vd, 1)} kN`], ''],
     ['Biela comprimida', 'VRd2 = 0,27·αv2·fcd·bw·d', [{ v: `${nf(v.VRd2, 1)} kN`, alerta: v.Vd > v.VRd2 }], '17.4.2.2'],
-    ['Estribos', 'Asw/s (Modelo I)', [`${nf(v.est.asw)} cm²/m → Ø${bit(v.est.phi)} c/${v.est.s}`], '17.4.1.1'],
+    ['Estribos', 'Asw/s (Modelo I)', [`${nf(v.est.asw)} cm²/m → Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}`], '17.4.1.1'],
     ['Armadura de pele', 'Asp = 0,10%·bw·h por face', [v.pele ? `${nf(v.pele)} cm²` : 'dispensada (h ≤ 60 cm)'], '17.3.5.2.3'],
   ]});
   return out;
@@ -528,19 +528,19 @@ function render() {
   $('keys').innerHTML = `
     <div><dt>Sapata</dt><dd>${r.L} × ${r.B}<small>h = ${s.hs} · h0 = ${s.h0} cm</small></dd></div>
     <div><dt>Viga de rigidez</dt><dd>${v.bw} × ${v.h || '—'}<small>${v.h ? `sup. ${barras(v.sup)} · inf. ${barras(v.inf)}` : 'sem solução'}</small></dd></div>
-    <div><dt>Estribos</dt><dd>${v.est ? `Ø${bit(v.est.phi)} c/${v.est.s}` : '—'}<small>Vd = ${nf(v.Vd, 0)} kN</small></dd></div>
+    <div><dt>Estribos</dt><dd>${v.est ? `Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}` : '—'}<small>Vd = ${nf(v.Vd, 0)} kN</small></dd></div>
     <div><dt>Solo</dt><dd>${nf(r.sigma * 1e4, 0)} kPa<small>admissível ${nf(e.sadm, 0)} kPa</small></dd></div>`;
   $('planta').innerHTML = svgPlanta(r);
   $('corte').innerHTML = svgCorte(r);
   $('diag').innerHTML = svgMomento(r);
-  $('legenda').textContent = `Sapata: ${s.princ.n} Ø${bit(s.princ.phi)} c/${s.princ.s} transversais (por baixo) e Ø${bit(s.dist.phi)} c/${s.dist.s} longitudinais · Viga: ${barras(v.sup)} superiores, ${barras(v.inf)} inferiores, estribos ${v.est ? `Ø${bit(v.est.phi)} c/${v.est.s}` : '—'} · cotas em cm`;
+  $('legenda').textContent = `Sapata: ${s.princ.n} Ø${bit(s.princ.phi)} c/${s.princ.s} transversais (por baixo) e Ø${bit(s.dist.phi)} c/${s.dist.s} longitudinais · Viga: ${barras(v.sup)} superiores, ${barras(v.inf)} inferiores, estribos ${v.est ? `Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}` : '—'} · cotas em cm`;
   renderMemoria(memoria(r), 'memoria', 'Viga de rigidez');
   const q = r.quant;
   const linha = (pos, d, n, phi, L) => `<tr><td>${pos}</td><td>${d}</td><td class="v">${n}</td><td class="v">${bit(phi)}</td><td class="v">${nf(L / 100)} m</td><td class="v">${nf(n * L / 100 * Math.PI * (phi / 10) ** 2 / 4 * 0.785, 1)} kg</td></tr>`;
   $('quant').innerHTML = `<thead><tr><th>Pos.</th><th>Descrição</th><th class="v">Qtd.</th><th class="v">Ø (mm)</th><th class="v">Compr. unit.</th><th class="v">Massa</th></tr></thead><tbody>
     ${linha('N1', `sapata · transversal c/${s.princ.s}`, s.princ.n, s.princ.phi, s.princ.comp)}
     ${linha('N2', `sapata · longitudinal c/${s.dist.s}`, s.dist.n, s.dist.phi, s.dist.comp)}
-    ${v.h ? linha('N3', 'viga · superior', v.sup.n, v.sup.phi, v.compLong) + linha('N4', 'viga · inferior', v.inf.n, v.inf.phi, v.compLong) + linha('N5', `viga · estribos c/${v.est.s}`, q.nEst, v.est.phi, q.compEst) : ''}
+    ${v.h ? linha('N3', 'viga · superior', v.sup.n, v.sup.phi, v.compLong) + linha('N4', 'viga · inferior', v.inf.n, v.inf.phi, v.compLong) + linha('N5', `viga · estribos c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}`, q.nEst, v.est.phi, q.compEst) : ''}
     <tr><td></td><td><b>Aço CA-50 total</b> (sem perdas)</td><td></td><td></td><td></td><td class="v"><b>${nf(q.peso, 1)} kg</b></td></tr>
     <tr><td></td><td>Concreto C${e.fck}</td><td></td><td></td><td></td><td class="v">${nf(q.vol, 3)} m³</td></tr>
     <tr><td></td><td>Concreto magro (lastro 5 cm)</td><td></td><td></td><td></td><td class="v">${nf(q.magro, 3)} m³</td></tr></tbody>`;
@@ -566,7 +566,7 @@ function gerarPdf() {
   doc.text(`L = ${r.L} cm`, x0, y0 + r.B * k + 4); doc.text(`B = ${r.B} cm`, x0 + r.L * k + 2, y0 + r.B * k / 2);
   y = y0 + r.B * k + 10; novaPag(25); doc.setFontSize(7.6);
   [`Sapata ${r.L}x${r.B} h=${s.hs} h0=${s.h0} · N1 ${s.princ.n} Ø${bit(s.princ.phi)} c/${s.princ.s} (transversal) · N2 Ø${bit(s.dist.phi)} c/${s.dist.s}`,
-   v.h ? `Viga de rigidez ${v.bw}x${v.h} · N3 ${barras(v.sup)} sup. · N4 ${barras(v.inf)} inf. · N5 Ø${bit(v.est.phi)} c/${v.est.s}` : 'Viga de rigidez: sem solução',
+   v.h ? `Viga de rigidez ${v.bw}x${v.h} · N3 ${barras(v.sup)} sup. · N4 ${barras(v.inf)} inf. · N5 Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}` : 'Viga de rigidez: sem solução',
    `Aço ${nf(r.quant.peso, 1)} kg · Concreto ${nf(r.quant.vol, 3)} m³ · Lastro ${nf(r.quant.magro, 3)} m³`].forEach(t => { doc.text(asciiPdf(t), 14, y); y += 4; });
   pdfRodape(doc, 'Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos por profissional habilitado. Tensão admissível conforme investigação geotécnica (NBR 6122).');
   return doc.output('arraybuffer');
@@ -581,7 +581,7 @@ function gerarDxf() {
   for (let i = 0; i < P.n; i++) { const xx = e.c + i * (r.L - 2 * e.c) / Math.max(P.n - 1, 1); d.linha(xx, -r.B / 2 + e.c, xx, r.B / 2 - e.c, 'ARMADURA'); }
   d.texto(0, r.B / 2 + 20, 6, `SAPATA ASSOCIADA ${r.L}x${r.B} h=${s.hs} - VIGA DE RIGIDEZ ${v.bw}x${v.h || '-'} - C${e.fck} / CA-50 - cotas em cm`);
   d.texto(0, -r.B / 2 - 15, 5, `N1 ${P.n} Ø${bit(P.phi)} c/${P.s} C=${nf(P.comp, 0)} - N2 Ø${bit(s.dist.phi)} c/${s.dist.s}`);
-  if (v.h) d.texto(0, -r.B / 2 - 25, 5, `VIGA: N3 ${barras(v.sup)} sup. - N4 ${barras(v.inf)} inf. - N5 Ø${bit(v.est.phi)} c/${v.est.s}`);
+  if (v.h) d.texto(0, -r.B / 2 - 25, 5, `VIGA: N3 ${barras(v.sup)} sup. - N4 ${barras(v.inf)} inf. - N5 Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}`);
   return d.fim();
 }
 $('btnPdf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar a memória de cálculo em PDF'))) return; FC.registrarExport('associada', 'pdf'); msg('Gerando PDF…'); const b = gerarPdf(); if (b) await salvar(`memoria-sapata-associada-${window.__r.L}x${window.__r.B}.pdf`, b); });

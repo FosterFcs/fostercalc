@@ -240,18 +240,19 @@ function calcularDivisa(e0) {
   const bw = Math.max(e.bw || 0, a1, 20);                   // largura da viga alavanca
 
   // ---- dimensões da sapata (iteração em R1)
-  let R1 = 1.2 * N1, A = 0, B = 0, ecc = 0, it = 0;
+  // iteração em R1 (parte de N1; B acompanha R1 e pode diminuir), parada por convergência ou repetição
+  let R1 = N1, A = 0, B = 0, ecc = 0, it = 0; const vistos = new Set();
   for (; it < 80; it++) {
     const area = kpp * R1 / sadm;
-    B = Math.max(dR5(Math.sqrt(area / razao)), dR5(b1 + 20), B);   // B só cresce (evita oscilação)
-    A = Math.max(dR5(area / B), dR5(bw + 40));
+    B = Math.max(dR5(Math.sqrt(area / razao)), dR5(b1 + 20));
     ecc = (B - b1) / 2;
     if (ecc >= 0.8 * l) { erros.push('Pilares muito próximos para a excentricidade da sapata de divisa: use sapata associada.'); break; }
     const novo = N1 * l / (l - ecc);
-    if (kpp * novo / (A * B) <= sadm * 1.0001) { R1 = novo; break; }
-    R1 = novo;
+    if (Math.abs(novo - R1) < 0.5 || vistos.has(B)) { R1 = Math.max(R1, novo); break; }
+    vistos.add(B); R1 = novo;
   }
-  ecc = (B - b1) / 2; R1 = N1 * l / (l - ecc);                // R1 sempre coerente com a geometria final
+  ecc = (B - b1) / 2; R1 = N1 * l / (l - ecc);                // R1 coerente com a geometria final
+  A = Math.max(dR5(kpp * R1 / sadm / B), dR5(bw + 40));
   while (kpp * R1 / (A * B) > sadm * 1.0001) A += 5;
   const sigma = kpp * R1 / (A * B);
   if (sigma > sadm * 1.0001) erros.push('Tensão no solo acima da admissível.');
@@ -339,7 +340,7 @@ function calcularDivisa(e0) {
       const asw = Math.max(aswCalc, aswMin);
       const smax = Vd <= 0.67 * VRd2 ? Math.min(0.6 * d, 30) : Math.min(0.3 * d, 20);
       let est = null;
-      for (const pt of [5, 6.3, 8, 10]) { const s = Math.floor(Math.min(smax, 2 * dA(pt) / asw * 100)); if (s >= 10) { est = { phi: pt, s, asw, aswMin, aswCalc }; break; } }
+      for (const ramos of bw >= 30 ? [2, 4] : [2]) { for (const pt of [5, 6.3, 8, 10, 12.5]) { const s = Math.floor(Math.min(smax, ramos * dA(pt) / asw * 100)); if (s >= 10) { est = { phi: pt, s, ramos, asw, aswMin, aswCalc }; break; } } if (est) break; }
       if (!est) continue;
       const pele = h > 60 ? 0.001 * bw * h : 0;
       viga = { h, d, x, xd: x / d, phi, n, camadas, As, AsMin, AsEf: n * dA(phi), porCamada, VRd2, Vc, est, smax, pele, Mlim };
@@ -359,7 +360,7 @@ function calcularDivisa(e0) {
   let pesoViga = 0, nEst = 0, compEst = 0;
   if (viga) {
     const compLong = compViga + 2 * (viga.h - 2 * cv);
-    nEst = Math.ceil(Lv / viga.est.s) + 1; compEst = 2 * (bw - 2 * cv) + 2 * (viga.h - 2 * cv) + 10;
+    nEst = Math.ceil(Lv / viga.est.s) + 1; compEst = (2 * (bw - 2 * cv) + 2 * (viga.h - 2 * cv) + 10) * (viga.est.ramos > 2 ? 1.75 : 1);   // 4 ramos: estribo externo + interno
     pesoViga = massa(viga.n, compLong, viga.phi) + massa(2, compViga, 10) + massa(nEst, compEst, viga.est.phi) + (viga.pele ? massa(2 * Math.ceil(viga.pele / dA(10)), compViga, 10) : 0);
     viga.compLong = compLong;
   }
@@ -494,7 +495,7 @@ function memoria(r) {
     ['Cortante máximo', 'Vd = 1,4 · Vk', [`${nf(v.Vd, 1)} kN`], ''],
     ['Biela comprimida', 'VRd2 = 0,27·αv2·fcd·bw·d', [{ v: `${nf(v.VRd2, 1)} kN`, alerta: v.Vd > v.VRd2 }], '17.4.2.2'],
     ['Parcela do concreto', 'Vc = 0,6·fctd·bw·d', [`${nf(v.Vc, 1)} kN`], ''],
-    ['Estribos', 'Asw/s (mín. 0,2·fctm/fywk·bw)', [`${nf(v.est.asw)} cm²/m → Ø${bit(v.est.phi)} c/${v.est.s}`], '17.4.1.1'],
+    ['Estribos', 'Asw/s (mín. 0,2·fctm/fywk·bw)', [`${nf(v.est.asw)} cm²/m → Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}`], '17.4.1.1'],
     ['Armadura de pele', 'Asp = 0,10%·bw·h por face', [v.pele ? `${nf(v.pele)} cm²` : 'dispensada (h ≤ 60 cm)'], '17.3.5.2.3'],
   ]});
   return out;
@@ -571,7 +572,7 @@ function render() {
     ${msgs.length ? `<ul class="msgs">${msgs.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '<span style="margin-left:8px;color:var(--ink);font-weight:400">Solo, sapata e viga alavanca dentro dos limites.</span>'}`;
   $('keys').innerHTML = `
     <div><dt>Sapata P1</dt><dd>${r.A} × ${r.B}<small>h = ${s.hs} · h0 = ${s.h0} cm</small></dd></div>
-    <div><dt>Viga alavanca</dt><dd>${v.bw} × ${v.h || '—'}<small>${v.n ? `${v.n} Ø${bit(v.phi)} sup. · Ø${bit(v.est.phi)} c/${v.est.s}` : 'sem solução'}</small></dd></div>
+    <div><dt>Viga alavanca</dt><dd>${v.bw} × ${v.h || '—'}<small>${v.n ? `${v.n} Ø${bit(v.phi)} sup. · Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}` : 'sem solução'}</small></dd></div>
     <div><dt>Reação na sapata</dt><dd>${nf(r.R1, 0)} kN<small>e = ${nf(r.ecc, 1)} cm · σ ${nf(r.sigma * 1e4, 0)} kPa</small></dd></div>
     <div><dt>Carga de P2</dt><dd>${nf(r.N2red, 0)} kN<small>alívio ΔP = ${nf(r.dP, 0)} kN (50%)</small></dd></div>`;
   const qs = new URLSearchParams({ ap: e.a2, bp: e.b2, Nk: r.N2red.toFixed(1), sadm: e.sadm, fck: e.fck });
@@ -579,7 +580,7 @@ function render() {
   $('planta').innerHTML = svgPlanta(r);
   $('corte').innerHTML = svgCorte(r);
   $('diag').innerHTML = svgMomento(r);
-  $('legenda').textContent = `Sapata: ${s.princ.n} Ø${bit(s.princ.phi)} c/${s.princ.s} paralelas à divisa (por baixo) e Ø${bit(s.dist.phi)} c/${s.dist.s} na outra direção · Viga: ${v.n ? `${v.n} Ø${bit(v.phi)} superiores (principal), 2 Ø10 inferiores, estribos Ø${bit(v.est.phi)} c/${v.est.s}` : '—'} · cotas em cm`;
+  $('legenda').textContent = `Sapata: ${s.princ.n} Ø${bit(s.princ.phi)} c/${s.princ.s} paralelas à divisa (por baixo) e Ø${bit(s.dist.phi)} c/${s.dist.s} na outra direção · Viga: ${v.n ? `${v.n} Ø${bit(v.phi)} superiores (principal), 2 Ø10 inferiores, estribos Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}` : '—'} · cotas em cm`;
   renderMemoria(memoria(r), 'memoria', 'Viga alavanca');
   const q = r.quant;
   const linha = (pos, d, n, phi, L) => `<tr><td>${pos}</td><td>${d}</td><td class="v">${n}</td><td class="v">${bit(phi)}</td><td class="v">${nf(L / 100)} m</td><td class="v">${nf(n * L / 100 * Math.PI * (phi / 10) ** 2 / 4 * 0.785, 1)} kg</td></tr>`;
@@ -587,7 +588,7 @@ function render() {
     ${linha('N1', `sapata · paralela à divisa c/${s.princ.s}`, s.princ.n, s.princ.phi, s.princ.comp)}
     ${linha('N2', `sapata · distribuição c/${s.dist.s}`, s.dist.n, s.dist.phi, s.dist.comp)}
     ${v.n ? linha('N3', 'viga · armadura superior', v.n, v.phi, v.compLong) : ''}
-    ${v.n ? linha('N4', `viga · estribos c/${v.est.s}`, q.nEst, v.est.phi, q.compEst) : ''}
+    ${v.n ? linha('N4', `viga · estribos c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}`, q.nEst, v.est.phi, q.compEst) : ''}
     <tr><td></td><td><b>Aço CA-50 total</b> (inclui construtivas, sem perdas)</td><td></td><td></td><td></td><td class="v"><b>${nf(q.peso, 1)} kg</b></td></tr>
     <tr><td></td><td>Concreto C${e.fck} (sapata + viga)</td><td></td><td></td><td></td><td class="v">${nf(q.vol, 3)} m³</td></tr>
     <tr><td></td><td>Concreto magro (lastro 5 cm)</td><td></td><td></td><td></td><td class="v">${nf(q.magro, 3)} m³</td></tr></tbody>`;
@@ -615,7 +616,7 @@ function gerarPdf() {
   novaPag(30);
   doc.setFont('courier', 'normal'); doc.setFontSize(7.6);
   [`Sapata ${r.A}x${r.B} h=${s.hs} h0=${s.h0} · N1 ${s.princ.n} Ø${bit(s.princ.phi)} c/${s.princ.s} C=${nf(s.princ.comp, 0)} · N2 Ø${bit(s.dist.phi)} c/${s.dist.s}`,
-   v.n ? `Viga alavanca ${v.bw}x${v.h} · N3 ${v.n} Ø${bit(v.phi)} sup. C=${nf(v.compLong, 0)} · 2 Ø10 inf. · N4 Ø${bit(v.est.phi)} c/${v.est.s}` : 'Viga alavanca: sem solução',
+   v.n ? `Viga alavanca ${v.bw}x${v.h} · N3 ${v.n} Ø${bit(v.phi)} sup. C=${nf(v.compLong, 0)} · 2 Ø10 inf. · N4 Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}` : 'Viga alavanca: sem solução',
    `Carga de P2 para a fundação: ${nf(r.N2red, 1)} kN (alívio de 50%)`,
    `Aço ${nf(r.quant.peso, 1)} kg · Concreto ${nf(r.quant.vol, 3)} m³ · Lastro ${nf(r.quant.magro, 3)} m³`].forEach(t => { doc.text(asciiPdf(t), 14, y); y += 4; });
   pdfRodape(doc, 'Ferramenta de apoio ao dimensionamento. Resultados devem ser conferidos por profissional habilitado. Tensão admissível conforme investigação geotécnica (NBR 6122).');
@@ -633,7 +634,7 @@ function gerarDxf() {
   for (let i = 0; i < P.n; i++) { const xx = e.c + i * (r.B - 2 * e.c) / Math.max(P.n - 1, 1); d.linha(xx, -r.A / 2 + e.c, xx, r.A / 2 - e.c, 'ARMADURA'); }
   d.texto(0, r.A / 2 + 20, 6, `SAPATA DE DIVISA ${r.A}x${r.B} h=${s.hs} - VIGA ALAVANCA ${v.bw}x${v.h || '-'} - C${e.fck} / CA-50 - cotas em cm`);
   d.texto(0, -r.A / 2 - 15, 5, `N1 ${P.n} Ø${bit(P.phi)} c/${P.s} C=${nf(P.comp, 0)} - N2 Ø${bit(s.dist.phi)} c/${s.dist.s}`);
-  if (v.n) d.texto(0, -r.A / 2 - 25, 5, `VIGA: N3 ${v.n} Ø${bit(v.phi)} superior C=${nf(v.compLong, 0)} - N4 Ø${bit(v.est.phi)} c/${v.est.s}`);
+  if (v.n) d.texto(0, -r.A / 2 - 25, 5, `VIGA: N3 ${v.n} Ø${bit(v.phi)} superior C=${nf(v.compLong, 0)} - N4 Ø${bit(v.est.phi)} c/${v.est.s}${v.est.ramos > 2 ? ' (4 ramos)' : ''}`);
   return d.fim();
 }
 $('btnPdf').addEventListener('click', async () => { if (!(await FC.exigirPro('baixar a memória de cálculo em PDF'))) return; FC.registrarExport('divisa', 'pdf'); msg('Gerando PDF…'); const b = gerarPdf(); if (b) await salvar(`memoria-sapata-divisa-${window.__r.A}x${window.__r.B}.pdf`, b); });
