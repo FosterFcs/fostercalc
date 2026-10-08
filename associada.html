@@ -238,11 +238,11 @@ function calcularAssociada(e0) {
   // ---- comprimento centrado na resultante
   const xR = N2 * l / Nt;                                    // da posição de P1
   const folga = Math.max(e.b1, e.b2) / 2 + 25;
-  let esq = Math.max(xR, l - xR) + folga - xR;              // balanço além de P1 (simétrico em torno de xR)
   let L = aR5(2 * (Math.max(xR, l - xR) + folga));
-  esq = L / 2 - xR;
-  if (e.limEsq > 0 && esq > e.limEsq * 100) {               // divisa à esquerda limita o balanço
-    esq = e.limEsq * 100; L = aR5(2 * (xR + esq)); esq = L / 2 - xR;
+  let esq = L / 2 - xR;                                      // balanço além do eixo de P1 (simétrico em torno de xR)
+  if (e.limEsq > 0 && esq > e.limEsq * 100) {               // divisa à esquerda limita o balanço: arredonda para baixo
+    L = Math.floor(2 * (xR + e.limEsq * 100) / 5 + 1e-9) * 5; esq = L / 2 - xR;
+    if (esq < e.b1 / 2) erros.push('O balanço permitido não cobre o pilar P1: use viga alavanca (sapata de divisa).');
     if (L / 2 - (l - xR) < e.b2 / 2) erros.push('Com o balanço limitado à esquerda, a sapata não alcança P2 centrada na resultante: use viga alavanca (sapata de divisa).');
   }
   const dir = L - esq - l;
