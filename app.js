@@ -9,6 +9,13 @@
     anualEquivale: 'R$ 24,92/mês',                    // anual dividido por 12
     precoEst: 'R$ 9,90/mês',                          // plano Estudante mensal
     precoEstAnual: 'R$ 79/ano',                       // plano Estudante anual
+    // links públicos de pagamento (Asaas). O cliente deve pagar com o mesmo e-mail do cadastro no Foster Calc.
+    linksPagamento: {
+      'est-mensal': 'https://www.asaas.com/c/6o5n5wj2u1r0zrdp',
+      'est-anual': 'https://www.asaas.com/c/2hnn8c4mfn57zq2a',
+      mensal: 'https://www.asaas.com/c/oio2jw9yiygf6csf',
+      anual: 'https://www.asaas.com/c/zjevnkzmkp66gzda',
+    },
     whatsapp: '5524992096103',                        // contato comercial para assinar o Pro
   };
   const sb = window.supabase ? window.supabase.createClient(CONFIG.url, CONFIG.chave) : null;
@@ -392,14 +399,16 @@
       <div class="fc-plans" role="radiogroup" aria-label="Plano profissional">${cartao('mensal')}${cartao('anual')}</div>
       <p class="fc-grupo">Estudante · para aprender e conferir exercícios</p>
       <div class="fc-plans" role="radiogroup" aria-label="Plano estudante">${cartao('est-mensal')}${cartao('est-anual')}</div>
-      <p class="fc-nota">No plano Estudante, PDF e DXF saem com a marca “uso acadêmico, não válido para ART/RRT”. A assinatura é ativada pelo nosso atendimento no WhatsApp <b>(24) 99209-6103</b>.</p>
-      <div class="fc-row"><a class="fc-btn" style="text-decoration:none" data-wa target="_blank" rel="noopener">Assinar pelo WhatsApp</a><button class="fc-btn ghost" type="button" data-fechar>Agora não</button></div></div>`);
-    const wa = d.querySelector('[data-wa]');
+      <p class="fc-nota">Pagamento por Pix ou cartão. <b>Use no pagamento o mesmo e-mail do seu cadastro no Foster Calc</b>${sessao ? ` (${esc(sessao.user.email)})` : ''}. No plano Estudante, PDF e DXF saem com a marca “uso acadêmico, não válido para ART/RRT”.</p>
+      <div class="fc-row"><a class="fc-btn" style="text-decoration:none" data-pagar target="_blank" rel="noopener">Assinar agora</a><a class="fc-btn ghost" style="text-decoration:none" data-wa target="_blank" rel="noopener">Dúvidas no WhatsApp</a><button class="fc-btn ghost" type="button" data-fechar>Agora não</button></div></div>`);
+    const wa = d.querySelector('[data-wa]'), pagar = d.querySelector('[data-pagar]');
     const marcar = () => {
       d.querySelectorAll('[data-plano]').forEach(el => { const on = el.dataset.plano === plano; el.classList.toggle('on', on); el.setAttribute('aria-checked', on); });
       const o = OP[plano];
       const extra = o.grupo === 'Estudante' ? ' Declaro que sou estudante e vou usar o plano só para fins acadêmicos.' : '';
       wa.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(`Olá! Quero assinar o Foster Calc, plano ${o.nome} (${o.preco}). Meu e-mail de cadastro é ${sessao?.user.email || ''}.${extra}`)}`;
+      pagar.href = CONFIG.linksPagamento[plano] || wa.href;
+      pagar.textContent = `Assinar ${o.nome}`;
     };
     d.querySelectorAll('[data-plano]').forEach(el => {
       el.onclick = () => { plano = el.dataset.plano; marcar(); };
