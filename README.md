@@ -84,11 +84,17 @@ Todas as tabelas com RLS; o verificador de segurança do Supabase está sem aler
 - Viga: tabela **Reações nos pilares** com link **Calcular pilar** (`pilar.html?Nk=..&hx=..&fck=..`).
 - Pilar: links para sapata (`sapata.html?...`) e bloco sobre estacas (`bloco.html?...`) com seção, Nk, momento e fck preenchidos.
 
+## Pagamento automático (Asaas)
+
+- Links públicos de pagamento em `app.js` (`CONFIG.linksPagamento`). O cliente deve pagar com o mesmo e-mail do cadastro.
+- Edge Function `asaas-webhook` (Supabase): recebe os eventos do Asaas, identifica o plano pelo valor (9,90 / 79 / 29,90 / 299) e ativa ou prorroga o plano pelo e-mail do cliente (`ativar_plano`). Estorno e chargeback voltam a conta para grátis (`cancelar_plano`).
+- Segredos da função (Supabase → Edge Functions → Secrets): `ASAAS_API_KEY` (chave da API, nunca no código nem em chat) e `ASAAS_WEBHOOK_TOKEN` (o mesmo token configurado no webhook do Asaas).
+- Webhook no Asaas: URL `https://fvsdlpnvqfvjdxmfgbjx.supabase.co/functions/v1/asaas-webhook`, eventos de cobrança `PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED`, `PAYMENT_REFUNDED`, `PAYMENT_CHARGEBACK_REQUESTED`.
+- Conferência: tabela `pagamentos` (status `ativado`, `sem_conta`, `sem_email`, `valor_desconhecido`, `ja_ativado`, `cancelado`).
+
 ## Limitações conhecidas
 
 - O cálculo e a geração de PDF/DXF rodam no navegador. O bloqueio do Pro impede o uso normal,
   mas um usuário técnico consegue contorná-lo lendo o código. Próximo passo: gerar a memória em
   PDF numa Edge Function, que só responde a assinantes.
-- Cobrança manual (WhatsApp). Próximo passo: integrar Asaas ou Mercado Pago com webhook que
-  atualiza `perfis.plano` sozinho.
 - Preços exibidos: mensal `R$ 29,90/mês` (lançamento) e anual `R$ 299/ano`, em `app.js` (`CONFIG.precoPro`, `CONFIG.precoAnual`, `CONFIG.anualEquivale`) e nos cards de `index.html`.
