@@ -545,7 +545,8 @@ function calcularViga(e0) {
 
   // ---- cisalhamento e decalagem
   S.forEach(s => {
-    s.cis = dimCis(s.Vd, dRef(s), e, mat, geo);
+    // altura útil para o cortante: a da armadura adotada, limitada a 0,8h quando a armadura de flexão não coube
+    const dC = dRef(s); s.cis = dimCis(s.Vd, dC > 0.5 * e.h ? dC : 0.8 * e.h, e, mat, geo);
     const nome = s.tipo === 'vao' ? `vão ${s.idx}` : `balanço ${s.lado === 'esq' ? 'esquerdo' : 'direito'}`;
     if (!s.cis.ok) erros.push(`Esmagamento da biela no ${nome}: Vd = ${s.Vd.toFixed(1)} kN > VRd2 = ${s.cis.VRd2.toFixed(1)} kN.`);
     if (s.cis.s < 7) avisos.push(`Estribos muito próximos no ${nome} (c/${s.cis.s}). Aumente o diâmetro do estribo.`);

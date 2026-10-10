@@ -42,6 +42,12 @@
   .fc-q{margin-left:6px;width:18px;height:18px;border-radius:50%;border:1px solid var(--accent,#c4161c);background:transparent;color:var(--accent,#c4161c);font:700 .7rem/1 var(--f-body,system-ui);cursor:pointer;padding:0;vertical-align:1px}
   .fc-q[aria-expanded="true"]{background:var(--accent,#c4161c);color:var(--sheet,#fff)}
   tr.fc-exp td{background:var(--accent-soft,#f8e3e3);font:400 .82rem/1.5 var(--f-body,system-ui);color:var(--ink,#141414);padding:8px 12px;white-space:normal}
+  .fc-alarme{position:fixed;left:50%;transform:translateX(-50%);width:max-content;flex-direction:row;line-height:1.2;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:50;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 24px);background:var(--bad,#a3121a);color:#fff;border:0;border-radius:999px;padding:10px 18px;font:500 .9rem var(--f-body,system-ui);box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;animation:fcPulso 1.6s ease-in-out 3}
+  .fc-alarme b,.fc-alarme span{white-space:nowrap}
+  .fc-alarme span{opacity:.85;text-decoration:underline}
+  @keyframes fcPulso{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.05)}}
+  @media (prefers-reduced-motion:reduce){.fc-alarme{animation:none}}
+  .fc-campo-erro{outline:2px solid var(--bad,#a3121a)!important;outline-offset:1px;background:var(--bad-soft,#f6e1df)!important}
   .fc-didatico{font-size:.8rem;color:var(--muted,#666);margin:0 0 8px}
   .fc-mail{color:var(--muted);font-size:.82rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .fc-dlg{border:1px solid var(--line);border-radius:8px;padding:0;background:var(--sheet);color:var(--ink);width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
@@ -224,6 +230,7 @@
   function txtPdf(t) { return String(t ?? '').replace(/[−–—]/g, '-').replace(/[^\x00-\xFF]/g, ''); }
   function finalizarPdf(doc, aviso) {
     const academico = !pro && plano === 'estudante';
+    const naoAtende = calculoComErro(), errosPdf = errosDaTela();
     const n = doc.getNumberOfPages(), o = dadosObra(), p = academico ? { nome: perfil?.nome ? 'Estudante: ' + perfil.nome : 'Uso acadêmico' } : (perfil || {});
     const data = new Date().toLocaleDateString('pt-BR');
     for (let i = 1; i <= n; i++) {
@@ -256,6 +263,17 @@
       doc.text(doc.splitTextToSize(txtPdf(aviso), W - 2 * M - 46), M, H - 7.5);
       doc.setFont('helvetica', 'normal'); doc.text('Gerado no Foster Calc · fostercalc.com.br', W - M, H - 7.5, { align: 'right' });
       doc.setFontSize(5.6); doc.text(txtPdf(`© ${new Date().getFullYear()} Foster Engenharia & Construção`), W - M, H - 4.5, { align: 'right' });
+      if (naoAtende) {                                   // carimbo de cálculo que não atende
+        doc.setFillColor(255, 255, 255); doc.setDrawColor(163, 18, 26); doc.setLineWidth(0.6);
+        doc.setFillColor(163, 18, 26); doc.rect(0, 0, W, 5.2, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7.4); doc.setTextColor(255, 255, 255);
+        doc.text(txtPdf('NÃO ATENDE À NORMA · ' + (errosPdf[0] || 'há verificações não atendidas')).slice(0, 160), M, 3.6, { maxWidth: W - 2 * M });
+        doc.setTextColor(163, 18, 26);
+        try { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.12 })); } catch (e) {}
+        doc.setFontSize(W > H ? 52 : 44); doc.text(txtPdf('NÃO ATENDE'), W / 2, H / 2 + 30, { align: 'center', angle: 35 });
+        try { doc.restoreGraphicsState(); } catch (e) {}
+        doc.setTextColor(20);
+      }
       if (academico) {                                   // marca d'água do plano Estudante
         try { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.13 })); } catch (e) {}
         doc.setFont('helvetica', 'bold'); doc.setTextColor(196, 22, 28); doc.setFontSize(W > H ? 46 : 40);
@@ -422,22 +440,43 @@
     if (!sb) { toast('Sem conexão com o servidor. Tente novamente.'); return false; }
     if (!sessao && !(await entrar(`Entre na sua conta para ${acao}.`))) return false;
     await carregarPerfil(); desenharBarra();
-    if (!pro && plano === 'estudante') { marcarDxfAcademico(); toast('Plano Estudante: o arquivo sai com a marca "uso acadêmico".'); return true; }
-    if (!pro) { telaPlanos(`Para ${acao}, é preciso um plano pago (Estudante ou Pro).`); return false; }
-    if (!perfil?.nome) toast('Dica: preencha seu perfil (clique no seu nome no topo) para sair com nome, CREA e logo no PDF.');
+    if (!pro && plano !== 'estudante') { telaPlanos(`Para ${acao}, é preciso um plano pago (Estudante ou Pro).`); return false; }
+    marcarDxf();
+    if (calculoComErro() && !(await confirmarComErro())) return false;
+    if (!pro) toast('Plano Estudante: o arquivo sai com a marca "uso acadêmico".');
+    else if (!perfil?.nome) toast('Dica: preencha seu perfil (clique no seu nome no topo) para sair com nome, CREA e logo no PDF.');
     return true;
   }
-  // DXF do plano Estudante: acrescenta um texto de uso acadêmico na seção de entidades
-  function marcarDxfAcademico() {
+  // ---------- trava de exportação quando o cálculo não atende ----------
+  const calculoComErro = () => !!document.querySelector('#status.bad');
+  const errosDaTela = () => [...document.querySelectorAll('#status.bad li')].map(li => li.textContent.trim()).filter(Boolean);
+  function confirmarComErro() {
+    return new Promise(resolve => {
+      const lista = errosDaTela().slice(0, 4).map(t => `<li>${esc(t)}</li>`).join('');
+      const d = dialogo(`<div class="fc-in"><h3 style="color:var(--bad,#a3121a)">⚠ Cálculo com verificações não atendidas</h3>
+        <ul style="margin:6px 0 10px;padding-left:18px;font-size:.86rem">${lista}</ul>
+        <p>O recomendado é corrigir os dados antes de exportar. Se exportar agora, o arquivo sai com o carimbo <b>“NÃO ATENDE À NORMA”</b> em todas as folhas.</p>
+        <div class="fc-row"><button class="fc-btn" type="button" data-corrigir>Voltar e corrigir</button><button class="fc-btn ghost" type="button" data-mesmo>Exportar mesmo assim</button></div></div>`);
+      let r = false;
+      d.querySelector('[data-corrigir]').onclick = () => { r = false; d.close(); };
+      d.querySelector('[data-mesmo]').onclick = () => { r = true; d.close(); };
+      d.addEventListener('close', () => { if (!r) irParaErro(); resolve(r); });
+    });
+  }
+  // DXF: acrescenta textos de aviso (plano Estudante e cálculo que não atende) na seção de entidades
+  function marcarDxf() {
     const Z = window.JSZip; if (!Z || Z.prototype.__fcMarca) return;
     const orig = Z.prototype.file; Z.prototype.__fcMarca = true;
     Z.prototype.file = function (nome, dados, ...r) {
       if (arguments.length < 2) return orig.apply(this, arguments);
-      if (typeof dados === 'string' && /\.dxf$/i.test(nome) && !pro && plano === 'estudante') {
+      if (typeof dados === 'string' && /\.dxf$/i.test(nome)) {
         const nl = dados.includes('\r\n') ? '\r\n' : '\n';
-        const t = ['0', 'TEXT', '8', 'USO_ACADEMICO', '62', '1', '10', '0', '20', '-80', '30', '0', '40', '12', '1', 'USO ACADEMICO - NAO VALIDO PARA ART/RRT - Foster Calc plano Estudante'].join(nl) + nl;
+        const txt = (camada, y, s) => ['0', 'TEXT', '8', camada, '62', '1', '10', '0', '20', String(y), '30', '0', '40', '12', '1', s].join(nl) + nl;
+        let t = '';
+        if (!pro && plano === 'estudante') t += txt('USO_ACADEMICO', -80, 'USO ACADEMICO - NAO VALIDO PARA ART/RRT - Foster Calc plano Estudante');
+        if (calculoComErro()) t += txt('NAO_ATENDE', -100, 'NAO ATENDE A NORMA - calculo com verificacoes nao atendidas');
         const k = dados.lastIndexOf('0' + nl + 'ENDSEC');
-        if (k > 0) dados = dados.slice(0, k) + t + dados.slice(k);
+        if (t && k > 0) dados = dados.slice(0, k) + t + dados.slice(k);
       }
       return orig.call(this, nome, dados, ...r);
     };
@@ -553,7 +592,54 @@
     };
     document.head.appendChild(s);
   }
-  const comecar = () => { abasSubtipo(); injetarCamposObra(); rodapeAutoria(); modoDidatico(); iniciar(); };
+  // ---------- alarme: faixa fixa, vibração, campos destacados e seção da memória aberta ----------
+  const CAMPOS_ALARME = {
+    laje: [[/espessura|ductilidade|cisalhamento/i, ['h']], [/concreto/i, ['fck']]],
+    viga: [[/seção|biela|ductilidade|altura|4% ?ac/i, ['h', 'bw']], [/largura/i, ['bw', 'phiL']], [/estribo/i, ['phiT', 'bw']], [/concreto/i, ['fck']], [/apoio/i, ['apoio']]],
+    pilar: [[/seção|esbeltez|dimensão|área/i, ['hx', 'hy']], [/fck|concreto/i, ['fck']], [/esbeltez/i, ['lex', 'ley']]],
+    sapata: [[/tensão do solo|cargas/i, ['sadm']], [/diagonal/i, ['fck']]],
+    trelicada: [[/altura|flecha|nervura|cortante/i, ['altura', 'L']]],
+    escada: [[/espessura|cortante/i, ['h']]],
+    bloco: [[/capacidade|estacas com essa/i, ['cap', 'n']], [/bielas/i, ['ap', 'bp', 'phiE', 'fck']], [/tirante/i, ['phiE']]],
+    divisa: [[/alívio|próximos|distância/i, ['l']], [/largura/i, ['bw']], [/tensão no solo/i, ['sadm']], [/diagonal/i, ['fck']]],
+    associada: [[/balanço/i, ['limEsq']], [/largura da viga/i, ['bw']], [/tensão no solo/i, ['sadm']], [/diagonal/i, ['fck']]],
+    muro: [[/cortina/i, ['t1']], [/tensão|núcleo|tombamento|deslizamento/i, ['sadm', 'H']], [/concreto/i, ['fck']]],
+  };
+  function irParaErro() {
+    const s = document.getElementById('status'); if (!s) return;
+    s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const c = document.querySelector('.fc-campo-erro'); if (c && innerWidth > 900) setTimeout(() => c.focus({ preventScroll: true }), 400);
+  }
+  function alarme() {
+    const st = document.getElementById('status'); if (!st) return;
+    const pagina = document.body.dataset.pagina;
+    const barra = document.createElement('button'); barra.type = 'button'; barra.className = 'fc-alarme'; barra.hidden = true;
+    barra.onclick = irParaErro; document.body.appendChild(barra);
+    let visivel = false, anterior = null;
+    if ('IntersectionObserver' in window) new IntersectionObserver(es => { visivel = es[0].isIntersecting; atualizarBarra(); }).observe(st);
+    let ruim = false, n = 0;
+    function atualizarBarra() { barra.hidden = !ruim || visivel; barra.innerHTML = '<b>⚠ Cálculo não atende à norma</b><span>ver o que corrigir</span>'; }
+    const avaliar = () => {
+      ruim = st.classList.contains('bad');
+      const msgs = errosDaTela(); n = Math.max(1, msgs.length);
+      document.querySelectorAll('.fc-campo-erro').forEach(el => { el.classList.remove('fc-campo-erro'); el.removeAttribute('data-fc-erro'); });
+      if (ruim) {
+        for (const [re, ids] of CAMPOS_ALARME[pagina] || []) {
+          const m = msgs.find(t => re.test(t)); if (!m) continue;
+          ids.forEach(id => { const el = document.getElementById(id); if (el && el.closest('form')) { el.classList.add('fc-campo-erro'); el.title = 'Ajuste este campo: ' + m; } });
+        }
+      }
+      if (ruim && anterior === false) {
+        try { navigator.vibrate && navigator.vibrate([120, 60, 120]); } catch (e) {}
+        // abre a seção da memória onde está o problema
+        setTimeout(() => document.querySelectorAll('#memoria details').forEach(d => { if (d.querySelector('.alerta')) d.open = true; }), 30);
+      }
+      anterior = ruim; atualizarBarra();
+    };
+    new MutationObserver(avaliar).observe(st, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
+    avaliar();
+  }
+  const comecar = () => { abasSubtipo(); injetarCamposObra(); rodapeAutoria(); modoDidatico(); alarme(); iniciar(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', comecar); else comecar();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
