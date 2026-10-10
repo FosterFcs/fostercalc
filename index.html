@@ -3,255 +3,288 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#141414">
-<title>Foster Calc · Cálculo estrutural NBR 6118</title>
-<meta name="description" content="Dimensionamento de lajes maciças e treliçadas, vigas, pilares, escadas, sapatas, blocos sobre estacas e muros de arrimo de concreto armado pela NBR 6118, com memória de cálculo em PDF e detalhamento em DXF.">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0f1012">
+<title>Foster · Ferramentas digitais para engenharia e obras</title>
+<meta name="description" content="Aplicativos da Foster Engenharia & Construção para engenharia e obras: cálculo estrutural, gestão de obras, vistoria com IA, locação de ferramentas e mais.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Foster · Ferramentas digitais para engenharia e obras">
+<meta property="og:description" content="Cálculo estrutural, gestão de obras, vistoria com IA, locação de ferramentas e mais. Aplicativos criados por um engenheiro civil.">
+<meta property="og:image" content="https://fosterfcs.github.io/previa.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:url" content="https://fosterfcs.github.io/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c4161c'/%3E%3Ctext x='32' y='46' font-family='Arial' font-weight='700' font-size='40' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: capa de prancha — título forte com selo de norma, módulos como folhas lado a lado, projetos em lista */
 :root{
-  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
-  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --steel:#c4161c; --steel2:#3a3d42;
-  --ok:#2f7a4d; --ok-soft:#e2f1e7; --bad:#a3121a; --bad-soft:#f6e1df;
-  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
-  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --bg:#f3f3f1; --card:#fff; --ink:#131416; --muted:#5d6066; --line:#e2e3e5;
+  --dark:#0f1012; --dark2:#17191c; --accent:#d0191f; --accent2:#ff4d4f; --soft:#fdecec;
+  --shadow:0 1px 2px rgba(16,17,20,.06),0 8px 24px rgba(16,17,20,.06);
+  --f-d:"Barlow Condensed","Arial Narrow",system-ui,sans-serif; --f-b:"Inter",system-ui,sans-serif; --f-m:"IBM Plex Mono",ui-monospace,monospace;
+  --r:18px;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
-  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --steel:#ef5b5f; --steel2:#c9ccd1;
-  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
-  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --steel:#ef5b5f; --steel2:#c9ccd1;
-  --ok:#6cc08d; --ok-soft:#17291f; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d0e10;--card:#17181b;--ink:#eceded;--muted:#a3a6ab;--line:#26282c;--soft:#3a1517;--precoc:#ff8a8c;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d0e10;--card:#17181b;--ink:#eceded;--muted:#a3a6ab;--line:#26282c;--soft:#3a1517;--precoc:#ff8a8c;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);color-scheme:dark}
 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-behavior:smooth}
 html,body{margin:0}
-:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-[hidden]{display:none!important}
-body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--f-body)}
-.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:6px 56px}
-.hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:center;padding-block:36px 40px;border-bottom:2px solid var(--ink)}
-@media (max-width:820px){.hero{grid-template-columns:minmax(0,1fr)}}
-.selo{display:inline-flex;gap:8px;align-items:center;font:600 .74rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:3px 8px}
-.hero h1{font:700 clamp(2.4rem,6vw,4.2rem)/.95 var(--f-display);letter-spacing:.005em;margin:14px 0 14px;text-wrap:balance}
-.hero h1 em{font-style:normal;color:var(--accent)}
-.hero p{font-size:1.05rem;color:var(--muted);max-width:52ch;margin:0 0 22px}
-.ctas{display:flex;flex-wrap:wrap;gap:10px}
-.bt{display:inline-block;font:600 .95rem var(--f-body);border-radius:4px;padding:11px 18px;text-decoration:none;border:1px solid var(--accent);background:var(--accent);color:var(--sheet);cursor:pointer}
-.bt.ghost{background:transparent;color:var(--accent)}
-.bt:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.prancha{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:14px}
-.prancha svg{width:100%;height:auto;display:block}
-.prancha small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:8px}
-svg .conc{fill:var(--concrete);stroke:var(--ink);stroke-width:1}
-svg .stir{stroke:var(--muted);stroke-width:1}
-svg .bar{stroke:var(--steel);stroke-width:2.2;fill:none;stroke-linecap:round}
-svg .bar2{stroke:var(--steel2);stroke-width:2.2;fill:none;stroke-linecap:round}
-svg .mpos{fill:var(--steel);fill-opacity:.15;stroke:var(--steel);stroke-width:1.3}
-svg .mneg{fill:var(--steel2);fill-opacity:.15;stroke:var(--steel2);stroke-width:1.3}
-svg .sup{fill:var(--muted)}
-svg text{fill:var(--muted);font:11px var(--f-mono)}
-h2{font:600 1.7rem/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:0 0 6px}
-.sec{padding-block:36px 4px}
-.sec > p{color:var(--muted);margin:0 0 18px;max-width:62ch}
-.mods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-@media (max-width:1060px){.mods{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:620px){.mods{grid-template-columns:minmax(0,1fr)}}
-.mod{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.mod h3{font:600 1.35rem/1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;margin:0}
-.mod ul{margin:0;padding-left:18px;color:var(--muted);font-size:.9rem;flex:1}
-.mod ul li+li{margin-top:3px}
-.mod.breve{background:transparent;border-style:dashed}
-.mod .tag{font:600 .66rem var(--f-body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.lista{background:var(--sheet);border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.lista table{width:100%;border-collapse:collapse;font-size:.9rem}
-.lista th,.lista td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)}
-.lista th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-.lista tr:last-child td{border-bottom:0}
-.lista td.acoes{white-space:nowrap;text-align:right}
-.lista a{color:var(--accent);font-weight:600;text-decoration:none}
-.lista button{background:none;border:0;color:var(--muted);cursor:pointer;font:500 .85rem var(--f-body);margin-left:12px}
-.lista button:hover{color:var(--bad)}
-.vazio{padding:22px 18px;color:var(--muted)}
-.tbl{overflow-x:auto}
-.planos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-@media (max-width:1060px){.planos{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:620px){.planos{grid-template-columns:minmax(0,1fr)}}
-.plano{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column}
-.plano ul{flex:1}
-.plano .etiqueta{align-self:flex-start;font:600 .66rem var(--f-body);letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:var(--accent);color:var(--sheet);margin-bottom:8px}
-.plano .etiqueta.sobria{background:var(--ink)}
-.plano .sub{font-size:.82rem;color:var(--muted);margin:-4px 0 10px}
-.plano.pro{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.plano h3{font:600 1.3rem var(--f-display);text-transform:uppercase;margin:0}
-.plano .preco{font:700 1.9rem/1.1 var(--f-display);margin:4px 0 8px}
-.plano ul{margin:0 0 14px;padding-left:18px;color:var(--muted);font-size:.9rem}
-footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;font-size:.82rem;color:var(--muted)}
-footer p{margin:0;max-width:70ch}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-b);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+
+/* topo */
+.top{position:sticky;top:0;z-index:20;background:rgba(15,16,18,.82);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid rgba(255,255,255,.06)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:10px;color:#fff;font:700 1.4rem var(--f-d);letter-spacing:.03em;text-decoration:none}
+.logo b{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent2),var(--accent));font-size:1.1rem}
+.top nav{display:flex;gap:4px}
+.top nav a{color:#c9cbcf;text-decoration:none;font:500 .88rem var(--f-b);padding:8px 12px;border-radius:999px}
+.top nav a:hover{background:rgba(255,255,255,.08);color:#fff}
+@media (max-width:640px){.top nav{display:none}}
+
+/* hero */
+.hero{position:relative;overflow:hidden;background:var(--dark);color:#fff;padding:48px 0 56px}
+.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:28px 28px;mask-image:radial-gradient(ellipse at 70% 0%,#000 30%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse at 70% 0%,#000 30%,transparent 75%)}
+.hero::after{content:"";position:absolute;width:520px;height:520px;right:-160px;top:-220px;background:radial-gradient(circle,rgba(208,25,31,.45),transparent 65%);filter:blur(10px)}
+.hero .wrap{position:relative;z-index:1}
+.selo{display:inline-flex;align-items:center;gap:8px;font:500 .74rem var(--f-m);letter-spacing:.08em;text-transform:uppercase;color:#ffb3b4;background:rgba(208,25,31,.16);border:1px solid rgba(255,77,79,.35);border-radius:999px;padding:5px 12px}
+.selo::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent2);box-shadow:0 0 0 4px rgba(255,77,79,.2)}
+.hero h1{font:700 clamp(2.5rem,9vw,4.4rem)/.98 var(--f-d);letter-spacing:.005em;margin:18px 0 14px;max-width:16ch}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,#ff6b6d,var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{max-width:56ch;color:#b9bcc1;margin:0 0 24px;font-size:1.02rem}
+.acoes{display:flex;flex-wrap:wrap;gap:10px}
+.bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 .95rem var(--f-b);text-decoration:none;border-radius:12px;padding:12px 18px;transition:transform .15s,filter .15s,background .15s}
+.bt.pri{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;box-shadow:0 6px 18px rgba(208,25,31,.35)}
+.bt.sec{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.14)}
+.bt:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.bt:focus-visible,.app:focus-within{outline:2px solid var(--accent2);outline-offset:2px}
+@media (max-width:640px){.acoes .bt{flex:1 1 100%}}
+.nums{display:flex;flex-wrap:wrap;gap:22px 34px;margin:34px 0 0;padding:20px 0 0;border-top:1px solid rgba(255,255,255,.1)}
+.nums div{display:flex;flex-direction:column}
+.nums b{font:700 1.9rem/1 var(--f-d)}
+.nums span{font-size:.8rem;color:#9a9da3;margin-top:4px}
+
+/* grupos */
+.grupo{padding:40px 0 0}
+.grupo header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 16px}
+.grupo h2{font:700 1.7rem/1.1 var(--f-d);text-transform:uppercase;letter-spacing:.02em;margin:0}
+.grupo header small{font:500 .74rem var(--f-m);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:16px}
+
+.app{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s}
+.app:hover{transform:translateY(-3px);box-shadow:0 2px 4px rgba(16,17,20,.06),0 16px 36px rgba(16,17,20,.1)}
+.app .cab{display:flex;align-items:center;gap:14px;margin:0 0 12px}
+.ico{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:15px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;box-shadow:0 6px 14px rgba(208,25,31,.28)}
+.ico svg{width:26px;height:26px}
+.ico.g{background:linear-gradient(135deg,#3a3d43,#16181b);box-shadow:0 6px 14px rgba(0,0,0,.2)}
+.app .tag{display:block;font:500 .68rem var(--f-m);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.app h3{font:700 1.65rem/1.05 var(--f-d);margin:2px 0 0;letter-spacing:.01em}
+.app p{margin:0 0 14px;font-size:.95rem;color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:0;list-style:none}
+.chips li{font-size:.8rem;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.app .pe{margin-top:auto;display:flex;align-items:center;gap:10px}
+.preco{font:600 .8rem var(--f-b);color:var(--precoc,var(--accent));background:var(--soft);border-radius:999px;padding:5px 11px;white-space:nowrap}
+.app .bt.pri{margin-left:auto;padding:11px 18px}
+.app .bt.pri::after{content:"→";transition:transform .15s}
+.app:hover .bt.pri::after{transform:translateX(3px)}
+@media (max-width:640px){.app .pe{flex-wrap:wrap}.app .bt.pri{flex:1 1 100%;margin-left:0;padding:13px}}
+.app a.cobre{position:absolute;inset:0;border-radius:var(--r);z-index:0}
+.app .pe .bt{position:relative;z-index:1}
+
+/* quem faz */
+.sobre{margin:48px 0 0;background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+@media (max-width:820px){.sobre{grid-template-columns:minmax(0,1fr)}}
+.quem{display:flex;gap:20px;align-items:center;padding:24px}
+.quem img{width:120px;height:120px;object-fit:cover;object-position:50% 20%;border-radius:50%;flex:none;box-shadow:0 0 0 4px var(--card),0 0 0 6px var(--accent)}
+@media (max-width:520px){.quem{flex-direction:column;align-items:flex-start}}
+.sobre h2{font:700 1.6rem var(--f-d);text-transform:uppercase;margin:0 0 6px}
+.sobre p{margin:0 0 8px;color:var(--muted);font-size:.95rem}
+.cartao{background:var(--dark2);color:#eee;padding:24px;display:flex;flex-direction:column;gap:10px;justify-content:center}
+.cartao b{font:700 1.3rem var(--f-d);letter-spacing:.02em;color:#fff}
+.cartao a{display:flex;align-items:center;gap:12px;color:#e6e7e9;text-decoration:none;font-size:.93rem;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);overflow-wrap:anywhere}
+.cartao a:hover{background:rgba(255,255,255,.1)}
+.cartao svg{flex:none;width:20px;height:20px;color:var(--accent2)}
+
+footer{margin:40px 0 0;padding:18px 0 96px;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 24px;justify-content:space-between}
+
+/* WhatsApp flutuante */
+.zap{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;display:flex;align-items:center;gap:8px;background:#1faa55;color:#fff;text-decoration:none;font:600 .92rem var(--f-b);padding:13px 18px 13px 14px;border-radius:999px;box-shadow:0 8px 24px rgba(31,170,85,.4)}
+.zap svg{width:22px;height:22px}
+.zap:hover{filter:brightness(1.06)}
+
+/* entrada suave */
+@media (prefers-reduced-motion:no-preference){
+  .rev{opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease}
+  .rev.vis{opacity:1;transform:none}
+}
+
+/* celular: 2 colunas compactas */
+@media (max-width:640px){
+  .apps{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .app{padding:14px 12px;border-radius:16px}
+  .app .cab{flex-direction:column;align-items:flex-start;gap:10px;margin:0 0 8px}
+  .ico{width:42px;height:42px;border-radius:12px}
+  .ico svg{width:22px;height:22px}
+  .app .tag{font-size:.58rem;letter-spacing:.05em;line-height:1.35}
+  .app h3{font-size:1.35rem}
+  .app p{font-size:.84rem;line-height:1.45;margin:0 0 12px}
+  .chips{display:none}
+  .app .pe{flex-direction:column;align-items:stretch;gap:8px}
+  .preco{align-self:flex-start;font-size:.7rem;padding:4px 9px;white-space:normal}
+  .app .bt.pri{flex:none;padding:10px;font-size:.88rem;border-radius:10px}
+  .grupo h2{font-size:1.45rem}
+  .grupo header small{display:none}
+}
+
+/* celular: os 6 apps juntos, 2 por linha (sem separar por grupos) */
+@media (max-width:640px){
+  main.wrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding-top:40px}
+  .grupo,.grupo .apps{display:contents}
+  .grupo header{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .sobre,footer{grid-column:1/-1}
+  .sobre{margin-top:38px}
+  footer{margin-top:30px}
+}
 </style>
 </head>
-<body data-pagina="inicio">
-<div class="wrap">
-<div id="fc-bar"></div>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="./"><b>F</b>Foster</a>
+    <nav aria-label="Seções"><a href="#engenharia">Engenharia</a><a href="#locacao">Locação</a><a href="#populacao">População</a><a href="#quem">Quem faz</a></nav>
+  </div>
+</header>
 
 <section class="hero">
-  <div>
-    <span class="selo">ABNT NBR 6118:2023 · concreto armado</span>
-    <h1>Você projeta. <em>O Foster Calc calcula e mostra cada passo.</em></h1>
-    <p>Você define vãos, cargas, seções e materiais. O sistema dimensiona pela NBR 6118 e entrega a memória de cálculo com cada fórmula e item da norma, para você conferir, ajustar e assinar com segurança.</p>
-    <div class="ctas"><a class="bt" href="viga.html">Começar pela viga</a><a class="bt ghost" href="laje.html">Começar pela laje</a></div>
+  <div class="wrap">
+    <span class="selo">Foster Engenharia &amp; Construção</span>
+    <h1>Ferramentas digitais para <em>engenharia e obras</em>.</h1>
+    <p>Aplicativos criados por um engenheiro civil para o dia a dia de quem projeta, constrói, aluga e cuida de imóveis. Funcionam no navegador e no celular, sem instalar nada.</p>
+    <div class="acoes">
+      <a class="bt pri" href="#engenharia">Ver aplicativos</a>
+      <a class="bt sec" href="https://wa.me/5524992096103?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20aplicativos%20da%20Foster." target="_blank" rel="noopener">Falar no WhatsApp</a>
+    </div>
+    <div class="nums">
+      <div><b>6</b><span>aplicativos</span></div>
+      <div><b>NBR</b><span>normas ABNT na base</span></div>
+      <div><b>100%</b><span>no navegador e no celular</span></div>
+    </div>
   </div>
-  <figure class="prancha" style="margin:0" aria-label="Exemplo de diagrama de momentos e detalhamento de viga contínua">
-    <svg viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg">
-      <rect class="conc" x="10" y="20" width="400" height="34"/>
-      <g class="stir">
-        <line x1="22" y1="24" x2="22" y2="50"/><line x1="42" y1="24" x2="42" y2="50"/><line x1="62" y1="24" x2="62" y2="50"/><line x1="82" y1="24" x2="82" y2="50"/><line x1="102" y1="24" x2="102" y2="50"/><line x1="122" y1="24" x2="122" y2="50"/><line x1="142" y1="24" x2="142" y2="50"/><line x1="162" y1="24" x2="162" y2="50"/><line x1="182" y1="24" x2="182" y2="50"/><line x1="202" y1="24" x2="202" y2="50"/><line x1="222" y1="24" x2="222" y2="50"/><line x1="242" y1="24" x2="242" y2="50"/><line x1="262" y1="24" x2="262" y2="50"/><line x1="282" y1="24" x2="282" y2="50"/><line x1="302" y1="24" x2="302" y2="50"/><line x1="322" y1="24" x2="322" y2="50"/><line x1="342" y1="24" x2="342" y2="50"/><line x1="362" y1="24" x2="362" y2="50"/><line x1="382" y1="24" x2="382" y2="50"/><line x1="398" y1="24" x2="398" y2="50"/>
-      </g>
-      <path class="bar" d="M14 44 V49 H206"/><path class="bar" d="M196 49 H406 V44"/>
-      <path class="bar2" d="M150 26 H262"/>
-      <path class="sup" d="M14 54 l-6 9 h12z M210 54 l-6 9 h12z M406 54 l-6 9 h12z"/>
-      <line x1="10" y1="128" x2="410" y2="128" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1"/>
-      <path class="mpos" d="M14 128 Q 90 178 150 128 Z"/><path class="mpos" d="M270 128 Q 330 178 406 128 Z"/>
-      <path class="mneg" d="M150 128 Q 210 72 270 128 Z"/>
-      <text x="82" y="170">+49,7</text><text x="192" y="94">−73,4</text><text x="320" y="170">+32,0</text>
-      <text x="10" y="12">N5 · 4 Ø12,5 · C=477</text>
-    </svg>
-    <small>Envoltória de momentos e armaduras de uma viga de 2 vãos · kN·m</small>
-  </figure>
 </section>
 
-<section class="sec">
-  <h2>Módulos</h2>
-  <p><a href="validacao.html" style="color:var(--accent);font-weight:600">Veja a validação: 20 exemplos publicados conferidos módulo a módulo →</a></p>
-  <p>Da laje à fundação, na ordem em que a carga desce. O cálculo é livre e roda no seu aparelho; entre para salvar projetos e assine o Pro para baixar memória e desenho.</p>
-  <div class="mods">
-    <article class="mod">
-      <span class="tag">1 · Lajes</span><h3>Lajes maciças</h3>
-      <ul><li>Bordas apoiadas ou engastadas</li><li>Teoria de placas, sem tabelas</li><li>Armaduras por faixa, mínimas da Tab. 19.1</li><li>Cisalhamento, fissuração e flecha</li><li>Reações nas vigas, em g e q</li></ul>
-      <a class="bt" href="laje.html">Abrir módulo</a>
+<main class="wrap">
+<section class="grupo" id="engenharia" aria-labelledby="g1">
+  <header><h2 id="g1">Para engenheiros e construtoras</h2><small>3 apps</small></header>
+  <div class="apps">
+    <article class="app rev">
+      <a class="cobre" href="https://fostercalc.com.br" target="_blank" rel="noopener" aria-label="Abrir Foster Calc" tabindex="-1"></a>
+      <div class="cab">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 17h18M6 7v10M18 7v10"/><path d="M6 12h12" stroke-dasharray="2 2"/></svg></span>
+        <div><span class="tag">Cálculo estrutural · NBR 6118</span><h3>Foster Calc</h3></div>
+      </div>
+      <p>Você projeta; o Foster Calc calcula e mostra cada passo.</p>
+      <ul class="chips"><li>Lajes, vigas, pilares, escadas</li><li>Sapatas, blocos e muros</li><li>Memória em PDF</li><li>Desenho em DXF</li></ul>
+      <div class="pe"><span class="preco">A partir de R$ 9,90/mês</span><a class="bt pri" href="https://fostercalc.com.br" target="_blank" rel="noopener">Acessar</a></div>
     </article>
-    <article class="mod">
-      <span class="tag">1 · Lajes</span><h3>Lajes treliçadas</h3>
-      <ul><li>Vigotas TR 8 a TR 25, LT12 a LT30</li><li>Enchimento cerâmico ou EPS</li><li>Altura automática pela flecha</li><li>Contraflecha e travamento</li><li>Reações nas vigas, em g e q</li></ul>
-      <a class="bt" href="trelicada.html">Abrir módulo</a>
+    <article class="app rev">
+      <a class="cobre" href="https://fosterfcs.github.io/DIARIO-DE-OBRA/" target="_blank" rel="noopener" aria-label="Abrir Foster Obras" tabindex="-1"></a>
+      <div class="cab">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/></svg></span>
+        <div><span class="tag">Gestão de obras</span><h3>Foster Obras</h3></div>
+      </div>
+      <p>A obra organizada em um só lugar, do canteiro ao escritório.</p>
+      <ul class="chips"><li>Diário de obra (RDO)</li><li>Financeiro</li><li>Equipe e presença</li><li>Almoxarifado</li><li>Orçamento</li></ul>
+      <div class="pe"><a class="bt pri" href="https://fosterfcs.github.io/DIARIO-DE-OBRA/" target="_blank" rel="noopener">Acessar</a></div>
     </article>
-    <article class="mod">
-      <span class="tag">2 · Vigas</span><h3>Vigas</h3>
-      <ul><li>1 a 5 vãos, com balanços</li><li>Envoltória com alternância da acidental</li><li>Flexão, cisalhamento, decalagem e ancoragem</li><li>Fissuração e flecha por vão</li><li>Corte das negativas e relação do aço</li></ul>
-      <a class="bt" href="viga.html">Abrir módulo</a>
-    </article>
-    <article class="mod">
-      <span class="tag">3 · Pilares</span><h3>Pilares</h3>
-      <ul><li>Seção retangular, λ até 90</li><li>Momentos mínimos e 2ª ordem</li><li>Flexão composta oblíqua</li><li>Escolha automática das barras</li><li>Estribos e proteção contra flambagem</li></ul>
-      <a class="bt" href="pilar.html">Abrir módulo</a>
-    </article>
-    <article class="mod">
-      <span class="tag">4 · Fundação</span><h3>Sapatas</h3>
-      <ul><li>Sapata isolada rígida</li><li>Tensões no solo com momentos</li><li>Armadura pelo método CEB-70</li><li>Diagonal comprimida junto ao pilar</li><li>Concreto, aço, lastro e escavação</li></ul>
-      <a class="bt" href="sapata.html">Abrir módulo</a>
-    </article>
-    <article class="mod">
-      <span class="tag">4 · Fundação</span><h3>Sapata de divisa</h3>
-      <ul><li>Sapata excêntrica na divisa</li><li>Viga alavanca dimensionada</li><li>Alívio no pilar interno (NBR 6122)</li><li>Flexão e estribos da viga</li><li>Leva a carga para a sapata de P2</li></ul>
-      <a class="bt" href="divisa.html">Abrir módulo</a>
-    </article>
-    <article class="mod">
-      <span class="tag">4 · Fundação</span><h3>Sapata associada</h3>
-      <ul><li>Dois pilares numa só sapata</li><li>Centrada na resultante</li><li>Viga de rigidez dimensionada</li><li>Armaduras superior e inferior</li><li>Planta, corte e DXF</li></ul>
-      <a class="bt" href="associada.html">Abrir módulo</a>
-    </article>
-    <article class="mod">
-      <span class="tag">4 · Fundação</span><h3>Blocos sobre estacas</h3>
-      <ul><li>1 a 4 estacas</li><li>Bielas e tirantes (Blévot)</li><li>Tensões nas bielas no pilar e na estaca</li><li>Armaduras complementares</li><li>Planta e corte em DXF</li></ul>
-      <a class="bt" href="bloco.html">Abrir módulo</a>
-    </article>
-    <article class="mod">
-      <span class="tag">5 · Escadas</span><h3>Escadas</h3>
-      <ul><li>Lance reto com patamares</li><li>Degraus pela fórmula de Blondel</li><li>Espessura automática</li><li>Cisalhamento e flecha</li><li>Reações nas vigas de apoio</li></ul>
-      <a class="bt" href="escada.html">Abrir módulo</a>
-    </article>
-    <article class="mod">
-      <span class="tag">6 · Contenções</span><h3>Muros de arrimo</h3>
-      <ul><li>Muro de flexão até 7 m</li><li>Empuxo de Rankine com sobrecarga</li><li>Tombamento, deslizamento e solo</li><li>Dente de ancoragem automático</li><li>Cortina e base armadas</li></ul>
-      <a class="bt" href="muro.html">Abrir módulo</a>
+    <article class="app rev">
+      <a class="cobre" href="https://fosterfcs.github.io/vistoria/" target="_blank" rel="noopener" aria-label="Abrir VistorIA" tabindex="-1"></a>
+      <div class="cab">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+        <div><span class="tag">Vistoria e patologias · IA</span><h3>VistorIA</h3></div>
+      </div>
+      <p>Vistoria por ambiente e diagnóstico preliminar de patologias a partir de fotos.</p>
+      <ul class="chips"><li>Fissuras e infiltração</li><li>Corrosão e mais</li><li>Normas ABNT</li><li>Laudo em PDF</li></ul>
+      <div class="pe"><span class="preco">Beta gratuito</span><a class="bt pri" href="https://fosterfcs.github.io/vistoria/" target="_blank" rel="noopener">Acessar</a></div>
     </article>
   </div>
 </section>
 
-<section class="sec" id="projetos">
-  <h2>Meus projetos</h2>
-  <p id="projMsg">Entre na sua conta para ver os projetos salvos.</p>
-  <div class="lista tbl" id="projLista" hidden></div>
-  <button class="bt ghost" type="button" id="projEntrar">Entrar ou criar conta</button>
+<section class="grupo" id="locacao" aria-labelledby="g2">
+  <header><h2 id="g2">Para locadoras e profissionais</h2><small>2 apps</small></header>
+  <div class="apps">
+    <article class="app rev">
+      <a class="cobre" href="https://fosterfcs.github.io/Locaobra/" target="_blank" rel="noopener" aria-label="Abrir LocaObra" tabindex="-1"></a>
+      <div class="cab">
+        <span class="ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6.5a4 4 0 0 0-5.3 5.3L4 17l3 3 5.2-5.2a4 4 0 0 0 5.3-5.3l-2.4 2.4-2.4-.6-.6-2.4z"/></svg></span>
+        <div><span class="tag">Locação de ferramentas</span><h3>LocaObra</h3></div>
+      </div>
+      <p>Controle de locação de ferramentas e equipamentos para obra.</p>
+      <ul class="chips"><li>Disponibilidade em tempo real</li><li>Contrato e recibo em PDF</li><li>Multas</li><li>Lembretes no WhatsApp</li></ul>
+      <div class="pe"><span class="preco">7 dias grátis</span><a class="bt pri" href="https://fosterfcs.github.io/Locaobra/" target="_blank" rel="noopener">Acessar</a></div>
+    </article>
+    <article class="app rev">
+      <a class="cobre" href="https://fosterfcs.github.io/foster-central/" target="_blank" rel="noopener" aria-label="Abrir Foster Central" tabindex="-1"></a>
+      <div class="cab">
+        <span class="ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.8.3 5 2.7 5 5.8"/></svg></span>
+        <div><span class="tag">Serviços de construção</span><h3>Foster Central</h3></div>
+      </div>
+      <p>Conecta clientes a profissionais da construção, engenharia e arquitetura.</p>
+      <ul class="chips"><li>Pedidos com propostas</li><li>Engenheiros e arquitetos</li><li>Pedreiros e eletricistas</li><li>Avaliações</li></ul>
+      <div class="pe"><a class="bt pri" href="https://fosterfcs.github.io/foster-central/" target="_blank" rel="noopener">Acessar</a></div>
+    </article>
+  </div>
 </section>
 
-<section class="sec" id="planos">
-  <h2>Planos</h2>
-  <p>Sem fidelidade. Quem assinar agora mantém o preço de lançamento enquanto a assinatura estiver ativa.</p>
-  <div class="planos">
-    <div class="plano"><h3>Grátis</h3><div class="preco">R$ 0</div>
-      <ul><li>Todos os módulos de cálculo</li><li>Resultados e verificações na tela</li><li>Projetos salvos na conta</li></ul>
-      <a class="bt ghost" href="viga.html">Começar</a></div>
-    <div class="plano"><span class="etiqueta sobria">Para estudantes</span><h3>Estudante</h3><div class="preco">R$ 9,90/mês</div>
-      <p class="sub">ou R$ 79/ano</p>
-      <ul><li>Tudo do Grátis</li><li>PDF e DXF com marca “uso acadêmico”</li><li>Modo didático: explicação de cada fórmula</li><li>50% de desconto no 1º ano do Pro ao se formar</li></ul>
-      <button class="bt ghost" type="button" data-assinar="est-anual">Assinar Estudante</button></div>
-    <div class="plano"><span class="etiqueta sobria">Preço de lançamento</span><h3>Pro mensal</h3><div class="preco" id="precoPro">R$ 29,90/mês</div>
-      <p class="sub">Cancele quando quiser</p>
-      <ul><li>Tudo do Grátis</li><li>Memória em PDF com seu cabeçalho, logo e carimbo</li><li>Detalhamento em DXF por camadas</li><li>Novos módulos antes</li></ul>
-      <button class="bt ghost" type="button" data-assinar="mensal">Assinar mensal</button></div>
-    <div class="plano pro"><span class="etiqueta">2 meses grátis</span><h3>Pro anual</h3><div class="preco" id="precoAnual">R$ 299/ano</div>
-      <p class="sub" id="anualEquivale">Equivale a R$ 24,92/mês</p>
-      <ul><li>Tudo do Pro mensal</li><li>Um único pagamento por ano</li><li>Preço de lançamento garantido por 12 meses</li></ul>
-      <button class="bt" type="button" data-assinar="anual">Assinar anual</button></div>
+<section class="grupo" id="populacao" aria-labelledby="g3">
+  <header><h2 id="g3">Para a população</h2><small>grátis</small></header>
+  <div class="apps">
+    <article class="app rev">
+      <a class="cobre" href="https://fosterfcs.github.io/minha-casa-segura/" target="_blank" rel="noopener" aria-label="Abrir Minha Casa Segura" tabindex="-1"></a>
+      <div class="cab">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M9.5 14.5l2 2 3.5-3.5"/></svg></span>
+        <div><span class="tag">Segurança da moradia</span><h3>Minha Casa Segura</h3></div>
+      </div>
+      <p>Avaliação gratuita do risco da sua casa, com orientação de engenharia.</p>
+      <ul class="chips"><li>Trincas e encostas</li><li>Muros e alagamentos</li><li>Funciona sem internet</li></ul>
+      <div class="pe"><span class="preco">Grátis</span><a class="bt pri" href="https://fosterfcs.github.io/minha-casa-segura/" target="_blank" rel="noopener">Acessar</a></div>
+    </article>
+  </div>
+</section>
+
+<section class="sobre rev" id="quem" aria-labelledby="sobre">
+  <div class="quem">
+    <img src="wilson.jpg" width="120" height="120" alt="Wilson Foster, engenheiro civil, de capacete branco e terno">
+    <div>
+      <h2 id="sobre">Quem faz</h2>
+      <p>Sou Wilson Foster, engenheiro civil. Desenvolvo estas ferramentas a partir do que vejo em obra e no atendimento à população: problemas reais, resolvidos com tecnologia simples de usar.</p>
+      <p>Precisa de um sistema sob medida para a sua empresa? Fale conosco.</p>
+    </div>
+  </div>
+  <div class="cartao">
+    <b>Foster Engenharia &amp; Construção</b>
+    <a href="https://wa.me/5524992096103" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.2-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.2z"/></svg>(24) 99209-6103</a>
+    <a href="mailto:comercial@fosterconstrucoes.com.br"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>comercial@fosterconstrucoes.com.br</a>
+    <a href="https://instagram.com/foster.engenharia" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>@foster.engenharia</a>
   </div>
 </section>
 
 <footer>
-  <p><b>Foster Calc</b> é um produto da Foster Engenharia &amp; Construção. Ferramenta de apoio ao dimensionamento: os resultados devem ser conferidos por profissional habilitado, responsável técnico pela ART/RRT.</p>
-  <p>comercial@fosterconstrucoes.com.br · WhatsApp (24) 99209-6103</p>
-  <p>© 2026 Foster Engenharia &amp; Construção · Todos os direitos reservados · <a href="termos.html" style="color:inherit">Termos de uso e privacidade</a></p>
+  <span>© 2026 Foster Engenharia &amp; Construção · Todos os direitos reservados</span>
+  <span>fosterconstrucoes.com.br</span>
 </footer>
-</div>
+</main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="app.js"></script>
+<a class="zap" href="https://wa.me/5524992096103?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20aplicativos%20da%20Foster." target="_blank" rel="noopener" aria-label="Falar no WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.2-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.2z"/></svg>WhatsApp</a>
+
 <script>
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-$('precoPro').textContent = FC.CONFIG.precoPro;
-$('precoAnual').textContent = FC.CONFIG.precoAnual;
-$('anualEquivale').textContent = 'Equivale a ' + FC.CONFIG.anualEquivale;
-document.querySelectorAll('[data-assinar]').forEach(b => b.addEventListener('click', async () => {
-  if (!FC.sessao && !(await FC.entrar('Crie sua conta ou entre para assinar o Pro.'))) return;
-  if (FC.pro) FC.toast('Sua conta já é Pro.'); else FC.telaPlanos('Escolha o plano e fale com a gente para ativar.', b.dataset.assinar);
-}));
-$('projEntrar').addEventListener('click', () => FC.entrar());
-async function listar() {
-  const logado = !!FC.sessao;
-  $('projEntrar').hidden = logado;
-  if (!logado) { $('projLista').hidden = true; $('projMsg').textContent = 'Entre na sua conta para ver os projetos salvos.'; return; }
-  const ps = await FC.listarProjetos();
-  $('projMsg').textContent = ps.length ? 'Abra um projeto para continuar de onde parou.' : 'Nenhum projeto salvo ainda. Use "Salvar projeto" em qualquer módulo.';
-  $('projLista').hidden = !ps.length;
-  $('projLista').innerHTML = `<table><thead><tr><th>Projeto</th><th>Módulo</th><th>Atualizado</th><th></th></tr></thead><tbody>${ps.map(p => `<tr>
-    <td>${esc(p.nome)}</td><td>${{ viga: 'Viga', laje: 'Laje maciça', trelicada: 'Laje treliçada', pilar: 'Pilar', sapata: 'Sapata', bloco: 'Bloco', divisa: 'Sapata de divisa', associada: 'Sapata associada', escada: 'Escada', muro: 'Muro de arrimo' }[p.modulo] || p.modulo}</td><td>${new Date(p.atualizado_em).toLocaleDateString('pt-BR')}</td>
-    <td class="acoes"><a href="${p.modulo}.html?p=${p.id}">Abrir</a><button type="button" data-apagar="${p.id}" data-nome="${esc(p.nome)}">Apagar</button></td></tr>`).join('')}</tbody></table>`;
-}
-$('projLista').addEventListener('click', ev => {
-  const b = ev.target.closest('[data-apagar]'); if (!b) return;
-  const d = FC.dialogo(`<div class="fc-in"><h3>Apagar projeto</h3><p>Apagar "${esc(b.dataset.nome)}"? Essa ação não pode ser desfeita.</p>
-    <div class="fc-row"><button class="fc-btn" data-sim style="background:var(--bad);border-color:var(--bad)">Apagar</button><button class="fc-btn ghost" data-nao>Cancelar</button></div></div>`);
-  d.querySelector('[data-nao]').onclick = () => d.close();
-  d.querySelector('[data-sim]').onclick = async () => { const ok = await FC.apagarProjeto(b.dataset.apagar); d.close(); FC.toast(ok ? 'Projeto apagado.' : 'Não foi possível apagar.'); listar(); };
-});
-FC.aoMudar(listar);
+(function(){
+  var els=document.querySelectorAll('.rev');
+  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('vis')});return;}
+  var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('vis');io.unobserve(en.target);}})},{rootMargin:'0px 0px -40px 0px'});
+  els.forEach(function(e){io.observe(e)});
+})();
 </script>
 </body>
 </html>
