@@ -468,6 +468,14 @@ const arm = a => a ? `Ø${bit(a.phi)} c/${a.s}` : '—';
 function memoria(r) {
   const e = r.entrada, t = r.est, c = r.cortina, b = r.base;
   const out = [
+    { t: 'Geometria do muro', cols: ['Valor'], l: [
+      ['Altura de terra contida', 'H', [`${nf(r.H / 100)} m`], ''],
+      ['Base', 'B = ponta + cortina + talão', [`${nf(t.B / 100)} m`], ''],
+      ['Ponta (pé) · talão', '', [`${t.ponta} · ${t.talao} cm`], ''],
+      ['Cortina (topo / base)', 't1 / t2', [`${r.t1} / ${r.t2} cm`], ''],
+      ['Espessura da base', 'hb', [`${r.hb} cm`], ''],
+      ...(r.dente ? [['Dente sob a base', 'hd', [`${r.dente.hd} cm`], '']] : []),
+    ]},
     { t: 'Empuxo ativo (Rankine)', cols: ['Valor'], l: [
       ['Coeficiente de empuxo', 'Ka = tg²(45° − φ/2)', [nf(r.Ka, 3)], ''],
       ['Altura total', 'Ht = H + hb', [`${nf(r.Ht / 100)} m`], ''],
@@ -477,6 +485,7 @@ function memoria(r) {
     ]},
     { t: 'Estabilidade', cols: ['Valor'], l: [
       ...t.F.map(f => [f.n, `peso · braço até a ponta (${nf(f.x, 2)} m)`, [`${nf(f.V, 2)} kN/m`], '']),
+      [t.Fq.n + ' (só nas tensões)', `q · talão · braço (${nf(t.Fq.x, 2)} m)`, [`${nf(t.Fq.V, 2)} kN/m`], ''],
       ['Momento estabilizante', 'Mr = Σ V·x', [`${nf(t.Mr0, 2)} kN·m/m`], ''],
       ['Tombamento', 'FS = Mr / Ma ≥ 2,0', [{ v: nf(t.FSt), alerta: t.FSt < r.FST }], 'NBR 11682'],
       ['Deslizamento (atrito)', 'FS = ΣV·tg(2φ/3) / Ha ≥ 1,5', [{ v: nf(t.FSd), alerta: t.FSd < r.FSD && !r.dente }], 'NBR 11682'],
@@ -484,6 +493,7 @@ function memoria(r) {
       ['Excentricidade', 'e = B/2 − (Mr + Mq − Ma)/ΣV ≤ B/6', [{ v: `${nf(t.ex * 100, 1)} cm (B/6 = ${nf(t.B / 6, 1)})`, alerta: Math.abs(t.ex) * 100 > t.B / 6 + 1e-6 }], ''],
       ['Tensão média', 'σméd ≤ σadm', [{ v: `${nf(t.smed, 1)} kPa`, alerta: t.smed > e.sadm }], 'NBR 6122'],
       ['Tensão máxima', 'σmáx ≤ 1,3·σadm', [{ v: `${nf(t.smax, 1)} kPa`, alerta: t.smax > 1.3 * e.sadm }], 'NBR 6122'],
+      ['Tensão mínima', 'σmín ≥ 0 (sem tração no solo)', [{ v: `${nf(t.smin, 1)} kPa`, alerta: t.smin < -1e-6 }], 'NBR 6122'],
     ]},
     { t: 'Cortina', cols: ['Valor'], l: [
       ['Momento na base', 'Mk = Ka·γ·H³/6 + Ka·q·H²/2', [`${nf(c.Mk, 2)} kN·m/m`], ''],
@@ -583,6 +593,7 @@ function render() {
     <tr><td>Deslizamento${r.dente ? ` (dente ${r.dente.hd} cm)` : ''}</td><td class="v">${nf(t.FSd2 || t.FSd)}</td><td class="v">≥ 1,50</td><td>${pill((t.FSd2 || t.FSd) >= r.FSD)}</td></tr>
     <tr><td>Tensão média</td><td class="v">${nf(t.smed, 0)} kPa</td><td class="v">${nf(e.sadm, 0)}</td><td>${pill(t.smed <= e.sadm + 1e-6)}</td></tr>
     <tr><td>Tensão máxima</td><td class="v">${nf(t.smax, 0)} kPa</td><td class="v">${nf(1.3 * e.sadm, 0)}</td><td>${pill(t.smax <= 1.3 * e.sadm + 1e-6)}</td></tr>
+    <tr><td>Tensão mínima</td><td class="v">${nf(t.smin, 0)} kPa</td><td class="v">≥ 0</td><td>${pill(t.smin >= -1e-6)}</td></tr>
     <tr><td>Resultante no núcleo</td><td class="v">e = ${nf(t.ex * 100, 1)} cm</td><td class="v">≤ ${nf(t.B / 6, 1)}</td><td>${pill(Math.abs(t.ex) * 100 <= t.B / 6 + 1e-6)}</td></tr></tbody>`;
   $('arms').innerHTML = `<thead><tr><th>Peça</th><th>Posição</th><th class="v">Adotado</th></tr></thead><tbody>
     <tr><td>Cortina</td><td>vertical, lado da terra</td><td class="v">${arm(c.arm)}</td></tr>
@@ -601,6 +612,7 @@ function render() {
     <tr><td>Aço CA-50 (estimativa, sem perdas)</td><td class="v">${nf(q.kgM, 1)} kg</td><td class="v">${nf(q.kgTot, 0)} kg</td></tr>
     <tr><td>Fôrma</td><td class="v">${nf(q.forma, 2)} m²</td><td class="v">${nf(q.formaTot, 1)} m²</td></tr>
     <tr><td>Concreto magro (lastro 5 cm)</td><td class="v">${nf(q.magro / e.L, 3)} m³</td><td class="v">${nf(q.magro, 2)} m³</td></tr>
+    <tr><td>Aterro sobre o talão (compactado)</td><td class="v">${nf(t.talao / 100 * r.H / 100, 2)} m³</td><td class="v">${nf(t.talao / 100 * r.H / 100 * e.L, 1)} m³</td></tr>
     <tr><td>Barbacãs Ø75 mm</td><td class="v">—</td><td class="v">${q.dreno.barbacas} un.</td></tr></tbody>`;
 }
 
