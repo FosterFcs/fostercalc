@@ -20,7 +20,7 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `bloco.html` | Módulo de blocos sobre 1 a 4 estacas (bielas e tirantes) |
 | `validacao.html` | Comparação com exemplos resolvidos publicados (gerada por script a partir dos dados de validação) |
 | `explica.js` | Textos do modo didático (botão “?” na memória de viga, laje e pilar; planos Estudante e Pro) |
-| `ferramentas/` | Calculadoras gratuitas e públicas (sem login), feitas para atrair visitas pelo Google. Hoje: `cisterna-agua-de-chuva/`. Contatos vão para a tabela `leads_calc` |
+| `ferramentas/` | Calculadoras gratuitas e públicas (sem login), feitas para atrair visitas pelo Google. Hoje: `cisterna-agua-de-chuva/` e `fossa-septica/`. Contatos vão para a tabela `leads_calc` |
 | `robots.txt`, `sitemap.xml` | Orientam o Google; incluir cada nova calculadora no `sitemap.xml` |
 | `termos.html` | Termos de uso e política de privacidade (LGPD) |
 | `LICENSE` | Licença proprietária: © Foster Engenharia & Construção, todos os direitos reservados |

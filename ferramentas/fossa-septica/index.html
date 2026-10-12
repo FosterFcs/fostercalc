@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Fossa Séptica e Sumidouro (NBR 7229) | Foster Calc</title>
+<meta name="description" content="Calcule grátis o volume da fossa séptica e o tamanho do sumidouro para sua casa pela NBR 7229 e NBR 13969. Dimensões sugeridas, distâncias mínimas e memorial em PDF.">
+<link rel="canonical" href="https://fostercalc.com.br/ferramentas/fossa-septica/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Calculadora de Fossa Séptica e Sumidouro">
+<meta property="og:description" content="Volume da fossa, dimensões e sumidouro para a sua casa em 1 minuto. Grátis, com memorial em PDF.">
+<meta property="og:url" content="https://fostercalc.com.br/ferramentas/fossa-septica/">
+<meta property="og:locale" content="pt_BR">
+<meta name="theme-color" content="#c4161c">
+<link rel="icon" href="/icon-192.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "Calculadora de Fossa Séptica e Sumidouro",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "pt-BR",
+      "url": "https://fostercalc.com.br/ferramentas/fossa-septica/",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"},
+      "provider": {"@type": "Organization", "name": "Foster Engenharia & Construção", "email": "comercial@fosterconstrucoes.com.br", "url": "https://fostercalc.com.br/"}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "Qual o tamanho da fossa séptica para 5 pessoas?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Para uma casa de padrão médio com 5 moradores, clima com inverno ameno e limpeza a cada 2 anos, o volume útil pela NBR 7229 fica em torno de 2.200 litros. O valor muda com o padrão da casa, a temperatura do local e o intervalo de limpeza."}},
+        {"@type": "Question", "name": "Qual a diferença entre fossa séptica e sumidouro?",
+         "acceptedAnswer": {"@type": "Answer", "text": "A fossa séptica é um tanque fechado onde o esgoto fica parado, os sólidos se depositam e são digeridos. O sumidouro recebe o líquido que sai da fossa e o infiltra no solo. Um não substitui o outro."}},
+        {"@type": "Question", "name": "De quanto em quanto tempo limpar a fossa séptica?",
+         "acceptedAnswer": {"@type": "Answer", "text": "No intervalo previsto no dimensionamento, normalmente de 1 a 5 anos. A limpeza deve ser feita por empresa licenciada, que retira o lodo e dá a destinação correta."}},
+        {"@type": "Question", "name": "Posso fazer fossa negra ou fossa rudimentar?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Não é recomendado. A fossa rudimentar é só um buraco sem tratamento, que contamina o solo e a água subterrânea, inclusive poços da vizinhança. O sistema correto é fossa séptica seguida de sumidouro, vala de infiltração ou filtro."}}
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* Layout: ferramenta no topo (formulário + resultado com o reservatório desenhado), texto de referência abaixo, CTA final */
+:root{
+  --bg:#f0f0ee; --surface:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-ink:#ffffff; --water:#2f8fa3; --water-soft:#dcecef; --warm:#c4161c;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px}
+header.top{padding-block:18px;border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.2px;text-decoration:none;color:var(--ink)}
+.brand span{color:var(--accent)}
+.toplink{font-size:14px;color:var(--muted);text-decoration:none}
+.toplink:hover{color:var(--accent)}
+
+.hero{padding-block:36px 8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:700;text-transform:none;font-size:clamp(30px,5.4vw,48px);line-height:1.08;margin:8px 0 10px;text-wrap:balance;max-width:20ch}
+.lead{color:var(--muted);max-width:62ch;margin:0}
+
+.tool{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;padding-block:24px 40px}
+@media (max-width:880px){.tool{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;min-width:0}
+.card h2{font-family:var(--display);font-size:20px;margin:0 0 14px}
+fieldset{border:0;padding:0;margin:0 0 18px;display:grid;gap:12px}
+legend{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.row{grid-template-columns:1fr}}
+label{display:grid;gap:4px;font-weight:700;font-size:15px}
+label small{font-weight:400;color:var(--muted);font-size:13px;line-height:1.4}
+input,select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.unit{position:relative}
+.unit input{padding-right:58px}
+.unit i{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--mono);font-size:13px;color:var(--muted);pointer-events:none}
+
+.result{display:grid;gap:16px;align-content:start}
+.big{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.tank{width:120px;max-width:100%}
+.vol{font-family:var(--display);font-weight:700;font-size:clamp(40px,7vw,58px);line-height:1;font-variant-numeric:tabular-nums}
+.vol small{font-size:.42em;color:var(--muted);font-weight:600}
+.vol-note{color:var(--muted);font-size:14px;margin-top:6px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{border-top:2px solid var(--line);padding-top:8px}
+.stat b{display:block;font-family:var(--mono);font-weight:500;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat.hl{border-color:var(--warm)}
+.calc-line{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+
+.capture{border-top:1px dashed var(--line);padding-top:16px;display:grid;gap:10px}
+.capture h3{font-family:var(--display);font-size:18px;margin:0}
+.capture p{margin:0;font-size:14px;color:var(--muted)}
+.btn{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:8px;padding:12px 16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.consent{display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:13px;color:var(--muted)}
+.consent input{width:auto;margin-top:3px}
+.msg{font-size:14px;min-height:1.2em}
+.msg.err{color:var(--warm)}
+
+article{background:var(--surface);border-top:1px solid var(--line);padding-block:44px}
+article .wrap{max-width:760px}
+article h2{font-family:var(--display);font-size:28px;line-height:1.2;margin:36px 0 10px;text-wrap:balance}
+article h2:first-child{margin-top:0}
+article h3{font-family:var(--display);font-size:20px;margin:24px 0 6px}
+article p,article li{max-width:66ch}
+.formula{font-family:var(--mono);font-size:15px;background:var(--water-soft);border-radius:8px;padding:14px 16px;overflow-x:auto}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.warn{border-left:3px solid var(--warm);padding:4px 0 4px 14px;margin:14px 0}
+details{border-bottom:1px solid var(--line);padding:12px 0}
+summary{font-weight:700;cursor:pointer}
+
+.cta{padding-block:40px;border-top:2px solid var(--ink)}
+.ctas{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.ctas{grid-template-columns:1fr}}
+.cta-col{display:grid;gap:10px;align-content:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;min-width:0}
+.cta-col h2{font-family:var(--display);font-size:clamp(24px,4vw,30px);margin:0;line-height:1.1;text-wrap:balance}
+.cta-col p{margin:0}
+.cta-col .phone{font-family:var(--mono);font-size:15px;color:var(--muted);overflow-wrap:anywhere}
+.cta-col .btn{justify-self:start}
+.cta-col.pro{border-top:3px solid var(--accent)}
+footer{padding-block:24px;font-size:13px;color:var(--muted)}
+
+/* Memorial para impressão / PDF */
+#memorial{display:none}
+@media print{
+  body{background:#fff;color:#000;font-size:12pt}
+  body > *:not(#memorial){display:none !important}
+  #memorial{display:block;padding:0}
+  #memorial h1{font-size:20pt;max-width:none;margin:0 0 4pt}
+  #memorial table{font-size:11pt}
+  #memorial th,#memorial td{border-bottom:1px solid #999;color:#000}
+  @page{margin:18mm}
+}
+@media (prefers-reduced-motion:no-preference){.water-rect{transition:y .4s ease,height .4s ease}}
+
+/* Corte esquemático: fossa + sumidouro */
+.corte{width:100%;max-width:100%;height:auto;display:block}
+.dims{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.dims{grid-template-columns:1fr}}
+.dim{background:var(--bg);border-radius:8px;padding:10px 12px;min-width:0}
+.dim h4{margin:0 0 4px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.dim p{margin:0;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+.alerta{border-left:3px solid var(--accent);padding:6px 0 6px 12px;font-size:14px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">Foster <span>Calc</span></a>
+    <a class="toplink" href="/ferramentas/">Ferramentas gratuitas</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Calculadora grátis · base na NBR 7229 e NBR 13969</div>
+      <h1>Calculadora de fossa séptica e sumidouro</h1>
+      <p class="lead">Informe quantas pessoas moram na casa, o clima e o tipo de solo. Você recebe o volume da fossa séptica, dimensões sugeridas e o tamanho do sumidouro para infiltrar o efluente.</p>
+    </div>
+  </section>
+
+  <section class="wrap tool" aria-label="Calculadora">
+    <form class="card" id="calc" novalidate>
+      <h2>Seus dados</h2>
+
+      <fieldset>
+        <legend>Moradores e uso</legend>
+        <div class="row">
+          <label for="pessoas">Pessoas na casa
+            <span class="unit"><input id="pessoas" type="number" inputmode="numeric" min="1" step="1" value="5"><i>pess.</i></span>
+            <small>Considere a ocupação máxima prevista.</small>
+          </label>
+          <label for="padrao">Padrão da residência
+            <select id="padrao">
+              <option value="160">Alto · 160 L/pessoa</option>
+              <option value="130" selected>Médio · 130 L/pessoa</option>
+              <option value="100">Baixo · 100 L/pessoa</option>
+            </select>
+            <small>Define o volume de esgoto gerado por dia.</small>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Fossa séptica</legend>
+        <div class="row">
+          <label for="clima">Temperatura no mês mais frio
+            <select id="clima">
+              <option value="0">Até 10 °C</option>
+              <option value="1" selected>Entre 10 °C e 20 °C</option>
+              <option value="2">Acima de 20 °C</option>
+            </select>
+            <small>Clima frio digere o lodo mais devagar.</small>
+          </label>
+          <label for="limpeza">Limpeza a cada
+            <select id="limpeza">
+              <option value="0">1 ano</option>
+              <option value="1" selected>2 anos</option>
+              <option value="2">3 anos</option>
+              <option value="3">4 anos</option>
+              <option value="4">5 anos</option>
+            </select>
+            <small>Mais tempo entre limpezas pede fossa maior.</small>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sumidouro</legend>
+        <label for="solo">Tipo de solo no fundo do sumidouro
+          <select id="solo">
+            <option value="15">Rocha ou argila compacta branca, cinza ou preta</option>
+            <option value="30">Argila amarela, vermelha ou marrom, média compacta</option>
+            <option value="50" selected>Argila arenosa ou siltosa, amarela, vermelha ou marrom</option>
+            <option value="75">Areia ou silte pouco argiloso</option>
+            <option value="90">Areia limpa, areia grossa com cascalho</option>
+            <option value="teste">Tenho o resultado do teste de infiltração</option>
+          </select>
+          <small>O teste de percolação no local é sempre mais confiável que a escolha pela aparência.</small>
+        </label>
+        <label for="ci" id="ciWrap" hidden>Coeficiente de infiltração do teste
+          <span class="unit"><input id="ci" type="number" inputmode="decimal" min="1" step="1" value="50"><i>L/m²·dia</i></span>
+        </label>
+        <label for="diam">Diâmetro do sumidouro
+          <select id="diam">
+            <option value="1.2">1,20 m</option>
+            <option value="1.5" selected>1,50 m</option>
+            <option value="2.0">2,00 m</option>
+            <option value="2.5">2,50 m</option>
+          </select>
+        </label>
+      </fieldset>
+    </form>
+
+    <div class="card result" aria-live="polite">
+      <h2>Resultado</h2>
+      <div>
+        <div class="vol" id="vol">— <small>litros</small></div>
+        <div class="vol-note" id="volNote">Volume útil da fossa séptica</div>
+      </div>
+
+      <svg class="corte" viewBox="0 0 360 170" role="img" aria-labelledby="corteTitle">
+        <title id="corteTitle">Corte esquemático da fossa séptica e do sumidouro</title>
+        <line x1="8" y1="40" x2="352" y2="40" stroke="var(--muted)" stroke-width="1.5"/>
+        <text x="10" y="32" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono, monospace">nível do terreno</text>
+        <rect x="40" y="40" width="110" height="96" rx="4" fill="var(--water-soft)" stroke="var(--ink)" stroke-width="2"/>
+        <rect x="40" y="58" width="110" height="78" fill="var(--water)" opacity=".35"/>
+        <rect x="40" y="118" width="110" height="18" fill="var(--muted)" opacity=".45"/>
+        <text x="95" y="96" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">Fossa séptica</text>
+        <text x="95" y="130" text-anchor="middle" font-size="9.5" fill="var(--ink)">lodo</text>
+        <line x1="150" y1="66" x2="220" y2="66" stroke="var(--ink)" stroke-width="2"/>
+        <rect x="220" y="40" width="96" height="112" rx="4" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="268" y="98" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">Sumidouro</text>
+        <text x="268" y="114" text-anchor="middle" font-size="9.5" fill="var(--muted)">paredes e fundo</text>
+        <text x="268" y="126" text-anchor="middle" font-size="9.5" fill="var(--muted)">permeáveis</text>
+        <text id="tFossa" x="95" y="156" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink)">—</text>
+        <text id="tSumi" x="268" y="166" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink)">—</text>
+      </svg>
+
+      <div class="dims">
+        <div class="dim"><h4>Fossa cilíndrica</h4><p id="dCil">—</p></div>
+        <div class="dim"><h4>Fossa retangular</h4><p id="dRet">—</p></div>
+        <div class="dim"><h4>Esgoto por dia</h4><p id="dQ">—</p></div>
+        <div class="dim"><h4>Sumidouro</h4><p id="dSum">—</p></div>
+      </div>
+
+      <div class="alerta" id="alerta" hidden></div>
+      <div class="calc-line" id="calcLine">—</div>
+
+      <form class="capture" id="lead" novalidate>
+        <h3>Receba o memorial de cálculo em PDF</h3>
+        <p>Com os dados, as fórmulas da NBR 7229 e NBR 13969 e as distâncias mínimas, para levar à obra ou à prefeitura.</p>
+        <div class="row">
+          <label for="nome">Nome<input id="nome" autocomplete="name" required></label>
+          <label for="zap">WhatsApp<input id="zap" type="tel" inputmode="tel" autocomplete="tel" placeholder="(11) 90000-0000" required></label>
+        </div>
+        <div class="row">
+          <label for="email">E-mail<input id="email" type="email" autocomplete="email"></label>
+          <label for="perfil">Você é
+            <select id="perfil">
+              <option value="morador">Dono do imóvel</option>
+              <option value="profissional">Engenheiro, arquiteto ou técnico</option>
+              <option value="instalador">Instalador ou construtor</option>
+            </select>
+          </label>
+        </div>
+        <label class="consent" for="ok"><input id="ok" type="checkbox"> Aceito receber contato da Foster Engenharia sobre este cálculo. Meus dados não serão compartilhados.</label>
+        <button class="btn" type="submit">Gerar meu memorial em PDF</button>
+        <div class="msg" id="msg" role="status"></div>
+      </form>
+    </div>
+  </section>
+
+  <article>
+    <div class="wrap">
+      <h2>Como a calculadora dimensiona a fossa séptica</h2>
+      <p>A NBR 7229 calcula o volume útil somando uma parcela fixa de 1.000 litros a uma parcela que cresce com o número de pessoas. Essa parcela por pessoa tem duas partes: o esgoto que precisa ficar parado tempo suficiente para os sólidos se depositarem, e o espaço para guardar o lodo até a próxima limpeza.</p>
+      <div class="formula">V = 1.000 + N × (C × T + K × Lf)</div>
+      <ul>
+        <li><strong>V</strong> é o volume útil, em litros. O mínimo admitido é 1.250 litros.</li>
+        <li><strong>N</strong> é o número de pessoas.</li>
+        <li><strong>C</strong> é o esgoto gerado por pessoa por dia: 160 L no padrão alto, 130 L no médio e 100 L no baixo.</li>
+        <li><strong>T</strong> é o tempo que o esgoto fica retido, em dias. Diminui conforme o volume diário aumenta.</li>
+        <li><strong>K</strong> é a taxa de acumulação de lodo, em dias. Depende do clima e do intervalo de limpeza.</li>
+        <li><strong>Lf</strong> é o lodo fresco gerado: 1 litro por pessoa por dia em residências.</li>
+      </ul>
+
+      <h3>Tempo de detenção (T)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Esgoto por dia</th><th>T (dias)</th></tr></thead>
+        <tbody>
+          <tr><td>Até 1.500 L</td><td class="n">1,00</td></tr>
+          <tr><td>1.501 a 3.000 L</td><td class="n">0,92</td></tr>
+          <tr><td>3.001 a 4.500 L</td><td class="n">0,83</td></tr>
+          <tr><td>4.501 a 6.000 L</td><td class="n">0,75</td></tr>
+          <tr><td>6.001 a 7.500 L</td><td class="n">0,67</td></tr>
+          <tr><td>7.501 a 9.000 L</td><td class="n">0,58</td></tr>
+          <tr><td>Acima de 9.000 L</td><td class="n">0,50</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Acumulação de lodo (K)</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Limpeza a cada</th><th>Até 10 °C</th><th>10 a 20 °C</th><th>Acima de 20 °C</th></tr></thead>
+        <tbody>
+          <tr><td>1 ano</td><td class="n">94</td><td class="n">65</td><td class="n">57</td></tr>
+          <tr><td>2 anos</td><td class="n">134</td><td class="n">105</td><td class="n">97</td></tr>
+          <tr><td>3 anos</td><td class="n">174</td><td class="n">145</td><td class="n">137</td></tr>
+          <tr><td>4 anos</td><td class="n">214</td><td class="n">185</td><td class="n">177</td></tr>
+          <tr><td>5 anos</td><td class="n">254</td><td class="n">225</td><td class="n">217</td></tr>
+        </tbody>
+      </table></div>
+      <p>A temperatura é a média do mês mais frio do ano no local.</p>
+
+      <h3>Dimensões da fossa</h3>
+      <p>A profundidade útil fica entre 1,20 m e 2,20 m para fossas de até 6 m³, entre 1,50 m e 2,50 m de 6 a 10 m³, e entre 1,80 m e 2,80 m acima disso. Fossas cilíndricas devem ter pelo menos 1,10 m de diâmetro. As retangulares, pelo menos 0,80 m de largura, com comprimento de 2 a 4 vezes a largura. A calculadora usa a profundidade do meio de cada faixa e o comprimento igual ao dobro da largura.</p>
+
+      <h2>Como a calculadora dimensiona o sumidouro</h2>
+      <p>O sumidouro precisa de área de contato com o solo suficiente para infiltrar todo o efluente do dia. A área depende de quanto o solo absorve, medido pelo coeficiente de infiltração.</p>
+      <div class="formula">Área de infiltração (m²) = Esgoto por dia (L) ÷ Coeficiente de infiltração (L/m²·dia)</div>
+      <p>A calculadora considera como área útil o fundo e as paredes do sumidouro cilíndrico até a altura útil, e calcula a altura necessária para o diâmetro escolhido.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Solo</th><th>Coeficiente usado (L/m²·dia)</th></tr></thead>
+        <tbody>
+          <tr><td>Rocha ou argila compacta branca, cinza ou preta</td><td class="n">até 20 (inadequado)</td></tr>
+          <tr><td>Argila amarela, vermelha ou marrom, média compacta</td><td class="n">30</td></tr>
+          <tr><td>Argila arenosa ou siltosa</td><td class="n">50</td></tr>
+          <tr><td>Areia ou silte pouco argiloso</td><td class="n">75</td></tr>
+          <tr><td>Areia limpa, areia grossa com cascalho</td><td class="n">90</td></tr>
+        </tbody>
+      </table></div>
+      <p>São valores médios de faixas usadas na prática. O teste de percolação descrito na NBR 13969, feito no local e na profundidade do sumidouro, dá o valor real do seu terreno.</p>
+      <p class="warn"><strong>Lençol freático:</strong> o fundo do sumidouro deve ficar pelo menos 1,50 m acima do nível mais alto da água subterrânea. Em terreno com água rasa, use vala de infiltração ou outra solução indicada por profissional.</p>
+
+      <h2>Distâncias mínimas da fossa séptica</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Até</th><th>Distância mínima</th></tr></thead>
+        <tbody>
+          <tr><td>Construções, divisas do terreno, sumidouro e ramal de água</td><td class="n">1,50 m</td></tr>
+          <tr><td>Árvores e rede pública de abastecimento de água</td><td class="n">3,00 m</td></tr>
+          <tr><td>Poços e cursos d'água</td><td class="n">15,00 m</td></tr>
+        </tbody>
+      </table></div>
+      <p>Confira também as exigências do código sanitário e da prefeitura da sua cidade, que podem ser maiores.</p>
+
+      <h2>Cuidados que fazem o sistema funcionar</h2>
+      <ul>
+        <li><strong>Caixa de gordura antes da fossa.</strong> Gordura da cozinha entope a fossa e o sumidouro.</li>
+        <li><strong>Água de chuva fora.</strong> Calhas ligadas na fossa a fazem transbordar.</li>
+        <li><strong>Tampa de inspeção acessível.</strong> Para verificar o nível de lodo e fazer a limpeza.</li>
+        <li><strong>Limpeza no prazo.</strong> Feita por empresa licenciada, que dá destino correto ao lodo. Deixe um pouco de lodo no fundo para manter as bactérias.</li>
+        <li><strong>Sem produtos agressivos.</strong> Excesso de cloro, soda e solventes mata as bactérias que fazem o tratamento.</li>
+      </ul>
+
+      <h2>Perguntas frequentes</h2>
+      <details>
+        <summary>Qual o tamanho da fossa séptica para 5 pessoas?</summary>
+        <p>Para uma casa de padrão médio, inverno ameno e limpeza a cada 2 anos, o volume útil fica em torno de 2.200 litros. Use a calculadora para o seu caso.</p>
+      </details>
+      <details>
+        <summary>Qual a diferença entre fossa séptica e sumidouro?</summary>
+        <p>A fossa é um tanque fechado onde os sólidos se depositam e são digeridos. O sumidouro recebe o líquido que sai da fossa e o infiltra no solo. Os dois trabalham juntos.</p>
+      </details>
+      <details>
+        <summary>De quanto em quanto tempo limpar a fossa?</summary>
+        <p>No intervalo usado no dimensionamento, normalmente de 1 a 5 anos. Se a fossa foi feita sem cálculo, verifique o nível de lodo pelo menos uma vez por ano.</p>
+      </details>
+      <details>
+        <summary>Posso fazer fossa negra ou rudimentar?</summary>
+        <p>Não é recomendado. Ela é só um buraco sem tratamento e contamina o solo e a água subterrânea, inclusive poços vizinhos.</p>
+      </details>
+      <details>
+        <summary>Preciso de projeto para aprovar na prefeitura?</summary>
+        <p>Muitas prefeituras exigem projeto do sistema de esgoto com responsável técnico para aprovar a construção ou dar o habite-se. Consulte a sua.</p>
+      </details>
+
+      <p style="color:var(--muted);font-size:14px;margin-top:28px">Esta calculadora faz um pré-dimensionamento para residências. O projeto definitivo deve ser feito por profissional habilitado, com teste de infiltração no local e verificação do lençol freático.</p>
+    </div>
+  </article>
+
+  <section class="cta" aria-label="Próximos passos">
+    <div class="wrap ctas">
+      <div class="cta-col">
+        <div class="eyebrow">Para quem vai construir</div>
+        <h2>Precisa do projeto da fossa para a prefeitura?</h2>
+        <p>A Foster Engenharia faz o projeto do sistema de esgoto com ART, o teste de infiltração no terreno e acompanha a execução.</p>
+        <p class="phone">(24) 99209-6103 · comercial@fosterconstrucoes.com.br</p>
+        <a class="btn" href="https://wa.me/5524992096103?text=Ol%C3%A1%2C%20usei%20a%20calculadora%20de%20fossa%20s%C3%A9ptica%20do%20Foster%20Calc%20e%20quero%20um%20or%C3%A7amento." target="_blank" rel="noopener">Pedir orçamento pelo WhatsApp</a>
+      </div>
+      <div class="cta-col pro">
+        <div class="eyebrow">Para engenheiros, arquitetos e estudantes</div>
+        <h2>Calcule a estrutura no Foster Calc</h2>
+        <p>Vigas, lajes maciças e treliçadas, pilares, escadas, sapatas, blocos e muros de arrimo pela NBR 6118, com memória de cálculo e PDF com o seu carimbo.</p>
+        <p>Plano Estudante a partir de R$ 9,90/mês.</p>
+        <a class="btn ghost" href="/#planos">Conhecer o Foster Calc</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© Foster Engenharia & Construção · Calculadora de pré-dimensionamento, sem substituir projeto de profissional habilitado. · <a href="/termos.html" style="color:inherit">Termos de uso e privacidade</a> · <a href="/ferramentas/" style="color:inherit">Outras ferramentas</a></div>
+</footer>
+
+<div id="memorial"></div>
+
+<script>
+/* Contatos vão para a tabela public.leads_calc do projeto foster-calc no Supabase.
+   Se o envio falhar, o PDF é gerado normalmente. */
+const SUPABASE_URL = "https://fvsdlpnvqfvjdxmfgbjx.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_VT3XEbInyTr2Eu-AuLnrqw_BOrA2jYy";
+
+const $ = id => document.getElementById(id);
+const num = id => { const v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) && v > 0 ? v : 0; };
+const fmt = (v, d = 0) => v.toLocaleString("pt-BR", {minimumFractionDigits: d, maximumFractionDigits: d});
+const up = (v, step) => Math.ceil(v / step - 1e-9) * step;
+
+// NBR 7229: tempo de detenção por faixa de contribuição diária e taxa K (linhas = anos 1..5; colunas = clima)
+const TFAIXAS = [[1500, 1.00], [3000, 0.92], [4500, 0.83], [6000, 0.75], [7500, 0.67], [9000, 0.58], [Infinity, 0.50]];
+const KTAB = [[94, 65, 57], [134, 105, 97], [174, 145, 137], [214, 185, 177], [254, 225, 217]];
+const CLIMAS = ["até 10 °C", "entre 10 °C e 20 °C", "acima de 20 °C"];
+let last = null;
+
+function profundidade(vm3){ // faixa de profundidade útil (m) por volume
+  if (vm3 <= 6) return [1.20, 2.20];
+  if (vm3 <= 10) return [1.50, 2.50];
+  return [1.80, 2.80];
+}
+
+function calc(){
+  const N = Math.round(num("pessoas")), C = parseFloat($("padrao").value);
+  const clima = parseInt($("clima").value, 10), anos = parseInt($("limpeza").value, 10);
+  const soloSel = $("solo").value;
+  $("ciWrap").hidden = soloSel !== "teste";
+  const Ci = soloSel === "teste" ? num("ci") : parseFloat(soloSel);
+  const D = parseFloat($("diam").value);
+
+  const Q = N * C;                                         // L/dia
+  const T = TFAIXAS.find(f => Q <= f[0])[1];
+  const K = KTAB.at(anos).at(clima), Lf = 1;
+  const Vcalc = 1000 + N * (C * T + K * Lf);
+  const V = Math.max(1250, Vcalc);
+  const vm3 = V / 1000;
+  const [hmin, hmax] = profundidade(vm3);
+  const h = Math.round((hmin + hmax) / 2 * 100) / 100;
+
+  // cilíndrica: diâmetro pela profundidade média, mínimo 1,10 m
+  let Dc = Math.max(1.10, up(Math.sqrt(4 * vm3 / (Math.PI * h)), 0.05));
+  let hc = Math.max(hmin, up(4 * vm3 / (Math.PI * Dc * Dc), 0.05));
+  // retangular: L = 2B, mínimo 0,80 m de largura
+  let B = Math.max(0.80, up(Math.sqrt(vm3 / (2 * h)), 0.05));
+  let L = up(2 * B, 0.05);
+  let hr = Math.max(hmin, up(vm3 / (B * L), 0.05));
+
+  // sumidouro cilíndrico: área = fundo + parede lateral
+  const A = Ci > 0 ? Q / Ci : 0;
+  const fundo = Math.PI * D * D / 4;
+  const hs = A > 0 ? Math.max(0.5, up((A - fundo) / (Math.PI * D), 0.05)) : 0;
+  const nSum = hs > 3 ? Math.ceil(hs / 3) : 1;
+  const hsEach = nSum > 1 ? up(((A / nSum) - fundo) / (Math.PI * D), 0.05) : hs;
+
+  last = {N, C, T, K, Lf, Q, Vcalc, V, clima, anos: anos + 1, h, hmin, hmax, Dc, hc, B, L, hr, Ci, soloTxt: $("solo").selectedOptions[0].text, D, A, fundo, hs, nSum, hsEach, padraoTxt: $("padrao").selectedOptions[0].text};
+
+  const ok = N > 0;
+  $("vol").innerHTML = (ok ? fmt(V) : "—") + " <small>litros</small>";
+  $("volNote").textContent = ok ? (Vcalc < 1250 ? "Volume útil da fossa (mínimo da norma: 1.250 L)" : "Volume útil da fossa séptica") : "Informe o número de pessoas";
+  $("dCil").textContent = ok ? `Ø ${fmt(Dc, 2)} m × ${fmt(hc, 2)} m úteis` : "—";
+  $("dRet").textContent = ok ? `${fmt(B, 2)} × ${fmt(L, 2)} × ${fmt(hr, 2)} m úteis` : "—";
+  $("dQ").textContent = ok ? `${fmt(Q)} L/dia` : "—";
+  $("dSum").textContent = ok && Ci > 0 ? (nSum > 1 ? `${nSum} × Ø ${fmt(D, 2)} m × ${fmt(hsEach, 2)} m` : `Ø ${fmt(D, 2)} m × ${fmt(hs, 2)} m úteis`) : "—";
+  $("tFossa").textContent = ok ? `${fmt(V)} L` : "—";
+  $("tSumi").textContent = ok && Ci > 0 ? `${fmt(A, 1)} m² de infiltração` : "—";
+
+  const al = $("alerta"); al.hidden = true;
+  if (ok && soloSel === "15"){ al.hidden = false; al.textContent = "Solo pouco permeável: o sumidouro tende a não funcionar. Faça o teste de infiltração e avalie vala de infiltração, filtro anaeróbio ou outra solução com um profissional."; }
+  else if (ok && nSum > 1){ al.hidden = false; al.textContent = `A altura passaria de 3 m em um só sumidouro. A sugestão é dividir em ${nSum} sumidouros ou escolher diâmetro maior.`; }
+
+  $("calcLine").textContent = ok ? `V = 1.000 + ${N} × (${C} × ${fmt(T, 2)} + ${K} × ${Lf}) = ${fmt(Vcalc)} L · Sumidouro: ${fmt(Q)} ÷ ${fmt(Ci)} = ${fmt(A, 1)} m²` : "—";
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function memorial(){
+  const d = last, hoje = new Date().toLocaleDateString("pt-BR");
+  const row = (a, b) => `<tr><td>${a}</td><td style="text-align:right">${b}</td></tr>`;
+  $("memorial").innerHTML = `
+    <h1>Memorial de pré-dimensionamento de fossa séptica e sumidouro</h1>
+    <p>Referências: ABNT NBR 7229 e ABNT NBR 13969 · ${hoje}<br>Solicitante: ${escapeHtml($("nome").value)}</p>
+    <h3>1. Dados de entrada</h3>
+    <table>${row("Número de pessoas (N)", d.N)}${row("Padrão / contribuição de despejos (C)", escapeHtml(d.padraoTxt))}
+    ${row("Temperatura média do mês mais frio", CLIMAS.at(d.clima))}${row("Intervalo entre limpezas", d.anos + (d.anos > 1 ? " anos" : " ano"))}
+    ${row("Solo / coeficiente de infiltração", escapeHtml(d.soloTxt) + " / " + fmt(d.Ci) + " L/m²·dia")}</table>
+    <h3>2. Contribuição diária</h3>
+    <p>Q = N × C = ${d.N} × ${d.C} = <b>${fmt(d.Q)} L/dia</b> → tempo de detenção T = ${fmt(d.T, 2)} dia</p>
+    <h3>3. Volume útil da fossa séptica</h3>
+    <p>V = 1.000 + N × (C × T + K × Lf) = 1.000 + ${d.N} × (${d.C} × ${fmt(d.T, 2)} + ${d.K} × ${d.Lf}) = <b>${fmt(d.Vcalc)} L</b>${d.Vcalc < 1250 ? " → adotado o mínimo de <b>1.250 L</b>" : ""}</p>
+    <table>${row("Profundidade útil admitida para o volume", fmt(d.hmin, 2) + " a " + fmt(d.hmax, 2) + " m")}
+    ${row("Opção cilíndrica", "Ø " + fmt(d.Dc, 2) + " m × " + fmt(d.hc, 2) + " m úteis")}
+    ${row("Opção retangular (L = 2B)", fmt(d.B, 2) + " × " + fmt(d.L, 2) + " × " + fmt(d.hr, 2) + " m úteis")}</table>
+    <h3>4. Sumidouro</h3>
+    <p>Área de infiltração A = Q ÷ Ci = ${fmt(d.Q)} ÷ ${fmt(d.Ci)} = <b>${fmt(d.A, 1)} m²</b> (fundo + parede lateral)</p>
+    <p>Sumidouro cilíndrico Ø ${fmt(d.D, 2)} m: fundo = ${fmt(d.fundo, 2)} m² → altura útil = <b>${d.nSum > 1 ? d.nSum + " unidades de " + fmt(d.hsEach, 2) : fmt(d.hs, 2)} m</b></p>
+    <h3>5. Distâncias mínimas da fossa</h3>
+    <table>${row("Construções, divisas, sumidouro e ramal de água", "1,50 m")}${row("Árvores e rede pública de água", "3,00 m")}${row("Poços e cursos d'água", "15,00 m")}</table>
+    <h3>6. Recomendações</h3>
+    <p>Confirmar o coeficiente com teste de percolação no local (NBR 13969). Manter o fundo do sumidouro a pelo menos 1,50 m acima do lençol freático. Prever caixa de gordura, tampa de inspeção e limpeza por empresa licenciada no intervalo adotado.</p>
+    <p style="font-size:10pt">Pré-dimensionamento para residências. Não substitui projeto elaborado por profissional habilitado.<br>
+    Foster Engenharia & Construção · (24) 99209-6103 · comercial@fosterconstrucoes.com.br · fostercalc.com.br</p>`;
+}
+
+async function salvarLead(){
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  const d = last;
+  await fetch(`${SUPABASE_URL}/rest/v1/leads_calc`, {
+    method: "POST",
+    headers: {"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json", "Prefer": "return=minimal"},
+    body: JSON.stringify({calculadora: "fossa", nome: $("nome").value.trim(), whatsapp: $("zap").value.trim(),
+      email: $("email").value.trim() || null, perfil: $("perfil").value,
+      dados: {pessoas: d.N, contribuicao: d.C, volume_l: Math.round(d.V), ci: d.Ci, area_sumidouro_m2: Math.round(d.A * 10) / 10}})
+  });
+}
+
+$("calc").addEventListener("input", calc);
+$("calc").addEventListener("change", calc);
+$("calc").addEventListener("submit", e => e.preventDefault());
+
+$("lead").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = $("msg"); msg.className = "msg";
+  if (!$("nome").value.trim() || $("zap").value.replace(/\D/g, "").length < 10){ msg.className = "msg err"; msg.textContent = "Preencha nome e WhatsApp com DDD."; return; }
+  if (!$("ok").checked){ msg.className = "msg err"; msg.textContent = "Marque a autorização de contato para receber o memorial."; return; }
+  calc(); memorial();
+  msg.textContent = "Gerando o PDF… na janela que abrir, escolha Salvar como PDF.";
+  try { await salvarLead(); } catch(err) { /* o PDF sai mesmo se o envio falhar */ }
+  window.print();
+  msg.textContent = "Pronto. Se precisar do projeto com ART, fale com a gente pelo WhatsApp abaixo.";
+});
+
+calc();
+</script>
+</body>
+</html>
