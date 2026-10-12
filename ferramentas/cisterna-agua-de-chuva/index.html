@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Cisterna para Água de Chuva (NBR 15527) | Foster Calc</title>
+<meta name="description" content="Calcule grátis o tamanho da cisterna para aproveitar água de chuva na sua casa: volume ideal, quanto da demanda é atendida e quanto você economiza por ano. Baseado na NBR 15527.">
+<link rel="canonical" href="https://fostercalc.com.br/ferramentas/cisterna-agua-de-chuva/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Calculadora de Cisterna para Água de Chuva">
+<meta property="og:description" content="Descubra o tamanho certo da cisterna e quanto você economiza na conta de água. Grátis, com memorial em PDF.">
+<meta property="og:url" content="https://fostercalc.com.br/ferramentas/cisterna-agua-de-chuva/">
+<meta property="og:locale" content="pt_BR">
+<meta name="theme-color" content="#c4161c">
+<link rel="icon" href="/icon-192.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "Calculadora de Cisterna para Água de Chuva",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "pt-BR",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"},
+      "url": "https://fostercalc.com.br/ferramentas/cisterna-agua-de-chuva/",
+      "provider": {"@type": "Organization", "name": "Foster Engenharia & Construção", "email": "comercial@fosterconstrucoes.com.br", "url": "https://fostercalc.com.br/"}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "Qual o tamanho de cisterna para uma casa com 4 pessoas?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Depende da área do telhado, da chuva da sua cidade e de para que a água será usada. Para descargas de uma família de 4 pessoas com cerca de 100 m² de telhado em regiões com 1.400 mm de chuva por ano, o resultado costuma ficar entre 2.000 e 3.000 litros pelo método prático alemão. Use a calculadora acima com os seus dados."}},
+        {"@type": "Question", "name": "Posso beber a água da cisterna?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Não. A água de chuva captada do telhado serve para usos não potáveis, como descarga, rega de jardim e lavagem de pisos e carros. Ela não deve ser usada para beber, cozinhar ou tomar banho sem tratamento específico e acompanhamento técnico."}},
+        {"@type": "Question", "name": "A cisterna se paga?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Na maioria das casas com telhado médio e uso em descargas, a economia anual paga o sistema em alguns anos. A calculadora mostra a economia estimada e, se você informar o custo da instalação, o tempo de retorno."}},
+        {"@type": "Question", "name": "Preciso de engenheiro para instalar cisterna?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Para sistemas simples de rega, muitas pessoas instalam por conta própria. Quando a água vai abastecer descargas dentro de casa, é importante um projeto que separe totalmente a rede de água de chuva da rede de água potável e que verifique o local e o peso do reservatório."}}
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* Layout: ferramenta no topo (formulário + resultado com o reservatório desenhado), texto de referência abaixo, CTA final */
+:root{
+  --bg:#f0f0ee; --surface:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-ink:#ffffff; --water:#2f8fa3; --water-soft:#dcecef; --warm:#c4161c;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px}
+header.top{padding-block:18px;border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.2px;text-decoration:none;color:var(--ink)}
+.brand span{color:var(--accent)}
+.toplink{font-size:14px;color:var(--muted);text-decoration:none}
+.toplink:hover{color:var(--accent)}
+
+.hero{padding-block:36px 8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:700;text-transform:none;font-size:clamp(30px,5.4vw,48px);line-height:1.08;margin:8px 0 10px;text-wrap:balance;max-width:20ch}
+.lead{color:var(--muted);max-width:62ch;margin:0}
+
+.tool{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;padding-block:24px 40px}
+@media (max-width:880px){.tool{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;min-width:0}
+.card h2{font-family:var(--display);font-size:20px;margin:0 0 14px}
+fieldset{border:0;padding:0;margin:0 0 18px;display:grid;gap:12px}
+legend{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.row{grid-template-columns:1fr}}
+label{display:grid;gap:4px;font-weight:700;font-size:15px}
+label small{font-weight:400;color:var(--muted);font-size:13px;line-height:1.4}
+input,select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.unit{position:relative}
+.unit input{padding-right:58px}
+.unit i{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--mono);font-size:13px;color:var(--muted);pointer-events:none}
+
+.result{display:grid;gap:16px;align-content:start}
+.big{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.tank{width:120px;max-width:100%}
+.vol{font-family:var(--display);font-weight:700;font-size:clamp(40px,7vw,58px);line-height:1;font-variant-numeric:tabular-nums}
+.vol small{font-size:.42em;color:var(--muted);font-weight:600}
+.vol-note{color:var(--muted);font-size:14px;margin-top:6px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{border-top:2px solid var(--line);padding-top:8px}
+.stat b{display:block;font-family:var(--mono);font-weight:500;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat.hl{border-color:var(--warm)}
+.calc-line{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+
+.capture{border-top:1px dashed var(--line);padding-top:16px;display:grid;gap:10px}
+.capture h3{font-family:var(--display);font-size:18px;margin:0}
+.capture p{margin:0;font-size:14px;color:var(--muted)}
+.btn{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:8px;padding:12px 16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.consent{display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:13px;color:var(--muted)}
+.consent input{width:auto;margin-top:3px}
+.msg{font-size:14px;min-height:1.2em}
+.msg.err{color:var(--warm)}
+
+article{background:var(--surface);border-top:1px solid var(--line);padding-block:44px}
+article .wrap{max-width:760px}
+article h2{font-family:var(--display);font-size:28px;line-height:1.2;margin:36px 0 10px;text-wrap:balance}
+article h2:first-child{margin-top:0}
+article h3{font-family:var(--display);font-size:20px;margin:24px 0 6px}
+article p,article li{max-width:66ch}
+.formula{font-family:var(--mono);font-size:15px;background:var(--water-soft);border-radius:8px;padding:14px 16px;overflow-x:auto}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.warn{border-left:3px solid var(--warm);padding:4px 0 4px 14px;margin:14px 0}
+details{border-bottom:1px solid var(--line);padding:12px 0}
+summary{font-weight:700;cursor:pointer}
+
+.cta{padding-block:40px;border-top:2px solid var(--ink)}
+.ctas{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.ctas{grid-template-columns:1fr}}
+.cta-col{display:grid;gap:10px;align-content:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;min-width:0}
+.cta-col h2{font-family:var(--display);font-size:clamp(24px,4vw,30px);margin:0;line-height:1.1;text-wrap:balance}
+.cta-col p{margin:0}
+.cta-col .phone{font-family:var(--mono);font-size:15px;color:var(--muted);overflow-wrap:anywhere}
+.cta-col .btn{justify-self:start}
+.cta-col.pro{border-top:3px solid var(--accent)}
+footer{padding-block:24px;font-size:13px;color:var(--muted)}
+
+/* Memorial para impressão / PDF */
+#memorial{display:none}
+@media print{
+  body{background:#fff;color:#000;font-size:12pt}
+  body > *:not(#memorial){display:none !important}
+  #memorial{display:block;padding:0}
+  #memorial h1{font-size:20pt;max-width:none;margin:0 0 4pt}
+  #memorial table{font-size:11pt}
+  #memorial th,#memorial td{border-bottom:1px solid #999;color:#000}
+  @page{margin:18mm}
+}
+@media (prefers-reduced-motion:no-preference){.water-rect{transition:y .4s ease,height .4s ease}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">Foster <span>Calc</span></a>
+    <a class="toplink" href="/ferramentas/">Ferramentas gratuitas</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Calculadora grátis · base na NBR 15527</div>
+      <h1>Calculadora de cisterna para água de chuva</h1>
+      <p class="lead">Informe o seu telhado, a chuva da sua cidade e como pretende usar a água. Você descobre o tamanho de cisterna indicado, quanto da sua necessidade ela cobre e quanto economiza por ano na conta.</p>
+    </div>
+  </section>
+
+  <section class="wrap tool" aria-label="Calculadora">
+    <form class="card" id="calc" novalidate>
+      <h2>Seus dados</h2>
+
+      <fieldset>
+        <legend>Captação</legend>
+        <div class="row">
+          <label for="area">Área do telhado
+            <span class="unit"><input id="area" type="number" inputmode="decimal" min="1" step="1" value="100"><i>m²</i></span>
+            <small>Área em planta, vista de cima. Comprimento × largura.</small>
+          </label>
+          <label for="chuva">Chuva média anual
+            <span class="unit"><input id="chuva" type="number" inputmode="decimal" min="100" step="10" value="1400"><i>mm</i></span>
+            <small>Consulte a média da sua cidade no INMET.</small>
+          </label>
+        </div>
+        <label for="telhado">Tipo de cobertura
+          <select id="telhado">
+            <option value="0.80">Telha cerâmica</option>
+            <option value="0.85">Telha de fibrocimento</option>
+            <option value="0.90" selected>Telha metálica</option>
+            <option value="0.85">Laje impermeabilizada</option>
+          </select>
+          <small>Define quanto da chuva escorre até a calha.</small>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Uso da água</legend>
+        <div class="row">
+          <label for="pessoas">Moradores
+            <span class="unit"><input id="pessoas" type="number" inputmode="numeric" min="0" step="1" value="4"><i>pess.</i></span>
+            <small>Para as descargas.</small>
+          </label>
+          <label for="bacia">Volume da descarga
+            <select id="bacia">
+              <option value="6" selected>6 litros (caixa acoplada)</option>
+              <option value="3">3 litros (duplo acionamento, meia)</option>
+              <option value="12">12 litros (válvula antiga)</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <label for="jardim">Jardim regado
+            <span class="unit"><input id="jardim" type="number" inputmode="decimal" min="0" step="1" value="20"><i>m²</i></span>
+            <small>Rega 2 vezes por semana.</small>
+          </label>
+          <label for="lavagem">Lavagem de piso e carro
+            <span class="unit"><input id="lavagem" type="number" inputmode="decimal" min="0" step="10" value="150"><i>L/sem</i></span>
+            <small>Litros por semana.</small>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Economia</legend>
+        <div class="row">
+          <label for="tarifa">Custo da água
+            <span class="unit"><input id="tarifa" type="number" inputmode="decimal" min="0" step="0.5" value="12"><i>R$/m³</i></span>
+            <small>Água + esgoto. Veja na sua conta.</small>
+          </label>
+          <label for="custo">Custo do sistema
+            <span class="unit"><input id="custo" type="number" inputmode="decimal" min="0" step="100" value=""><i>R$</i></span>
+            <small>Opcional, para ver o retorno.</small>
+          </label>
+        </div>
+      </fieldset>
+    </form>
+
+    <div class="card result" aria-live="polite">
+      <h2>Resultado</h2>
+      <div class="big">
+        <svg class="tank" viewBox="0 0 120 150" role="img" aria-labelledby="tankTitle">
+          <title id="tankTitle">Parte da demanda atendida pela chuva</title>
+          <defs><clipPath id="tankClip"><rect x="14" y="18" width="92" height="118" rx="10"/></clipPath></defs>
+          <rect x="14" y="18" width="92" height="118" rx="10" fill="var(--water-soft)"/>
+          <g clip-path="url(#tankClip)">
+            <rect class="water-rect" id="waterRect" x="14" y="80" width="92" height="56" fill="var(--water)"/>
+          </g>
+          <rect x="14" y="18" width="92" height="118" rx="10" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+          <rect x="44" y="8" width="32" height="12" rx="3" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+          <text id="tankPct" x="60" y="72" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="16" font-weight="500" fill="var(--ink)">0%</text>
+          <text x="60" y="90" text-anchor="middle" font-size="10" fill="var(--ink)">da demanda</text>
+        </svg>
+        <div>
+          <div class="vol" id="vol">— <small>litros</small></div>
+          <div class="vol-note" id="volNote">Cisterna comercial indicada</div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b id="sCapt">—</b><span>água captável por ano</span></div>
+        <div class="stat"><b id="sDem">—</b><span>sua demanda por ano</span></div>
+        <div class="stat hl"><b id="sEco">—</b><span>economia por ano</span></div>
+        <div class="stat hl"><b id="sRet">—</b><span id="sRetLbl">retorno do investimento</span></div>
+      </div>
+
+      <div class="calc-line" id="calcLine">—</div>
+
+      <form class="capture" id="lead" novalidate>
+        <h3>Receba o memorial de cálculo em PDF</h3>
+        <p>Com os dados, as fórmulas e os dois métodos da NBR 15527 para levar ao instalador.</p>
+        <div class="row">
+          <label for="nome">Nome<input id="nome" autocomplete="name" required></label>
+          <label for="zap">WhatsApp<input id="zap" type="tel" inputmode="tel" autocomplete="tel" placeholder="(11) 90000-0000" required></label>
+        </div>
+        <div class="row">
+          <label for="email">E-mail<input id="email" type="email" autocomplete="email"></label>
+          <label for="perfil">Você é
+            <select id="perfil">
+              <option value="morador">Dono do imóvel</option>
+              <option value="profissional">Engenheiro, arquiteto ou técnico</option>
+              <option value="instalador">Instalador ou construtor</option>
+            </select>
+          </label>
+        </div>
+        <label class="consent" for="ok"><input id="ok" type="checkbox"> Aceito receber contato da Foster Engenharia sobre este cálculo. Meus dados não serão compartilhados.</label>
+        <button class="btn" type="submit">Gerar meu memorial em PDF</button>
+        <div class="msg" id="msg" role="status"></div>
+      </form>
+    </div>
+  </section>
+
+  <article>
+    <div class="wrap">
+      <h2>Como a calculadora chega ao tamanho da cisterna</h2>
+      <p>O cálculo segue três passos: quanta água o telhado consegue captar no ano, quanta água a casa usa para fins que não exigem água potável e, a partir disso, qual volume de reservatório faz sentido.</p>
+
+      <h3>1. Água captável</h3>
+      <p>Cada milímetro de chuva sobre um metro quadrado de telhado equivale a um litro de água. Parte dessa água se perde por evaporação, respingos e no descarte das primeiras águas, que lavam o telhado. Por isso se aplica um coeficiente de escoamento.</p>
+      <div class="formula">Captável (L/ano) = Chuva anual (mm) × Área (m²) × Coeficiente</div>
+
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Cobertura</th><th>Coeficiente usado</th></tr></thead>
+          <tbody>
+            <tr><td>Telha cerâmica</td><td class="n">0,80</td></tr>
+            <tr><td>Telha de fibrocimento</td><td class="n">0,85</td></tr>
+            <tr><td>Laje impermeabilizada</td><td class="n">0,85</td></tr>
+            <tr><td>Telha metálica</td><td class="n">0,90</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>São valores típicos da literatura técnica. Telhados sujos, com muitos recortes ou com calhas subdimensionadas captam menos.</p>
+
+      <h3>2. Demanda não potável</h3>
+      <p>A calculadora soma as descargas (5 por pessoa por dia, no volume da sua bacia), a rega do jardim (2 litros por metro quadrado, duas vezes por semana) e a lavagem de pisos e carro que você informar.</p>
+
+      <h3>3. Volume do reservatório</h3>
+      <p>A NBR 15527 apresenta vários métodos de dimensionamento. A calculadora usa o <strong>método prático alemão</strong>, simples e adequado para residências: o volume é 6% do menor valor entre a água captável e a demanda anual.</p>
+      <div class="formula">Volume (L) = 0,06 × menor valor entre Captável e Demanda</div>
+      <p>O resultado é arredondado para o próximo tamanho comercial de cisterna. No memorial em PDF também aparece o <strong>método prático de Azevedo Neto</strong>, que considera os meses de pouca chuva, para você comparar.</p>
+
+      <h2>Para que a água de chuva pode ser usada</h2>
+      <p>A água captada do telhado é para usos não potáveis: descarga de bacias, rega de jardins e hortas que não sejam consumidas cruas, lavagem de pisos, calçadas e veículos, e reserva para limpeza.</p>
+      <p class="warn"><strong>Não use para beber, cozinhar ou tomar banho.</strong> Mesmo parecendo limpa, a água do telhado carrega fezes de pássaros, poeira e fuligem.</p>
+
+      <h2>Cuidados que fazem o sistema funcionar</h2>
+      <ul>
+        <li><strong>Descarte das primeiras águas.</strong> Um dispositivo desvia a primeira chuva, que lava o telhado, antes de ela entrar na cisterna.</li>
+        <li><strong>Filtro e tela.</strong> Retêm folhas e insetos na entrada.</li>
+        <li><strong>Redes separadas.</strong> A tubulação da água de chuva nunca pode se ligar à rede de água potável da casa. Torneiras da água de chuva devem ser identificadas.</li>
+        <li><strong>Tampa vedada.</strong> Evita mosquitos, inclusive o da dengue, e entrada de luz, que favorece algas.</li>
+        <li><strong>Extravasor.</strong> Quando a cisterna enche, o excesso precisa ir para a drenagem, não para o vizinho.</li>
+        <li><strong>Peso.</strong> Cada 1.000 litros pesam cerca de uma tonelada. Cisterna elevada ou sobre laje precisa de verificação estrutural.</li>
+      </ul>
+
+      <h2>Perguntas frequentes</h2>
+      <details>
+        <summary>Qual o tamanho de cisterna para uma casa com 4 pessoas?</summary>
+        <p>Depende do telhado, da chuva da sua cidade e do uso. Para descargas de 4 pessoas com uns 100 m² de telhado, em regiões com cerca de 1.400 mm de chuva por ano, o resultado costuma ficar entre 2.000 e 3.000 litros. Use a calculadora com os seus dados.</p>
+      </details>
+      <details>
+        <summary>Posso beber a água da cisterna?</summary>
+        <p>Não. Ela serve para descarga, rega e lavagem. Beber ou cozinhar exige tratamento específico e acompanhamento técnico.</p>
+      </details>
+      <details>
+        <summary>A cisterna se paga?</summary>
+        <p>Na maioria das casas com uso em descargas, a economia anual paga o sistema em alguns anos. Informe o custo da instalação na calculadora para ver o retorno no seu caso.</p>
+      </details>
+      <details>
+        <summary>Preciso de engenheiro para instalar?</summary>
+        <p>Para rega simples, muita gente instala por conta própria. Para abastecer descargas dentro de casa, é importante um projeto que garanta a separação das redes e verifique onde a cisterna vai ficar e se a estrutura aguenta o peso.</p>
+      </details>
+      <details>
+        <summary>Onde encontro a chuva média da minha cidade?</summary>
+        <p>No site do INMET, nas normais climatológicas, ou em dados da defesa civil e de órgãos estaduais de recursos hídricos. Use a média anual em milímetros.</p>
+      </details>
+
+      <p style="color:var(--muted);font-size:14px;margin-top:28px">Esta calculadora faz um pré-dimensionamento. O projeto definitivo deve ser feito por profissional habilitado, considerando as condições do local.</p>
+    </div>
+  </article>
+
+  <section class="cta" aria-label="Próximos passos">
+    <div class="wrap ctas">
+      <div class="cta-col">
+        <div class="eyebrow">Para quem vai instalar em casa</div>
+        <h2>Quer o projeto pronto e a instalação feita do jeito certo?</h2>
+        <p>A Foster Engenharia faz o projeto do sistema de água de chuva, a verificação estrutural do reservatório e acompanha a instalação.</p>
+        <p class="phone">(24) 99209-6103 · comercial@fosterconstrucoes.com.br</p>
+        <a class="btn" href="https://wa.me/5524992096103?text=Ol%C3%A1%2C%20usei%20a%20calculadora%20de%20cisterna%20do%20Foster%20Calc%20e%20quero%20um%20or%C3%A7amento." target="_blank" rel="noopener">Pedir orçamento pelo WhatsApp</a>
+      </div>
+      <div class="cta-col pro">
+        <div class="eyebrow">Para engenheiros, arquitetos e estudantes</div>
+        <h2>Calcule a estrutura no Foster Calc</h2>
+        <p>Vigas, lajes maciças e treliçadas, pilares, escadas, sapatas, blocos e muros de arrimo pela NBR 6118, com memória de cálculo e PDF com o seu carimbo.</p>
+        <p>Plano Estudante a partir de R$ 9,90/mês.</p>
+        <a class="btn ghost" href="/#planos">Conhecer o Foster Calc</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© Foster Engenharia & Construção · Calculadora de pré-dimensionamento, sem substituir projeto de profissional habilitado. · <a href="/termos.html" style="color:inherit">Termos de uso e privacidade</a> · <a href="/ferramentas/" style="color:inherit">Outras ferramentas</a></div>
+</footer>
+
+<div id="memorial"></div>
+
+<script>
+/* ===== Configuração =====
+   Os contatos vão para a tabela public.leads_calc do projeto foster-calc no Supabase.
+   Se o envio falhar, o PDF é gerado normalmente.
+
+   create table public.leads_calc (
+     id bigint generated always as identity primary key,
+     criado_em timestamptz default now(),
+     calculadora text, nome text, whatsapp text, email text, perfil text, dados jsonb
+   );
+   alter table public.leads_calc enable row level security;
+   create policy "inserir lead" on public.leads_calc for insert to anon with check (true);
+   -- sem policy de select para anon: ninguém de fora consegue ler os contatos
+*/
+const SUPABASE_URL = "https://fvsdlpnvqfvjdxmfgbjx.supabase.co";      // projeto foster-calc
+const SUPABASE_ANON_KEY = "sb_publishable_VT3XEbInyTr2Eu-AuLnrqw_BOrA2jYy"; // chave publicável (segura no navegador; RLS controla o acesso)
+
+const $ = id => document.getElementById(id);
+const num = id => { const v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) && v > 0 ? v : 0; };
+const fmt = (v, d = 0) => v.toLocaleString("pt-BR", {minimumFractionDigits: d, maximumFractionDigits: d});
+const brl = v => v.toLocaleString("pt-BR", {style: "currency", currency: "BRL", maximumFractionDigits: 0});
+const SIZES = [310, 500, 1000, 1500, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 25000, 30000];
+let last = null;
+
+function calc(){
+  const area = num("area"), chuva = num("chuva"), coef = parseFloat($("telhado").value);
+  const pessoas = num("pessoas"), bacia = parseFloat($("bacia").value);
+  const jardim = num("jardim"), lavagem = num("lavagem");
+  const tarifa = num("tarifa"), custo = num("custo");
+
+  const captavel = chuva * area * coef;                        // L/ano
+  const dDescarga = pessoas * 5 * bacia * 365;                 // L/ano
+  const dJardim = jardim * 2 * 2 * 52;                         // L/ano
+  const dLavagem = lavagem * 52;                               // L/ano
+  const demanda = dDescarga + dJardim + dLavagem;
+  const base = Math.min(captavel, demanda);
+  const volAlemao = 0.06 * base;
+  const comercial = SIZES.find(s => s >= volAlemao) || Math.ceil(volAlemao / 1000) * 1000;
+  const mesesSecos = 4;
+  const volAzevedo = 0.042 * chuva * area * mesesSecos;
+  const atendido = demanda > 0 ? Math.min(1, captavel / demanda) : 0;
+  const m3Ano = Math.min(captavel, demanda) / 1000;
+  const economia = m3Ano * tarifa;
+  const retorno = custo > 0 && economia > 0 ? custo / economia : null;
+
+  last = {area, chuva, coef, tipo: $("telhado").selectedOptions[0].text, pessoas, bacia, jardim, lavagem, tarifa, custo,
+          captavel, dDescarga, dJardim, dLavagem, demanda, volAlemao, comercial, volAzevedo, mesesSecos, atendido, m3Ano, economia, retorno};
+
+  $("vol").innerHTML = (base > 0 ? fmt(comercial) : "—") + " <small>litros</small>";
+  $("volNote").textContent = base > 0 ? `Cisterna comercial indicada (cálculo: ${fmt(volAlemao)} L)` : "Preencha telhado, chuva e uso da água";
+  $("sCapt").textContent = fmt(captavel / 1000, 1) + " m³";
+  $("sDem").textContent = fmt(demanda / 1000, 1) + " m³";
+  $("sEco").textContent = economia > 0 ? brl(economia) : "—";
+  if (retorno !== null){ $("sRet").textContent = retorno < 1 ? "< 1 ano" : fmt(retorno, 1) + " anos"; $("sRetLbl").textContent = "retorno do investimento"; }
+  else { $("sRet").textContent = "—"; $("sRetLbl").textContent = "informe o custo do sistema"; }
+  $("calcLine").textContent = `${fmt(chuva)} mm × ${fmt(area)} m² × ${String(coef).replace(".", ",")} = ${fmt(captavel)} L/ano · 0,06 × ${fmt(base)} L = ${fmt(volAlemao)} L`;
+
+  const pct = Math.round(atendido * 100), h = 118 * atendido;
+  $("waterRect").setAttribute("y", 136 - h);
+  $("waterRect").setAttribute("height", h);
+  $("tankPct").textContent = pct + "%";
+}
+
+function memorial(){
+  const d = last, hoje = new Date().toLocaleDateString("pt-BR");
+  const row = (a, b) => `<tr><td>${a}</td><td style="text-align:right">${b}</td></tr>`;
+  $("memorial").innerHTML = `
+    <h1>Memorial de pré-dimensionamento de cisterna</h1>
+    <p>Aproveitamento de água de chuva para fins não potáveis · referência: ABNT NBR 15527 · ${hoje}<br>
+    Solicitante: ${escapeHtml($("nome").value)}</p>
+    <h3>1. Dados de entrada</h3>
+    <table>${row("Área de captação (projeção horizontal)", fmt(d.area) + " m²")}${row("Precipitação média anual", fmt(d.chuva) + " mm")}
+    ${row("Cobertura / coeficiente de escoamento", d.tipo + " / " + String(d.coef).replace(".", ","))}${row("Moradores / volume da descarga", fmt(d.pessoas) + " / " + d.bacia + " L")}
+    ${row("Jardim regado (2×/semana, 2 L/m²)", fmt(d.jardim) + " m²")}${row("Lavagem de piso e carro", fmt(d.lavagem) + " L/semana")}</table>
+    <h3>2. Água captável</h3>
+    <p>V captável = P × A × C = ${fmt(d.chuva)} × ${fmt(d.area)} × ${String(d.coef).replace(".", ",")} = <b>${fmt(d.captavel)} L/ano</b></p>
+    <h3>3. Demanda não potável</h3>
+    <table>${row("Descargas (5 por pessoa por dia)", fmt(d.dDescarga) + " L/ano")}${row("Rega", fmt(d.dJardim) + " L/ano")}${row("Lavagens", fmt(d.dLavagem) + " L/ano")}${row("<b>Total</b>", "<b>" + fmt(d.demanda) + " L/ano</b>")}</table>
+    <h3>4. Volume do reservatório</h3>
+    <p><b>Método prático alemão:</b> V = 0,06 × mín(captável; demanda) = 0,06 × ${fmt(Math.min(d.captavel, d.demanda))} = <b>${fmt(d.volAlemao)} L</b> → cisterna comercial de <b>${fmt(d.comercial)} L</b>.</p>
+    <p><b>Método prático de Azevedo Neto</b> (comparativo, ${d.mesesSecos} meses de pouca chuva): V = 0,042 × P × A × T = <b>${fmt(d.volAzevedo)} L</b>.</p>
+    <h3>5. Desempenho estimado</h3>
+    <table>${row("Parcela da demanda atendida pela chuva (média anual)", Math.round(d.atendido * 100) + "%")}${row("Água potável economizada", fmt(d.m3Ano, 1) + " m³/ano")}
+    ${row("Economia com tarifa de " + brl(d.tarifa) + "/m³", d.economia > 0 ? brl(d.economia) + "/ano" : "—")}${row("Retorno do investimento", d.retorno ? fmt(d.retorno, 1) + " anos" : "custo não informado")}</table>
+    <h3>6. Recomendações</h3>
+    <p>Prever descarte das primeiras águas, filtro na entrada, tampa vedada, extravasor ligado à drenagem e rede de água de chuva totalmente separada da rede potável, com pontos de uso identificados. Verificar a estrutura de apoio do reservatório (aprox. 1 t por 1.000 L).</p>
+    <p style="font-size:10pt">Pré-dimensionamento por métodos simplificados. Não substitui projeto elaborado por profissional habilitado.<br>
+    Foster Engenharia & Construção · (24) 99209-6103 · comercial@fosterconstrucoes.com.br</p>`;
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+async function salvarLead(){
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  const d = last;
+  await fetch(`${SUPABASE_URL}/rest/v1/leads_calc`, {
+    method: "POST",
+    headers: {"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json", "Prefer": "return=minimal"},
+    body: JSON.stringify({calculadora: "cisterna", nome: $("nome").value.trim(), whatsapp: $("zap").value.trim(),
+      email: $("email").value.trim(), perfil: $("perfil").value,
+      dados: {area: d.area, chuva: d.chuva, coef: d.coef, pessoas: d.pessoas, volume_l: d.comercial, demanda_l: Math.round(d.demanda)}})
+  });
+}
+
+$("calc").addEventListener("input", calc);
+$("calc").addEventListener("submit", e => e.preventDefault());
+
+$("lead").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = $("msg"); msg.className = "msg";
+  if (!$("nome").value.trim() || $("zap").value.replace(/\D/g, "").length < 10){ msg.className = "msg err"; msg.textContent = "Preencha nome e WhatsApp com DDD."; return; }
+  if (!$("ok").checked){ msg.className = "msg err"; msg.textContent = "Marque a autorização de contato para receber o memorial."; return; }
+  calc(); memorial();
+  msg.textContent = "Gerando o PDF… na janela que abrir, escolha Salvar como PDF.";
+  try { await salvarLead(); } catch(err) { /* o PDF sai mesmo se o envio falhar */ }
+  window.print();
+  msg.textContent = "Pronto. Se quiser o projeto completo, fale com a gente pelo WhatsApp abaixo.";
+});
+
+calc();
+</script>
+</body>
+</html>

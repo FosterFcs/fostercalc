@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadoras de Engenharia Grátis | Foster Calc</title>
+<meta name="description" content="Calculadoras gratuitas de engenharia civil para casas e pequenas obras: cisterna de água de chuva, fossa séptica e reservatório de retenção, com memorial em PDF.">
+<link rel="canonical" href="https://fostercalc.com.br/ferramentas/">
+<meta property="og:title" content="Calculadoras de engenharia grátis | Foster Calc">
+<meta property="og:description" content="Pré-dimensione cisterna, fossa e reservatório de retenção em minutos, com memorial em PDF.">
+<meta property="og:url" content="https://fostercalc.com.br/ferramentas/">
+<meta property="og:locale" content="pt_BR">
+<meta name="theme-color" content="#c4161c">
+<link rel="icon" href="/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f0f0ee; --surface:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9; --accent:#c4161c;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033; --accent:#ef4b4f; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033; --accent:#ef4b4f; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--body)}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px}
+header{background:var(--surface);border-bottom:1px solid var(--line);padding-block:18px}
+header .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;text-decoration:none;color:var(--ink)}
+.brand span{color:var(--accent)}
+header a.app{font-size:14px;color:var(--muted);text-decoration:none}
+.hero{padding-block:40px 20px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-size:clamp(32px,5.5vw,52px);line-height:1.05;margin:8px 0 10px;text-wrap:balance;max-width:18ch}
+.lead{color:var(--muted);max-width:62ch;margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;padding-block:20px 48px}
+.tool{display:grid;gap:8px;align-content:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;text-decoration:none;color:var(--ink);min-width:0}
+a.tool:hover,a.tool:focus-visible{border-color:var(--accent);outline:none}
+.tool h2{font-family:var(--display);font-size:26px;line-height:1.1;margin:0}
+.tool p{margin:0;color:var(--muted);font-size:15px}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;justify-self:start;padding:2px 8px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.tag.on{border-color:var(--accent);color:var(--accent)}
+.tool.soon{opacity:.7}
+.go{font-weight:600;color:var(--accent)}
+footer{border-top:1px solid var(--line);padding-block:24px;font-size:13px;color:var(--muted)}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="/">Foster <span>Calc</span></a>
+    <a class="app" href="/">Cálculo estrutural NBR 6118</a>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">Ferramentas gratuitas</div>
+    <h1>Calculadoras de engenharia para casas e pequenas obras</h1>
+    <p class="lead">Pré-dimensionamento rápido, com as fórmulas explicadas e memorial de cálculo em PDF. Feitas por engenheiro civil, com base nas normas ABNT.</p>
+  </section>
+  <section class="grid" aria-label="Calculadoras">
+    <a class="tool" href="/ferramentas/cisterna-agua-de-chuva/">
+      <span class="tag on">Disponível</span>
+      <h2>Cisterna de água de chuva</h2>
+      <p>Tamanho do reservatório, parte da demanda atendida e economia por ano. NBR 15527.</p>
+      <span class="go">Calcular agora</span>
+    </a>
+    <div class="tool soon">
+      <span class="tag">Em breve</span>
+      <h2>Fossa séptica e sumidouro</h2>
+      <p>Volume do tanque e área de infiltração para casas sem rede de esgoto. NBR 7229 e NBR 13969.</p>
+    </div>
+    <div class="tool soon">
+      <span class="tag">Em breve</span>
+      <h2>Reservatório de retenção</h2>
+      <p>Volume exigido para lotes impermeabilizados, com memorial para aprovação na prefeitura.</p>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">© Foster Engenharia & Construção · <a href="/termos.html">Termos de uso e privacidade</a> · <a href="/">Foster Calc</a></div>
+</footer>
+</body>
+</html>

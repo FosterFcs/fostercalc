@@ -20,6 +20,8 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `bloco.html` | Módulo de blocos sobre 1 a 4 estacas (bielas e tirantes) |
 | `validacao.html` | Comparação com exemplos resolvidos publicados (gerada por script a partir dos dados de validação) |
 | `explica.js` | Textos do modo didático (botão “?” na memória de viga, laje e pilar; planos Estudante e Pro) |
+| `ferramentas/` | Calculadoras gratuitas e públicas (sem login), feitas para atrair visitas pelo Google. Hoje: `cisterna-agua-de-chuva/`. Contatos vão para a tabela `leads_calc` |
+| `robots.txt`, `sitemap.xml` | Orientam o Google; incluir cada nova calculadora no `sitemap.xml` |
 | `termos.html` | Termos de uso e política de privacidade (LGPD) |
 | `LICENSE` | Licença proprietária: © Foster Engenharia & Construção, todos os direitos reservados |
 | `app.js` | Login, plano, projetos salvos, barra superior e downloads |
@@ -76,7 +78,14 @@ Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automatica
 - `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, trelicada, pilar, sapata, divisa, associada, bloco, escada ou muro). Cada usuário vê apenas os seus.
 - `exportacoes`: registro de cada PDF/DXF baixado (só aceita inserção de quem é Pro).
 
-Todas as tabelas com RLS; o verificador de segurança do Supabase está sem alertas.
+- `leads_calc`: contatos deixados nas calculadoras gratuitas (nome, WhatsApp, e-mail, perfil e dados do cálculo). O público só consegue inserir; para ver os contatos, use o Table Editor ou o SQL Editor:
+
+```sql
+select criado_em, calculadora, nome, whatsapp, email, perfil, dados
+from public.leads_calc order by criado_em desc;
+```
+
+Todas as tabelas com RLS.
 
 ## Integração entre módulos
 
