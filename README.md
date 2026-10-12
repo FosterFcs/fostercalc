@@ -66,6 +66,18 @@ Plano Estudante: `set plano = 'estudante'` (mesmos intervalos). PDF e DXF saem c
 Para cancelar: `set plano = 'gratis', plano_ate = null`.
 Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automaticamente.
 
+## Central de pagamentos (Asaas)
+
+A função `asaas-webhook` (Supabase, Edge Functions) recebe os avisos do Asaas e ativa o plano sozinha.
+
+- Endereço do webhook: `https://fvsdlpnvqfvjdxmfgbjx.supabase.co/functions/v1/asaas-webhook`
+- Segredos da função: `ASAAS_WEBHOOK_TOKEN` (o mesmo token informado no webhook do Asaas) e `ASAAS_API_KEY` (chave de API do Asaas, para ler o e-mail do pagador).
+- Eventos: `PAYMENT_CONFIRMED` e `PAYMENT_RECEIVED` ativam; `PAYMENT_REFUNDED` e `PAYMENT_CHARGEBACK_REQUESTED` cancelam.
+- O plano é identificado por `externalReference` (`produto:plano`), pelo id do link de pagamento ou pelo valor (9,90 · 79 · 29,90 · 299).
+- O cliente é localizado pelo e-mail do pagamento. Se ainda não tiver conta, o pagamento fica com status `sem_conta` e o plano é ativado sozinho quando ele se cadastrar com o mesmo e-mail.
+- Tudo fica registrado na tabela `pagamentos` (coluna `status` mostra o que aconteceu com cada aviso).
+- Preparada para outros produtos: hoje só o Foster Calc ativa planos; pagamentos de outros produtos ficam com status `outro_produto`.
+
 ## Perfil do engenheiro e cabeçalho do PDF
 
 - Clique no seu nome, no topo do site, para abrir **Meu perfil**: nome, CREA/CAU, empresa, telefone, e-mail, cidade e logo (PNG ou JPG; é reduzido automaticamente).
