@@ -328,7 +328,7 @@
     const link = (href, nome, id) => `<a href="${href}" ${grupo === id ? 'aria-current="page"' : ''}>${nome}</a>`;
     alvo.className = 'fc-bar';
     alvo.innerHTML = `<a class="fc-logo" href="./"><b>FC</b>Foster Calc</a>
-      <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'lajes')}${link('viga.html', 'Vigas', 'vigas')}${link('pilar.html', 'Pilares', 'pilares')}${link('sapata.html', 'Fundações', 'fundacoes')}${link('escada.html', 'Escadas', 'escadas')}${link('muro.html', 'Muros', 'muros')}${link('solar.html', 'Telhado solar', 'solar')}${link('./#projetos', 'Meus projetos', '-')}</nav>
+      <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'lajes')}${link('viga.html', 'Vigas', 'vigas')}${link('pilar.html', 'Pilares', 'pilares')}${link('sapata.html', 'Fundações', 'fundacoes')}${link('escada.html', 'Escadas', 'escadas')}${link('muro.html', 'Muros', 'muros')}${link('solar.html', 'Telhado solar', 'solar')}${link('ferramentas/', 'Calculadoras grátis', 'ferramentas')}${link('./#projetos', 'Meus projetos', '-')}</nav>
       <div class="fc-user">${sessao
         ? `<span class="fc-plano ${pro ? 'pro' : plano === 'estudante' ? 'est' : ''}">${pro ? 'Pro' : plano === 'estudante' ? 'Estudante' : 'Grátis'}</span><button class="fc-nome" type="button" data-fc="perfil" title="Meu perfil · ${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</button><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
         : `<button class="fc-btn" type="button" data-fc="entrar">Entrar</button>`}</div>`;
