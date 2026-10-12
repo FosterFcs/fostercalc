@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Reservatório de Retenção (Lei das Piscininhas SP) | Foster Calc</title>
+<meta name="description" content="Calcule grátis o volume do reservatório de retenção de águas pluviais exigido pela Lei das Piscininhas (Lei estadual 12.526/2007 e Lei municipal 13.276/2002 de São Paulo). Com memorial em PDF.">
+<link rel="canonical" href="https://fostercalc.com.br/ferramentas/reservatorio-de-retencao/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Calculadora de Reservatório de Retenção (Lei das Piscininhas)">
+<meta property="og:description" content="Descubra se seu lote precisa de reservatório de retenção e qual o volume exigido em São Paulo. Grátis, com memorial em PDF.">
+<meta property="og:url" content="https://fostercalc.com.br/ferramentas/reservatorio-de-retencao/">
+<meta property="og:locale" content="pt_BR">
+<meta name="theme-color" content="#c4161c">
+<link rel="icon" href="/icon-192.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "Calculadora de Reservatório de Retenção",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "pt-BR",
+      "url": "https://fostercalc.com.br/ferramentas/reservatorio-de-retencao/",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"},
+      "provider": {"@type": "Organization", "name": "Foster Engenharia & Construção", "email": "comercial@fosterconstrucoes.com.br", "url": "https://fostercalc.com.br/"}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "Quem é obrigado a ter reservatório de retenção em São Paulo?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Lotes, edificados ou não, com área impermeabilizada superior a 500 m². A regra está na Lei estadual 12.526/2007, que vale para todo o estado de São Paulo, e na Lei municipal 13.276/2002 da capital."}},
+        {"@type": "Question", "name": "Como calcular o volume do reservatório de retenção?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Pela fórmula V = 0,15 × Ai × IP × t, com V em m³, Ai a área impermeabilizada em m², IP igual a 0,06 m/h e t igual a 1 hora. Na prática, o volume é 0,009 m³ por m² de área impermeabilizada. Um lote com 600 m² impermeabilizados precisa de 5,4 m³."}},
+        {"@type": "Question", "name": "O que fazer com a água do reservatório de retenção?",
+         "acceptedAnswer": {"@type": "Answer", "text": "De preferência, infiltrar no solo. Também pode ser lançada na rede pública de drenagem depois de uma hora de chuva, ou levada a outro reservatório para usos não potáveis."}},
+        {"@type": "Question", "name": "Reservatório de retenção é a mesma coisa que cisterna?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Não. O reservatório de retenção segura a água durante a chuva forte para não sobrecarregar a drenagem da cidade, e depois se esvazia. A cisterna guarda a água para reaproveitar. Os dois podem trabalhar juntos."}}
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* Layout: ferramenta no topo (formulário + resultado com o reservatório desenhado), texto de referência abaixo, CTA final */
+:root{
+  --bg:#f0f0ee; --surface:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-ink:#ffffff; --water:#2f8fa3; --water-soft:#dcecef; --warm:#c4161c;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px}
+header.top{padding-block:18px;border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.2px;text-decoration:none;color:var(--ink)}
+.brand span{color:var(--accent)}
+.toplink{font-size:14px;color:var(--muted);text-decoration:none}
+.toplink:hover{color:var(--accent)}
+
+.hero{padding-block:36px 8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:700;text-transform:none;font-size:clamp(30px,5.4vw,48px);line-height:1.08;margin:8px 0 10px;text-wrap:balance;max-width:20ch}
+.lead{color:var(--muted);max-width:62ch;margin:0}
+
+.tool{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;padding-block:24px 40px}
+@media (max-width:880px){.tool{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;min-width:0}
+.card h2{font-family:var(--display);font-size:20px;margin:0 0 14px}
+fieldset{border:0;padding:0;margin:0 0 18px;display:grid;gap:12px}
+legend{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.row{grid-template-columns:1fr}}
+label{display:grid;gap:4px;font-weight:700;font-size:15px}
+label small{font-weight:400;color:var(--muted);font-size:13px;line-height:1.4}
+input,select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.unit{position:relative}
+.unit input{padding-right:58px}
+.unit i{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--mono);font-size:13px;color:var(--muted);pointer-events:none}
+
+.result{display:grid;gap:16px;align-content:start}
+.big{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.tank{width:120px;max-width:100%}
+.vol{font-family:var(--display);font-weight:700;font-size:clamp(40px,7vw,58px);line-height:1;font-variant-numeric:tabular-nums}
+.vol small{font-size:.42em;color:var(--muted);font-weight:600}
+.vol-note{color:var(--muted);font-size:14px;margin-top:6px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{border-top:2px solid var(--line);padding-top:8px}
+.stat b{display:block;font-family:var(--mono);font-weight:500;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat.hl{border-color:var(--warm)}
+.calc-line{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+
+.capture{border-top:1px dashed var(--line);padding-top:16px;display:grid;gap:10px}
+.capture h3{font-family:var(--display);font-size:18px;margin:0}
+.capture p{margin:0;font-size:14px;color:var(--muted)}
+.btn{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:8px;padding:12px 16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.consent{display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:13px;color:var(--muted)}
+.consent input{width:auto;margin-top:3px}
+.msg{font-size:14px;min-height:1.2em}
+.msg.err{color:var(--warm)}
+
+article{background:var(--surface);border-top:1px solid var(--line);padding-block:44px}
+article .wrap{max-width:760px}
+article h2{font-family:var(--display);font-size:28px;line-height:1.2;margin:36px 0 10px;text-wrap:balance}
+article h2:first-child{margin-top:0}
+article h3{font-family:var(--display);font-size:20px;margin:24px 0 6px}
+article p,article li{max-width:66ch}
+.formula{font-family:var(--mono);font-size:15px;background:var(--water-soft);border-radius:8px;padding:14px 16px;overflow-x:auto}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.warn{border-left:3px solid var(--warm);padding:4px 0 4px 14px;margin:14px 0}
+details{border-bottom:1px solid var(--line);padding:12px 0}
+summary{font-weight:700;cursor:pointer}
+
+.cta{padding-block:40px;border-top:2px solid var(--ink)}
+.ctas{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.ctas{grid-template-columns:1fr}}
+.cta-col{display:grid;gap:10px;align-content:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;min-width:0}
+.cta-col h2{font-family:var(--display);font-size:clamp(24px,4vw,30px);margin:0;line-height:1.1;text-wrap:balance}
+.cta-col p{margin:0}
+.cta-col .phone{font-family:var(--mono);font-size:15px;color:var(--muted);overflow-wrap:anywhere}
+.cta-col .btn{justify-self:start}
+.cta-col.pro{border-top:3px solid var(--accent)}
+footer{padding-block:24px;font-size:13px;color:var(--muted)}
+
+/* Memorial para impressão / PDF */
+#memorial{display:none}
+@media print{
+  body{background:#fff;color:#000;font-size:12pt}
+  body > *:not(#memorial){display:none !important}
+  #memorial{display:block;padding:0}
+  #memorial h1{font-size:20pt;max-width:none;margin:0 0 4pt}
+  #memorial table{font-size:11pt}
+  #memorial th,#memorial td{border-bottom:1px solid #999;color:#000}
+  @page{margin:18mm}
+}
+@media (prefers-reduced-motion:no-preference){.water-rect{transition:y .4s ease,height .4s ease}}
+
+.status{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:8px;background:var(--bg);font-size:15px}
+.status b{font-family:var(--mono);font-weight:500;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap}
+.status.sim b{background:var(--accent);color:var(--accent-ink)}
+.status.nao b{background:var(--line);color:var(--ink)}
+.meter{display:grid;gap:6px}
+.meter-track{position:relative;height:14px;border-radius:7px;background:var(--water-soft);overflow:hidden}
+.meter-fill{position:absolute;inset:0 auto 0 0;background:var(--water);border-radius:7px}
+.meter-lim{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.meter-legend{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.dims{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.dims{grid-template-columns:1fr}}
+.dim{background:var(--bg);border-radius:8px;padding:10px 12px;min-width:0}
+.dim h4{margin:0 0 4px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.dim p{margin:0;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+.seg{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg label{position:relative;flex:1;display:block;font-weight:600;font-size:14px;text-align:center;padding:10px 8px;cursor:pointer;background:var(--bg)}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--ink);color:var(--surface)}
+.seg label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:-3px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">Foster <span>Calc</span></a>
+    <a class="toplink" href="/ferramentas/">Ferramentas gratuitas</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Calculadora grátis · Lei das Piscininhas</div>
+      <h1>Calculadora de reservatório de retenção</h1>
+      <p class="lead">Informe as áreas de telhado e de piso impermeável do lote. Você descobre se a lei de São Paulo exige o reservatório e qual o volume mínimo, com memorial para a aprovação.</p>
+    </div>
+  </section>
+
+  <section class="wrap tool" aria-label="Calculadora">
+    <form class="card" id="calc" novalidate>
+      <h2>Seus dados</h2>
+
+      <fieldset>
+        <legend>Regra aplicada</legend>
+        <div class="seg" role="radiogroup" aria-label="Regra aplicada">
+          <label for="rSP"><input type="radio" id="rSP" name="regra" value="sp" checked> Estado de São Paulo</label>
+          <label for="rOutra"><input type="radio" id="rOutra" name="regra" value="outra"> Outra cidade</label>
+        </div>
+        <small style="color:var(--muted);font-size:13px">São Paulo: Lei estadual 12.526/2007 e Lei municipal 13.276/2002 da capital, com a mesma fórmula.</small>
+        <div id="outraBox" hidden>
+          <div class="row">
+            <label for="lim">Área a partir da qual é obrigatório
+              <span class="unit"><input id="lim" type="number" inputmode="decimal" min="0" step="10" value="500"><i>m²</i></span>
+            </label>
+            <label for="coef">Coeficiente da fórmula
+              <span class="unit"><input id="coef" type="number" inputmode="decimal" min="0" step="0.01" value="0.15"><i>—</i></span>
+            </label>
+          </div>
+          <div class="row">
+            <label for="ip">Intensidade de chuva (IP)
+              <span class="unit"><input id="ip" type="number" inputmode="decimal" min="0" step="1" value="60"><i>mm/h</i></span>
+            </label>
+            <label for="dur">Duração da chuva (t)
+              <span class="unit"><input id="dur" type="number" inputmode="decimal" min="0" step="0.25" value="1"><i>h</i></span>
+            </label>
+          </div>
+          <small style="color:var(--muted);font-size:13px">Use os valores da lei ou do código de obras da sua cidade.</small>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Áreas impermeabilizadas</legend>
+        <div class="row">
+          <label for="telhado">Telhados e coberturas
+            <span class="unit"><input id="telhado" type="number" inputmode="decimal" min="0" step="1" value="420"><i>m²</i></span>
+            <small>Área em planta, vista de cima.</small>
+          </label>
+          <label for="piso">Pisos descobertos
+            <span class="unit"><input id="piso" type="number" inputmode="decimal" min="0" step="1" value="180"><i>m²</i></span>
+            <small>Pátios, garagens, calçadas e terraços.</small>
+          </label>
+        </div>
+        <label for="lote">Área do terreno (opcional)
+          <span class="unit"><input id="lote" type="number" inputmode="decimal" min="0" step="1" value="800"><i>m²</i></span>
+          <small>Para mostrar quanto do lote está impermeabilizado.</small>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Dimensões</legend>
+        <label for="altura">Altura útil do reservatório
+          <select id="altura">
+            <option value="1.0">1,00 m</option>
+            <option value="1.5" selected>1,50 m</option>
+            <option value="2.0">2,00 m</option>
+          </select>
+          <small>Usada para sugerir as medidas em planta de um reservatório enterrado.</small>
+        </label>
+      </fieldset>
+    </form>
+
+    <div class="card result" aria-live="polite">
+      <h2>Resultado</h2>
+      <div class="status" id="status"><b>—</b><span>—</span></div>
+      <div>
+        <div class="vol" id="vol">— <small>m³</small></div>
+        <div class="vol-note" id="volNote">Volume mínimo do reservatório</div>
+      </div>
+
+      <div class="meter" aria-hidden="true">
+        <div class="meter-track"><div class="meter-fill" id="mFill" style="width:0%"></div><div class="meter-lim" id="mLim" style="left:50%"></div></div>
+        <div class="meter-legend"><span id="mAi">0 m² impermeabilizados</span><span id="mLimTxt">limite 500 m²</span></div>
+      </div>
+
+      <div class="dims">
+        <div class="dim"><h4>Em litros</h4><p id="dL">—</p></div>
+        <div class="dim"><h4>Lote impermeabilizado</h4><p id="dPct">—</p></div>
+        <div class="dim"><h4>Retangular enterrado</h4><p id="dRet">—</p></div>
+        <div class="dim"><h4>Caixas de 5.000 L</h4><p id="dCx">—</p></div>
+      </div>
+
+      <div class="calc-line" id="calcLine">—</div>
+
+      <form class="capture" id="lead" novalidate>
+        <h3>Receba o memorial de cálculo em PDF</h3>
+        <p>Com as áreas, a fórmula da lei e o volume, para anexar ao projeto de aprovação.</p>
+        <div class="row">
+          <label for="nome">Nome<input id="nome" autocomplete="name" required></label>
+          <label for="zap">WhatsApp<input id="zap" type="tel" inputmode="tel" autocomplete="tel" placeholder="(11) 90000-0000" required></label>
+        </div>
+        <div class="row">
+          <label for="email">E-mail<input id="email" type="email" autocomplete="email"></label>
+          <label for="perfil">Você é
+            <select id="perfil">
+              <option value="morador">Dono do imóvel</option>
+              <option value="profissional">Engenheiro, arquiteto ou técnico</option>
+              <option value="instalador">Instalador ou construtor</option>
+            </select>
+          </label>
+        </div>
+        <label class="consent" for="ok"><input id="ok" type="checkbox"> Aceito receber contato da Foster Engenharia sobre este cálculo. Meus dados não serão compartilhados.</label>
+        <button class="btn" type="submit">Gerar meu memorial em PDF</button>
+        <div class="msg" id="msg" role="status"></div>
+      </form>
+    </div>
+  </section>
+
+  <article>
+    <div class="wrap">
+      <h2>O que é a Lei das Piscininhas</h2>
+      <p>Quando a chuva cai sobre telhados e pisos impermeáveis, a água corre toda de uma vez para as ruas e galerias, e isso alimenta as enchentes. A lei obriga lotes com muita área impermeabilizada a segurar parte dessa água num reservatório durante a chuva forte, liberando depois.</p>
+      <p>No estado de São Paulo, a regra está na <strong>Lei estadual 12.526/2007</strong>, que vale para todos os municípios. A capital tem lei própria, a <strong>Lei municipal 13.276/2002</strong>, com a mesma exigência e a mesma fórmula. Na capital, o reservatório é condição para obter o Certificado de Conclusão ou o Auto de Regularização da obra.</p>
+
+      <h2>Quem é obrigado</h2>
+      <p>Lotes, edificados ou não, com <strong>área impermeabilizada maior que 500 m²</strong>. Entram nessa conta os telhados, coberturas, terraços e pavimentos descobertos, como pátios, garagens e estacionamentos.</p>
+
+      <h2>Como calcular o volume</h2>
+      <div class="formula">V = 0,15 × Ai × IP × t</div>
+      <ul>
+        <li><strong>V</strong> é o volume do reservatório, em m³.</li>
+        <li><strong>Ai</strong> é a área impermeabilizada, em m².</li>
+        <li><strong>IP</strong> é o índice pluviométrico, fixado em 0,06 m/h (60 mm por hora).</li>
+        <li><strong>t</strong> é a duração da chuva, fixada em 1 hora.</li>
+      </ul>
+      <p>Com os valores da lei, a conta fica simples: <strong>0,009 m³ por m² impermeabilizado</strong>, ou 9 litros por metro quadrado.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Área impermeabilizada</th><th>Volume mínimo</th></tr></thead>
+        <tbody>
+          <tr><td>600 m²</td><td class="n">5,4 m³</td></tr>
+          <tr><td>1.000 m²</td><td class="n">9,0 m³</td></tr>
+          <tr><td>2.000 m²</td><td class="n">18,0 m³</td></tr>
+          <tr><td>5.000 m²</td><td class="n">45,0 m³</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2>Para onde vai a água</h2>
+      <p>A lei prevê três destinos para a água retida:</p>
+      <ul>
+        <li><strong>Infiltração no solo</strong>, que é a opção preferencial.</li>
+        <li><strong>Lançamento na rede pública de drenagem</strong> depois de uma hora de chuva.</li>
+        <li><strong>Reaproveitamento</strong> em outro reservatório, para usos não potáveis como descarga, rega e lavagem.</li>
+      </ul>
+      <p>Se a ideia é reaproveitar, vale dimensionar também uma cisterna. Use a nossa <a href="/ferramentas/cisterna-agua-de-chuva/">calculadora de cisterna para água de chuva</a>.</p>
+
+      <h2>Cuidados no projeto</h2>
+      <ul>
+        <li><strong>Toda a área entra.</strong> Calhas de telhados e ralos de pisos descobertos precisam ser conduzidos ao reservatório.</li>
+        <li><strong>Saída controlada.</strong> A descarga para a rede deve ser feita de forma que o reservatório cumpra o papel de segurar a água durante a chuva.</li>
+        <li><strong>Extravasor.</strong> Quando enche, o excesso precisa de saída segura para a drenagem.</li>
+        <li><strong>Acesso para limpeza</strong> e tampa vedada, para evitar mosquitos.</li>
+        <li><strong>Estrutura.</strong> Reservatório enterrado sob área com tráfego de veículos precisa de verificação estrutural.</li>
+      </ul>
+
+      <h2>Perguntas frequentes</h2>
+      <details>
+        <summary>Quem é obrigado a ter reservatório de retenção em São Paulo?</summary>
+        <p>Lotes, edificados ou não, com mais de 500 m² de área impermeabilizada. A Lei estadual 12.526/2007 vale para todo o estado.</p>
+      </details>
+      <details>
+        <summary>Como calcular o volume?</summary>
+        <p>Multiplique a área impermeabilizada por 0,009. O resultado sai em m³. Um lote com 600 m² impermeabilizados precisa de 5,4 m³.</p>
+      </details>
+      <details>
+        <summary>Reservatório de retenção é a mesma coisa que cisterna?</summary>
+        <p>Não. O reservatório de retenção segura a água durante a chuva forte e depois se esvazia. A cisterna guarda a água para reaproveitar. Os dois podem trabalhar juntos.</p>
+      </details>
+      <details>
+        <summary>Minha cidade fora de São Paulo tem regra parecida?</summary>
+        <p>Várias cidades têm leis próprias, com outros limites e outras fórmulas. Escolha "Outra cidade" na calculadora e use os valores da lei local.</p>
+      </details>
+
+      <p style="color:var(--muted);font-size:14px;margin-top:28px">Esta calculadora aplica a fórmula das leis citadas. Confira sempre a legislação e as exigências da prefeitura do seu município. O projeto do sistema deve ser feito por profissional habilitado.</p>
+      <p style="color:var(--muted);font-size:14px">Fontes: <a href="https://www.al.sp.gov.br/repositorio/legislacao/lei/2007/lei-12526-02.01.2007.html" target="_blank" rel="noopener">Lei estadual 12.526/2007 (Alesp)</a> · <a href="https://www.saopaulo.sp.leg.br/iah/fulltext/leis/L13276.pdf" target="_blank" rel="noopener">Lei municipal 13.276/2002 (Câmara de São Paulo)</a></p>
+    </div>
+  </article>
+
+  <section class="cta" aria-label="Próximos passos">
+    <div class="wrap ctas">
+      <div class="cta-col">
+        <div class="eyebrow">Para quem vai aprovar a obra</div>
+        <h2>Precisa do projeto do reservatório para a prefeitura?</h2>
+        <p>A Foster Engenharia faz o projeto de drenagem e do reservatório de retenção com ART, inclusive a verificação estrutural.</p>
+        <p class="phone">(24) 99209-6103 · comercial@fosterconstrucoes.com.br</p>
+        <a class="btn" href="https://wa.me/5524992096103?text=Ol%C3%A1%2C%20usei%20a%20calculadora%20de%20reservat%C3%B3rio%20de%20reten%C3%A7%C3%A3o%20do%20Foster%20Calc%20e%20quero%20um%20or%C3%A7amento." target="_blank" rel="noopener">Pedir orçamento pelo WhatsApp</a>
+      </div>
+      <div class="cta-col pro">
+        <div class="eyebrow">Para engenheiros, arquitetos e estudantes</div>
+        <h2>Calcule a estrutura no Foster Calc</h2>
+        <p>Vigas, lajes maciças e treliçadas, pilares, escadas, sapatas, blocos e muros de arrimo pela NBR 6118, com memória de cálculo e PDF com o seu carimbo.</p>
+        <p>Plano Estudante a partir de R$ 9,90/mês.</p>
+        <a class="btn ghost" href="/#planos">Conhecer o Foster Calc</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© Foster Engenharia & Construção · Calculadora de pré-dimensionamento, sem substituir projeto de profissional habilitado. · <a href="/termos.html" style="color:inherit">Termos de uso e privacidade</a> · <a href="/ferramentas/" style="color:inherit">Outras ferramentas</a></div>
+</footer>
+
+<div id="memorial"></div>
+
+<script>
+/* Contatos vão para a tabela public.leads_calc do projeto foster-calc no Supabase.
+   Se o envio falhar, o PDF é gerado normalmente. */
+const SUPABASE_URL = "https://fvsdlpnvqfvjdxmfgbjx.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_VT3XEbInyTr2Eu-AuLnrqw_BOrA2jYy";
+
+const $ = id => document.getElementById(id);
+const num = id => { const v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) && v > 0 ? v : 0; };
+const fmt = (v, d = 0) => v.toLocaleString("pt-BR", {minimumFractionDigits: d, maximumFractionDigits: d});
+const up = (v, step) => Math.ceil(v / step - 1e-9) * step;
+let last = null;
+
+function regra(){
+  const sp = $("rSP").checked;
+  $("outraBox").hidden = sp;
+  if (sp) return {nome: "Lei estadual SP 12.526/2007 e Lei municipal 13.276/2002", lim: 500, coef: 0.15, ip: 0.06, t: 1};
+  return {nome: "Regra informada pelo usuário", lim: num("lim"), coef: num("coef"), ip: num("ip") / 1000, t: num("dur")};
+}
+
+function calc(){
+  const r = regra();
+  const tel = num("telhado"), piso = num("piso"), lote = num("lote"), h = parseFloat($("altura").value);
+  const Ai = tel + piso;
+  const V = r.coef * Ai * r.ip * r.t;           // m³
+  const obrig = Ai > r.lim;
+  const pct = lote > 0 ? Ai / lote : null;
+  // retangular enterrado, planta quadrada arredondada para cima
+  const lado = V > 0 ? up(Math.sqrt(V / h), 0.05) : 0;
+  const cx = V > 0 ? Math.ceil(V * 1000 / 5000) : 0;
+
+  last = {r, tel, piso, lote, Ai, V, obrig, pct, h, lado, cx};
+
+  const st = $("status");
+  st.className = "status " + (obrig ? "sim" : "nao");
+  st.innerHTML = obrig
+    ? `<b>Obrigatório</b><span>A área impermeabilizada passa de ${fmt(r.lim)} m². O lote precisa do reservatório.</span>`
+    : `<b>Não exigido</b><span>Com até ${fmt(r.lim)} m² impermeabilizados, a lei não exige. O volume abaixo é a referência caso queira instalar.</span>`;
+
+  $("vol").innerHTML = (Ai > 0 ? fmt(V, 2) : "—") + " <small>m³</small>";
+  $("volNote").textContent = obrig ? "Volume mínimo exigido do reservatório" : "Volume de referência do reservatório";
+  $("dL").textContent = Ai > 0 ? fmt(V * 1000) + " L" : "—";
+  $("dPct").textContent = pct !== null ? fmt(pct * 100) + "% do terreno" : "informe o terreno";
+  $("dRet").textContent = V > 0 ? `${fmt(lado, 2)} × ${fmt(lado, 2)} × ${fmt(h, 2)} m` : "—";
+  $("dCx").textContent = V > 0 ? `${cx} ${cx > 1 ? "caixas" : "caixa"}` : "—";
+
+  const escala = Math.max(Ai, r.lim) * 1.25 || 1;
+  $("mFill").style.width = Math.min(100, Ai / escala * 100) + "%";
+  $("mLim").style.left = Math.min(100, r.lim / escala * 100) + "%";
+  $("mAi").textContent = `${fmt(Ai)} m² impermeabilizados`;
+  $("mLimTxt").textContent = `limite ${fmt(r.lim)} m²`;
+
+  $("calcLine").textContent = Ai > 0
+    ? `V = ${String(r.coef).replace(".", ",")} × ${fmt(Ai)} m² × ${fmt(r.ip, 3)} m/h × ${fmt(r.t, 2)} h = ${fmt(V, 2)} m³`
+    : "—";
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function memorial(){
+  const d = last, hoje = new Date().toLocaleDateString("pt-BR");
+  const row = (a, b) => `<tr><td>${a}</td><td style="text-align:right">${b}</td></tr>`;
+  $("memorial").innerHTML = `
+    <h1>Memorial de cálculo de reservatório de retenção de águas pluviais</h1>
+    <p>Critério: ${escapeHtml(d.r.nome)} · ${hoje}<br>Solicitante: ${escapeHtml($("nome").value)}</p>
+    <h3>1. Áreas impermeabilizadas</h3>
+    <table>${row("Telhados e coberturas", fmt(d.tel) + " m²")}${row("Pisos descobertos", fmt(d.piso) + " m²")}
+    ${row("<b>Área impermeabilizada total (Ai)</b>", "<b>" + fmt(d.Ai) + " m²</b>")}${d.lote ? row("Área do terreno / taxa impermeabilizada", fmt(d.lote) + " m² / " + fmt(d.pct * 100) + "%") : ""}</table>
+    <h3>2. Exigência</h3>
+    <p>Limite para obrigatoriedade: área impermeabilizada superior a ${fmt(d.r.lim)} m². Situação: <b>${d.obrig ? "reservatório obrigatório" : "reservatório não exigido"}</b>.</p>
+    <h3>3. Volume do reservatório</h3>
+    <p>V = ${String(d.r.coef).replace(".", ",")} × Ai × IP × t = ${String(d.r.coef).replace(".", ",")} × ${fmt(d.Ai)} × ${fmt(d.r.ip, 3)} × ${fmt(d.r.t, 2)} = <b>${fmt(d.V, 2)} m³ (${fmt(d.V * 1000)} L)</b></p>
+    <p>IP = índice pluviométrico (m/h); t = duração da chuva (h).</p>
+    <h3>4. Sugestão de dimensões</h3>
+    <table>${row("Reservatório retangular enterrado, altura útil " + fmt(d.h, 2) + " m", fmt(d.lado, 2) + " × " + fmt(d.lado, 2) + " m em planta")}${row("Alternativa com caixas de 5.000 L", d.cx + (d.cx > 1 ? " caixas" : " caixa"))}</table>
+    <h3>5. Destino da água</h3>
+    <p>Preferencialmente infiltração no solo; ou lançamento na rede pública de drenagem após uma hora de chuva; ou condução a reservatório para usos não potáveis. Prever captação de todas as áreas impermeabilizadas, extravasor, acesso para limpeza e verificação estrutural quando sob tráfego.</p>
+    <p style="font-size:10pt">Cálculo pela fórmula da legislação indicada. Conferir exigências do município. Não substitui projeto elaborado por profissional habilitado.<br>
+    Foster Engenharia & Construção · (24) 99209-6103 · comercial@fosterconstrucoes.com.br · fostercalc.com.br</p>`;
+}
+
+async function salvarLead(){
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  const d = last;
+  await fetch(`${SUPABASE_URL}/rest/v1/leads_calc`, {
+    method: "POST",
+    headers: {"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json", "Prefer": "return=minimal"},
+    body: JSON.stringify({calculadora: "retencao", nome: $("nome").value.trim(), whatsapp: $("zap").value.trim(),
+      email: $("email").value.trim() || null, perfil: $("perfil").value,
+      dados: {regra: $("rSP").checked ? "sp" : "outra", area_impermeavel_m2: d.Ai, volume_m3: Math.round(d.V * 100) / 100, obrigatorio: d.obrig}})
+  });
+}
+
+$("calc").addEventListener("input", calc);
+$("calc").addEventListener("change", calc);
+$("calc").addEventListener("submit", e => e.preventDefault());
+
+$("lead").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = $("msg"); msg.className = "msg";
+  if (!$("nome").value.trim() || $("zap").value.replace(/\D/g, "").length < 10){ msg.className = "msg err"; msg.textContent = "Preencha nome e WhatsApp com DDD."; return; }
+  if (!$("ok").checked){ msg.className = "msg err"; msg.textContent = "Marque a autorização de contato para receber o memorial."; return; }
+  calc(); memorial();
+  msg.textContent = "Gerando o PDF… na janela que abrir, escolha Salvar como PDF.";
+  try { await salvarLead(); } catch(err) { /* o PDF sai mesmo se o envio falhar */ }
+  window.print();
+  msg.textContent = "Pronto. Se precisar do projeto com ART, fale com a gente pelo WhatsApp abaixo.";
+});
+
+calc();
+</script>
+</body>
+</html>
