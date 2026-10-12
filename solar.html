@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="description" content="Verificação da cobertura para instalação de placas solares: caibros e terças de madeira, terças de aço e lajes de concreto. Vento pela NBR 6123 e laudo em PDF. Foster Calc.">
+<title>Telhado Solar · Foster Calc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: prancheta técnica — entrada à esquerda, folha de resultados à direita */
+:root{
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3; --concrete:#dcdddf; --beam:#b8babd; --steel:#c4161c; --steel2:#3a3d42;
+  --wood:#c9a46a; --pv:#1f3b57;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#a3121a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --wood:#8a6a3a; --pv:#6f9cc7;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --concrete:#33363a; --beam:#4a4d52; --steel:#ef5b5f; --steel2:#c9ccd1;
+  --wood:#8a6a3a; --pv:#6f9cc7;
+  --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:20px}
+header.top h1{font:700 2rem/1 var(--f-display);letter-spacing:.01em;margin:0}
+header.top h1 span{color:var(--accent)}
+header.top p{margin:0;color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+legend{font:600 .78rem/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 0 8px;grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+label.full{grid-column:1/-1}
+label.chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+label.chk input{width:auto}
+input,select{font:500 .95rem var(--f-mono);color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.unit{position:relative}.unit input{padding-right:58px}
+.unit i{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:400 .75rem var(--f-mono);color:var(--muted);font-style:normal;pointer-events:none}
+.tipos{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.tipos label{position:relative;flex-direction:row;justify-content:center;align-items:center;text-align:center;padding:9px 6px;font:600 .82rem var(--f-body);color:var(--ink);cursor:pointer;background:var(--sheet);border-right:1px solid var(--line)}
+.tipos label:last-child{border-right:0}
+.tipos input{position:absolute;opacity:0;width:1px;height:1px}
+.tipos label:has(input:checked){background:var(--ink);color:var(--sheet)}
+.tipos label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:-2px}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+h2{font:600 1.35rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 12px}
+.status{padding:12px 16px;border-radius:6px;font-weight:500}
+.status.ok{background:var(--ok-soft);color:var(--ok)}.status.warn{background:var(--warn-soft);color:var(--warn)}.status.bad{background:var(--bad-soft);color:var(--bad)}
+.status b{font:700 1.15rem var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.msgs{margin:8px 0 0;padding-left:18px;font-size:.88rem;color:var(--ink);font-weight:400}
+.reac{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:0}
+.reac div{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0;min-width:0}
+.reac dt{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.reac dd{margin:2px 0 0;font:600 1.2rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.reac dd small{display:block;font:400 .74rem var(--f-mono);color:var(--muted);margin-top:3px}
+.reac4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:800px){.reac4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+dd.c-ok{color:var(--ok)}dd.c-warn{color:var(--warn)}dd.c-bad{color:var(--bad)}
+.usos{display:grid;gap:12px}
+.uso{display:grid;grid-template-columns:110px minmax(0,1fr) 112px;gap:12px;align-items:center}
+@media (max-width:520px){.uso{grid-template-columns:minmax(0,1fr) auto}.uso .uso-b{grid-column:1/-1;grid-row:2}}
+.uso-n{font-weight:600;font-size:.88rem}
+.uso-v{font:500 .82rem var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.uso-b{position:relative;display:grid;gap:4px}
+.trilho{height:9px;border-radius:2px;background:var(--paper);overflow:hidden}
+.trilho i{display:block;height:100%;border-radius:2px}
+.trilho i.antes{background:var(--beam)}.trilho i.depois{background:var(--steel2)}.trilho i.bad{background:var(--bad)}
+.uso-b .lim{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--accent)}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.78rem;color:var(--muted);margin-top:12px}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.legenda i{display:inline-block;width:14px;height:8px;border-radius:2px}
+#esquema svg{width:100%;height:auto;display:block;max-width:720px}
+svg text{fill:var(--ink);font-family:var(--f-mono)}
+svg text.mut{fill:var(--muted)}
+details.memo{border-top:1px solid var(--line)}
+details.memo:last-of-type{border-bottom:1px solid var(--line)}
+details.memo summary{cursor:pointer;padding:10px 2px;font:600 1.05rem var(--f-display);letter-spacing:.03em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.memo summary::-webkit-details-marker{display:none}
+details.memo summary::after{content:"+";font-family:var(--f-mono);color:var(--muted)}
+details.memo[open] summary::after{content:"–"}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+th.v{text-align:right}
+td.f{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);min-width:170px}
+td.v{font-family:var(--f-mono);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+td.v.alerta{color:var(--bad);font-weight:600}
+td.r{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.memo .tbl{padding-bottom:12px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.pri,a.pri{font:600 .9rem var(--f-body);border-radius:4px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--sheet);text-decoration:none;display:inline-block}
+button.pri.ghost,a.pri.ghost{background:transparent;color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted)}
+.disclaimer{font-size:.8rem;color:var(--muted);border-left:3px solid var(--line);padding:4px 0 4px 12px;max-width:72ch}
+ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
+.foster{border-top:3px solid var(--accent)}
+.foster p{margin:0 0 12px;max-width:68ch}
+</style>
+</head>
+<body data-pagina="solar">
+<div class="wrap">
+<div id="fc-bar"></div>
+<header class="top">
+  <h1>Telhado solar <span>· laudo para fotovoltaico</span></h1>
+  <p>Madeira (NBR 7190-1), terça de aço (NBR 14762) ou laje (NBR 6118) · vento pela NBR 6123</p>
+</header>
+
+<div class="grid">
+<aside aria-label="Dados de entrada">
+  <form id="f" class="sheet" style="display:flex;flex-direction:column;gap:18px" autocomplete="off">
+    <fieldset>
+      <legend>Estrutura que recebe as placas</legend>
+      <div class="tipos" role="radiogroup" aria-label="Estrutura">
+        <label for="tMad"><input type="radio" name="tipo" id="tMad" value="madeira" checked>Madeira</label>
+        <label for="tAco"><input type="radio" name="tipo" id="tAco" value="aco">Terça de aço</label>
+        <label for="tLaje"><input type="radio" name="tipo" id="tLaje" value="laje">Laje</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Módulos fotovoltaicos</legend>
+      <label>Comprimento<span class="unit"><input id="modL" type="number" step="0.001" min="0.5" value="2.278"><i>m</i></span></label>
+      <label>Largura<span class="unit"><input id="modB" type="number" step="0.001" min="0.3" value="1.134"><i>m</i></span></label>
+      <label>Peso por módulo<span class="unit"><input id="modP" type="number" step="0.5" min="1" value="28"><i>kg</i></span></label>
+      <label>Quantidade<span class="unit"><input id="nMod" type="number" step="1" min="1" value="10"><i>un</i></span></label>
+      <label class="full">Trilhos e fixações<span class="unit"><input id="gTrilho" type="number" step="0.01" min="0" value="0.03"><i>kN/m²</i></span></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Vento · NBR 6123</legend>
+      <label>Velocidade básica V0<span class="unit"><input id="V0" type="number" step="1" min="25" max="55" value="40"><i>m/s</i></span></label>
+      <label>Altura do telhado<span class="unit"><input id="z" type="number" step="0.5" min="1" value="6"><i>m</i></span></label>
+      <label>Terreno<select id="cat"><option value="I">I · mar, lagos</option><option value="II">II · campo aberto</option><option value="III" selected>III · casas baixas, sítios</option><option value="IV">IV · bairro urbano</option><option value="V">V · centro com prédios</option></select></label>
+      <label>Fator S3<span class="unit"><input id="S3" type="number" step="0.01" min="0.8" max="1.2" value="1.00"><i>—</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">V0 pelo mapa de isopletas da norma (São Paulo e região: cerca de 40 m/s). S3 = 1,00 para residências e comércio.</p>
+    </fieldset>
+
+    <fieldset data-tipo="madeira aco">
+      <legend>Cobertura</legend>
+      <label class="full">Telha<select id="telha"><option value="ceramica">Cerâmica · 0,50 kN/m²</option><option value="concreto">Concreto · 0,55 kN/m²</option><option value="fibro">Fibrocimento 6 mm · 0,20 kN/m²</option><option value="metalica">Metálica · 0,10 kN/m²</option><option value="outra">Outra (informar o peso)</option></select></label>
+      <label>Peso da telha e ripas<span class="unit"><input id="gCob" type="number" step="0.05" min="0" value="0.50"><i>kN/m²</i></span></label>
+      <label>Inclinação<span class="unit"><input id="incl" type="number" step="1" min="0" max="120" value="35"><i>%</i></span></label>
+      <label>Sobrecarga<span class="unit"><input id="Qc" type="number" step="0.05" min="0" value="0.25"><i>kN/m²</i></span></label>
+      <label>Posição das placas<select id="pos"><option value="central" selected>Região central</option><option value="borda">Perto de beirais e cantos</option></select></label>
+      <label>Cp de sucção<span class="unit"><input id="cpS" type="number" step="0.1" max="0" value="-1.2"><i>—</i></span></label>
+      <label>Cp de pressão<span class="unit"><input id="cpP" type="number" step="0.1" min="0" value="0.3"><i>—</i></span></label>
+      <label>Fixações por módulo<span class="unit"><input id="nFix" type="number" step="1" min="1" value="4"><i>un</i></span></label>
+      <label>Resistência da fixação<span class="unit"><input id="Rfix" type="number" step="0.1" min="0" value="0"><i>kN</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">Resistência de cálculo ao arrancamento, do fabricante. Deixe 0 para o laudo indicar a força que ela precisa resistir.</p>
+    </fieldset>
+
+    <fieldset data-tipo="madeira">
+      <legend>Peça de madeira verificada</legend>
+      <label>Peça<select id="elem"><option value="caibro" selected>Caibro</option><option value="terca">Terça</option></select></label>
+      <label>Classe<select id="classe"><option>D20</option><option selected>D30</option><option>D40</option><option>D50</option><option>D60</option></select></label>
+      <label>Largura b<span class="unit"><input id="b" type="number" step="0.5" min="2" value="5"><i>cm</i></span></label>
+      <label>Altura h<span class="unit"><input id="h" type="number" step="0.5" min="3" value="7"><i>cm</i></span></label>
+      <label>Vão entre apoios<span class="unit"><input id="L" type="number" step="0.05" min="0.3" value="1.80"><i>m</i></span></label>
+      <label>Espaçamento<span class="unit"><input id="esp" type="number" step="0.05" min="0.2" value="0.50"><i>m</i></span></label>
+      <label>Umidade do ar<select id="umid"><option value="1">Classe 1 · ≤ 65%</option><option value="2" selected>Classe 2 · ≤ 75%</option><option value="3">Classe 3 · ≤ 85%</option><option value="4">Classe 4 · > 85%</option></select></label>
+      <label>Flecha limite<span class="unit"><input id="limM" type="number" step="10" min="100" value="200"><i>L/</i></span></label>
+    </fieldset>
+
+    <fieldset data-tipo="aco" hidden>
+      <legend>Terça de aço · perfil U enrijecido</legend>
+      <label class="full">Perfil<select id="perfil">
+        <option value="100,50,17,2">Ue 100×50×17×2,00</option><option value="100,50,17,2.65">Ue 100×50×17×2,65</option>
+        <option value="127,50,17,2.25">Ue 127×50×17×2,25</option><option value="150,60,20,2">Ue 150×60×20×2,00</option>
+        <option value="150,60,20,2.25" selected>Ue 150×60×20×2,25</option><option value="150,60,20,2.65">Ue 150×60×20×2,65</option>
+        <option value="200,75,25,2">Ue 200×75×25×2,00</option><option value="200,75,25,2.65">Ue 200×75×25×2,65</option>
+        <option value="200,75,25,3">Ue 200×75×25×3,00</option><option value="250,85,25,3">Ue 250×85×25×3,00</option>
+        <option value="outro">Outro (informar as medidas)</option></select></label>
+      <label>Altura bw<span class="unit"><input id="bw" type="number" step="1" min="50" value="150"><i>mm</i></span></label>
+      <label>Mesa bf<span class="unit"><input id="bf" type="number" step="1" min="30" value="60"><i>mm</i></span></label>
+      <label>Enrijecedor D<span class="unit"><input id="D" type="number" step="1" min="0" value="20"><i>mm</i></span></label>
+      <label>Espessura t<span class="unit"><input id="tA" type="number" step="0.05" min="0.8" value="2.25"><i>mm</i></span></label>
+      <label>Aço<select id="fy"><option value="230">fy 230 MPa</option><option value="250" selected>fy 250 MPa</option><option value="280">fy 280 MPa</option><option value="345">fy 345 MPa</option></select></label>
+      <label>Vão entre tesouras<span class="unit"><input id="La" type="number" step="0.1" min="1" value="5.0"><i>m</i></span></label>
+      <label>Espaçamento<span class="unit"><input id="espA" type="number" step="0.05" min="0.3" value="1.50"><i>m</i></span></label>
+      <label>Linhas de corrente<select id="nLC"><option value="0">Nenhuma</option><option value="1">1 (no meio)</option><option value="2" selected>2 (nos terços)</option><option value="3">3</option></select></label>
+      <label class="chk full"><input id="trav" type="checkbox" checked> Mesa superior travada pelas telhas</label>
+      <label>Flecha limite<span class="unit"><input id="limA" type="number" step="10" min="100" value="180"><i>L/</i></span></label>
+      <label>MRd do catálogo<span class="unit"><input id="MRdCat" type="number" step="0.1" min="0" value="0"><i>kN·m</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">MRd do catálogo é opcional: se informado, substitui o momento resistente calculado.</p>
+    </fieldset>
+
+    <fieldset data-tipo="laje" hidden>
+      <legend>Laje de concreto</legend>
+      <label>Menor vão<span class="unit"><input id="lx" type="number" step="0.05" min="1" value="4.00"><i>m</i></span></label>
+      <label>Maior vão<span class="unit"><input id="ly" type="number" step="0.05" min="1" value="4.00"><i>m</i></span></label>
+      <label>Espessura<span class="unit"><input id="hL" type="number" step="1" min="7" value="10"><i>cm</i></span></label>
+      <label>Concreto<select id="fck"><option>20</option><option selected>25</option><option>30</option><option>35</option></select></label>
+      <label>Armadura positiva<select id="phiL"><option value="5">Ø 5,0 mm</option><option value="6.3" selected>Ø 6,3 mm</option><option value="8">Ø 8,0 mm</option><option value="10">Ø 10,0 mm</option></select></label>
+      <label>Espaçamento<span class="unit"><input id="sL" type="number" step="1" min="5" value="15"><i>cm</i></span></label>
+      <label>Agressividade<select id="caa"><option value="I">CAA I · c = 2,0</option><option value="II" selected>CAA II · c = 2,5</option><option value="III">CAA III · c = 3,5</option></select></label>
+      <label>Revestimento<span class="unit"><input id="gRev" type="number" step="0.1" min="0" value="1.0"><i>kN/m²</i></span></label>
+      <label>Sobrecarga<span class="unit"><input id="qL" type="number" step="0.5" min="0" value="1.0"><i>kN/m²</i></span></label>
+      <label>Inclinação dos módulos<span class="unit"><input id="tilt" type="number" step="1" min="0" max="45" value="15"><i>°</i></span></label>
+      <label>Estrutura de apoio<span class="unit"><input id="gEstr" type="number" step="0.01" min="0" value="0.08"><i>kN/m²</i></span></label>
+      <label>Fixação<select id="fixL"><option value="chumbada" selected>Chumbada na laje</option><option value="lastro">Lastro (blocos)</option></select></label>
+      <label>Cn de sucção<span class="unit"><input id="cnL" type="number" step="0.1" max="0" value="-1.0"><i>—</i></span></label>
+      <label>Chumbadores por módulo<span class="unit"><input id="nAnc" type="number" step="1" min="1" value="4"><i>un</i></span></label>
+      <label class="full">Resistência do chumbador<span class="unit"><input id="RfixL" type="number" step="0.1" min="0" value="0"><i>kN</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">Laje apoiada nas quatro bordas, sem contar a continuidade com as vizinhas (a favor da segurança). Cn de sucção sobre módulos inclinados: use o valor de ensaio do fabricante da estrutura, se houver.</p>
+    </fieldset>
+  </form>
+</aside>
+
+<main>
+  <section id="status" class="status ok" aria-live="polite"></section>
+
+  <section class="sheet">
+    <h2>Resultado</h2>
+    <dl class="reac reac4" id="keys"></dl>
+  </section>
+
+  <section class="sheet">
+    <h2>Antes e depois das placas</h2>
+    <div class="usos" id="barras"></div>
+    <div class="legenda"><span><i style="background:var(--beam)"></i>sem as placas</span><span><i style="background:var(--steel2)"></i>com as placas</span><span><i style="background:var(--accent);width:3px;height:12px"></i>limite da norma (100%)</span></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Esquema</h2>
+    <div id="esquema"></div>
+    <p class="note" id="legEsq" style="margin:6px 0 0"></p>
+  </section>
+
+  <section class="sheet">
+    <h2>Memória de cálculo</h2>
+    <div id="memoria"></div>
+    <p class="note" style="margin:12px 0 4px"><b>Hipóteses e limites deste módulo:</b></p>
+    <ul class="todo note" id="hip"></ul>
+  </section>
+
+  <section class="sheet">
+    <h2>Projeto e exportação</h2>
+    <div class="actions">
+      <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
+      <button type="button" class="pri ghost" id="btnAbrir">Meus projetos</button>
+      <button type="button" class="pri" id="btnPdf">Baixar laudo (PDF)</button>
+      <span class="note" id="expMsg" role="status"></span>
+    </div>
+    <p class="note" style="margin:10px 0 0">O cálculo é livre. O laudo em PDF, com seu cabeçalho e o carimbo para a ART, faz parte dos planos pagos.</p>
+  </section>
+
+  <section class="sheet foster">
+    <h2>Não tem engenheiro responsável?</h2>
+    <p>Empresas de energia solar e clientes que precisam do laudo assinado podem pedir à Foster Engenharia. Fazemos a vistoria da cobertura, o laudo com ART e, se for preciso, o projeto de reforço.</p>
+    <a class="pri" id="btnFoster" href="https://wa.me/5524992096103" target="_blank" rel="noopener">Pedir laudo com ART pelo WhatsApp</a>
+    <p class="note" style="margin:10px 0 0">(24) 99209-6103 · comercial@fosterconstrucoes.com.br</p>
+  </section>
+
+  <p class="disclaimer">Ferramenta de apoio à verificação. Os resultados dependem das dimensões e do estado de conservação informados e devem ser conferidos em vistoria por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT. Peças com podridão, cupim, corrosão ou fissuras precisam ser avaliadas e recuperadas antes da instalação.</p>
+</main>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// Motor de cálculo — Verificação da estrutura que recebe um sistema fotovoltaico
+// Madeira (NBR 7190-1:2022), terças de aço formado a frio (NBR 14762:2010), laje de concreto (NBR 6118:2023).
+// Vento pela NBR 6123 (S1 = 1; S2 categoria e classe A; S3 informado). Combinações pela NBR 8681.
+
+const SOL = {
+  S2: { I: [1.10, 0.06], II: [1.00, 0.085], III: [0.94, 0.10], IV: [0.86, 0.12], V: [0.74, 0.15] },
+  MAD: { D20: { fc: 20, fv: 4, E: 10000, rho: 500 }, D30: { fc: 30, fv: 5, E: 12000, rho: 625 }, D40: { fc: 40, fv: 6, E: 14500, rho: 750 },
+         D50: { fc: 50, fv: 7, E: 16500, rho: 850 }, D60: { fc: 60, fv: 8, E: 19500, rho: 1000 } },
+  KMOD2: { 1: 1.0, 2: 0.9, 3: 0.8, 4: 0.7 },
+  FLU: { 1: 0.8, 2: 0.8, 3: 2.0, 4: 2.0 },              // coeficiente de fluência, ações permanentes
+  COB: { 2.0: 2.0, 2.5: 2.5, 3.5: 3.5 },
+  E_ACO: 200000, G_ACO: 77000,
+};
+
+function solVento(e) {
+  const [b, p] = SOL.S2[e.cat] || SOL.S2.III;
+  const z = Math.max(e.z, 1);
+  const S2 = b * 1.0 * Math.pow(z / 10, p);
+  const Vk = e.V0 * 1.0 * S2 * e.S3;
+  const q = 0.613 * Vk * Vk / 1000;                       // kN/m²
+  return { S2, Vk, q, b, p };
+}
+function solModulo(e) {
+  const Am = e.modL * e.modB, Gmod = e.modP * 9.81 / 1000;        // m², kN
+  const gmod = Gmod / Am, gpv = gmod + e.gTrilho;                  // kN/m² na superfície dos módulos
+  return { Am, Gmod, gmod, gpv, pesoTotal: e.nMod * (e.modP + e.gTrilho * Am / 9.81 * 1000), areaTotal: e.nMod * Am };
+}
+
+// ---------- propriedades de seção aberta de parede fina (linha média, sem raios) ----------
+// nós em sequência [[x, y], ...] (mm), espessura t; devolve A, Ix, Iy, Wx, Wy, J, Cw, x0 (centro de torção − centroide)
+function secaoAberta(nos, t) {
+  const seg = []; for (let i = 0; i < nos.length - 1; i++) seg.push([nos[i], nos[i + 1]]);
+  let A = 0, Sx = 0, Sy = 0;
+  for (const [a, b] of seg) { const L = Math.hypot(b[0] - a[0], b[1] - a[1]); A += t * L; Sx += t * L * (a[0] + b[0]) / 2; Sy += t * L * (a[1] + b[1]) / 2; }
+  const xc = Sx / A, yc = Sy / A;
+  const int2 = (f1, f2, g1, g2, L) => t * L * (2 * f1 * g1 + f1 * g2 + f2 * g1 + 2 * f2 * g2) / 6;   // ∫ f·g dA, f e g lineares no segmento
+  let Ix = 0, Iy = 0, Ixy = 0, J = 0;
+  const p = nos.map(n => [n[0] - xc, n[1] - yc]);
+  // coordenada setorial com polo no centroide
+  const w = [0]; for (let i = 0; i < p.length - 1; i++) w.push(w[i] + (p[i][0] * p[i + 1][1] - p[i + 1][0] * p[i][1]));
+  let Iwx = 0, Iwy = 0;
+  for (let i = 0; i < p.length - 1; i++) {
+    const [x1, y1] = p[i], [x2, y2] = p[i + 1], L = Math.hypot(x2 - x1, y2 - y1);
+    Ix += int2(y1, y2, y1, y2, L); Iy += int2(x1, x2, x1, x2, L); Ixy += int2(x1, x2, y1, y2, L); J += L * t ** 3 / 3;
+    Iwx += int2(w[i], w[i + 1], x1, x2, L); Iwy += int2(w[i], w[i + 1], y1, y2, L);
+  }
+  // centro de torção (Ixy = 0 para seções simétricas em relação a x)
+  const xs = Iwy / Ix, ys = -Iwx / Iy;
+  const ws = p.map((q, i) => w[i] - xs * q[1] + ys * q[0]);
+  let Sw = 0; for (let i = 0; i < p.length - 1; i++) { const L = Math.hypot(p[i + 1][0] - p[i][0], p[i + 1][1] - p[i][1]); Sw += t * L * (ws[i] + ws[i + 1]) / 2; }
+  const wn = ws.map(v => v - Sw / A);
+  let Cw = 0; for (let i = 0; i < p.length - 1; i++) { const L = Math.hypot(p[i + 1][0] - p[i][0], p[i + 1][1] - p[i][1]); Cw += int2(wn[i], wn[i + 1], wn[i], wn[i + 1], L); }
+  const ymax = Math.max(...p.map(q => Math.abs(q[1]))) + t / 2, xmax = Math.max(...p.map(q => q[0])) + t / 2, xmin = Math.min(...p.map(q => q[0])) - t / 2;
+  return { A, xc, yc, Ix, Iy, Ixy, J, Cw, xs, ys, x0: xs, Wx: Ix / ymax, Wy: Iy / Math.max(xmax, -xmin), ymax };
+}
+// perfil U enrijecido: bw altura, bf mesa, D enrijecedor, t espessura (mm, dimensões externas)
+function nosUe(bw, bf, D, t) {
+  const h = bw - t, b = bf - t, d = D - t / 2;
+  const n = [];
+  if (d > 0) n.push([b, h / 2 - d]);
+  n.push([b, h / 2], [0, h / 2], [0, -h / 2], [b, -h / 2]);
+  if (d > 0) n.push([b, -h / 2 + d]);
+  return n;
+}
+// largura efetiva (NBR 14762, 9.2)
+function larguraEf(b, t, k, sig) {
+  const lp = (b / t) / (0.95 * Math.sqrt(k * SOL.E_ACO / sig));
+  return lp <= 0.673 ? b : b * (1 - 0.22 / lp) / lp;
+}
+// módulo resistente efetivo para flexão em torno de x (mesa superior comprimida; seção simétrica)
+function wefUe(bw, bf, D, t, sig) {
+  const h = bw - t, b = bf - t, d = D - t / 2;
+  const bPlano = bf - 2 * t, wPlano = bw - 2 * t, dPlano = Math.max(D - t, 0);
+  // elementos como retângulos (comprimento, posição do centro em y, orientação)
+  let yna = 0, Ief = 0, ytopo = h / 2 + t / 2;
+  for (let it = 0; it < 6; it++) {
+    const els = [];
+    const sigTopo = sig, ymaxc = h / 2 + t / 2 - yna;
+    // mesa comprimida: perde faixa central
+    const bef = larguraEf(bPlano, t, 4, sigTopo);
+    els.push({ tipo: 'h', L: b - (bPlano - bef), y: h / 2 });
+    // enrijecedor superior (comprimido, k = 0,43)
+    if (d > 0) { const def = dPlano > 0 ? larguraEf(dPlano, t, 0.43, sigTopo) : 0; const Lr = d - (dPlano - def); els.push({ tipo: 'v', L: Lr, y1: h / 2 - Lr, y2: h / 2 }); }
+    // alma: tensões linear com a linha neutra em yna
+    const s1 = sigTopo * (h / 2 - yna) / ymaxc, s2 = -sigTopo * (h / 2 + yna) / ymaxc;
+    const psi = s2 / s1, k = 4 + 2 * (1 - psi) ** 3 + 2 * (1 - psi);
+    const befW = larguraEf(wPlano, t, k, Math.abs(s1));
+    const bc = h / 2 - yna;                                       // trecho comprimido da alma
+    let be1 = befW / (3 - psi), be2 = befW / 2;
+    if (psi > -0.236) { be1 = 2 * befW / (5 - psi); be2 = befW - be1; }
+    const perde = Math.max(0, bc - (be1 + be2));
+    if (perde > 0) {
+      els.push({ tipo: 'v', L: be1, y1: h / 2 - be1, y2: h / 2 });
+      els.push({ tipo: 'v', L: h - be1 - perde, y1: -h / 2, y2: h / 2 - be1 - perde });
+    } else els.push({ tipo: 'v', L: h, y1: -h / 2, y2: h / 2 });
+    // mesa e enrijecedor tracionados: integrais
+    els.push({ tipo: 'h', L: b, y: -h / 2 });
+    if (d > 0) els.push({ tipo: 'v', L: d, y1: -h / 2, y2: -h / 2 + d });
+    let A = 0, S = 0;
+    for (const e of els) { if (e.tipo === 'h') { A += e.L * t; S += e.L * t * e.y; } else { A += e.L * t; S += e.L * t * (e.y1 + e.y2) / 2; } }
+    const ynovo = S / A;
+    Ief = 0;
+    for (const e of els) {
+      if (e.tipo === 'h') Ief += e.L * t * (e.y - ynovo) ** 2 + e.L * t ** 3 / 12;
+      else { const yc = (e.y1 + e.y2) / 2; Ief += t * e.L ** 3 / 12 + e.L * t * (yc - ynovo) ** 2; }
+    }
+    if (Math.abs(ynovo - yna) < 0.01) { yna = ynovo; break; }
+    yna = ynovo;
+  }
+  return { Wef: Ief / (ytopo - yna), Ief, yna };
+}
+// cortante resistente da alma (NBR 14762, 9.8.3), kN
+function vrdAlma(bw, t, fy) {
+  const h = bw - 2 * t, lam = h / t, kv = 5, E = SOL.E_ACO;
+  const l1 = 1.08 * Math.sqrt(E * kv / fy), l2 = 1.4 * Math.sqrt(E * kv / fy);
+  let V;
+  if (lam <= l1) V = 0.6 * fy * h * t;
+  else if (lam <= l2) V = 0.65 * t * t * Math.sqrt(kv * fy * E);
+  else V = 0.905 * E * kv * t ** 3 / h;
+  return { VRd: V / 1.1 / 1000, lam, l1, l2 };
+}
+// momento resistente com flambagem lateral com torção (NBR 14762, 9.8.2.2), kN·m
+function mrdFlt(sec, wef, fy, Lb, Cb) {
+  const E = SOL.E_ACO, G = SOL.G_ACO, Lmm = Lb * 1000;
+  const rx2 = sec.Ix / sec.A, ry2 = sec.Iy / sec.A, r0 = Math.sqrt(rx2 + ry2 + sec.x0 ** 2);
+  const Ney = Math.PI ** 2 * E * sec.Iy / Lmm ** 2, Nez = (Math.PI ** 2 * E * sec.Cw / Lmm ** 2 + G * sec.J) / r0 ** 2;
+  const Me = Cb * r0 * Math.sqrt(Ney * Nez);              // N·mm
+  const l0 = Math.sqrt(sec.Wx * fy / Me);
+  const chi = l0 <= 0.6 ? 1 : l0 < 1.336 ? 1.11 * (1 - 0.278 * l0 * l0) : 1 / (l0 * l0);
+  return { Me: Me / 1e6, l0, chi, r0 };
+}
+
+// ---------- combinações sobre o elemento do telhado (cargas por metro, normais e tangenciais à cobertura) ----------
+function cargasTelhado(e, linha, pp) {
+  const a = Math.atan(e.incl / 100), ca = Math.cos(a), sa = Math.sin(a);
+  const v = solVento(e), m = solModulo(e);
+  const G0 = e.gCob * linha + pp, Gpv = m.gpv * linha, Q = e.Qc * ca * linha;
+  const Ws = Math.abs(e.cpS) * v.q * linha, Wp = Math.max(0, e.cpP) * v.q * linha;
+  const cen = pv => {
+    const G = G0 + (pv ? Gpv : 0);
+    return [
+      { id: 'C0', nome: '1,4·G', n: 1.4 * G * ca, t: 1.4 * G * sa, kmod1: 0.60 },
+      { id: 'C1', nome: '1,4·G + 1,4·Q', n: 1.4 * (G * ca + Q * ca), t: 1.4 * (G * sa + Q * sa), kmod1: 0.90 },
+      ...(Wp > 0 ? [{ id: 'C2', nome: '1,4·G + 1,4·W (pressão)', n: 1.4 * G * ca + 1.4 * Wp, t: 1.4 * G * sa, kmod1: 0.90 }] : []),
+      { id: 'C3', nome: '1,0·G − 1,4·W (sucção)', n: 1.0 * G * ca - 1.4 * Ws, t: 1.0 * G * sa, kmod1: 0.90 },
+    ];
+  };
+  return { a, ca, sa, v, m, G0, Gpv, Q, Ws, Wp, sem: cen(false), com: cen(true) };
+}
+function fixacoes(e, v, m, cp) {
+  const Ff = Math.abs(cp) * v.q * m.Am;                   // vento sobre um módulo (kN)
+  const Fd = (1.4 * Ff - 1.0 * m.Gmod) / e.nFix;
+  return { Ff, Fd: Math.max(0, Fd), Af: m.Am / e.nFix };
+}
+
+function calcMadeira(e) {
+  const erros = [], avisos = [];
+  const mat = SOL.MAD[e.classe] || SOL.MAD.D30, k2 = SOL.KMOD2[e.umid] || 0.9;
+  const b = e.b * 10, h = e.h * 10, L = e.L * 1000;                     // mm
+  const pp = mat.rho * 9.81 / 1000 * (e.b / 100) * (e.h / 100);         // kN/m
+  const c = cargasTelhado(e, e.esp, pp);
+  const terca = e.elem === 'terca';
+  const Wx = b * h * h / 6, Wy = h * b * b / 6, I = b * h ** 3 / 12;
+  const avalia = lista => {
+    let pior = { fl: 0, cis: 0 };
+    const linhas = lista.map(cb => {
+      const kmod = cb.kmod1 * k2, fmd = kmod * mat.fc / 1.4, fvd = kmod * mat.fv / 1.8;
+      const Mx = Math.abs(cb.n) * e.L ** 2 / 8, My = terca ? Math.abs(cb.t) * e.L ** 2 / 8 : 0, V = Math.abs(cb.n) * e.L / 2;
+      const sx = Mx * 1e6 / Wx, sy = My * 1e6 / Wy, tau = 1.5 * V * 1000 / (b * h);
+      const fl = terca ? Math.max(sx / fmd + 0.7 * sy / fmd, 0.7 * sx / fmd + sy / fmd) : sx / fmd;
+      const cis = tau / fvd;
+      const r = { ...cb, kmod, fmd, fvd, Mx, My, V, sx, sy, tau, fl, cis };
+      if (fl > pior.fl) { pior.fl = fl; pior.cbFl = r; }
+      if (cis > pior.cis) { pior.cis = cis; pior.cbCis = r; }
+      return r;
+    });
+    return { linhas, ...pior };
+  };
+  const sem = avalia(c.sem), com = avalia(c.com);
+  const phi = SOL.FLU[e.umid] || 0.8;
+  const flecha = pv => { const w = (c.G0 + (pv ? c.Gpv : 0)) * c.ca; const u0 = 5 * w * L ** 4 / (384 * mat.E * I); return { w, u0, u: u0 * (1 + phi) }; };
+  const fS = flecha(false), fC = flecha(true), lim = L / e.limF;
+  const fix = fixacoes(e, c.v, c.m, e.cpS);
+  const util = {
+    flexao: [sem.fl, com.fl], cisalhamento: [sem.cis, com.cis], flecha: [fS.u / lim, fC.u / lim],
+  };
+  if (com.fl > 1) erros.push(`Flexão do ${terca ? 'terça' : 'caibro'} acima da resistência (${pct(com.fl)}): aumente a seção, reduza o vão ou o espaçamento, ou reforce.`);
+  if (com.cis > 1) erros.push(`Cisalhamento acima da resistência (${pct(com.cis)}): aumente a seção ou reduza o vão.`);
+  if (fC.u > lim) erros.push(`Flecha ${nf1(fC.u / 10)} cm acima do limite L/${e.limF} = ${nf1(lim / 10)} cm.`);
+  if (sem.fl > 1 || sem.cis > 1) avisos.push('A estrutura já não atende mesmo sem as placas: o problema é anterior à instalação e precisa ser resolvido antes dela.');
+  if (h / b > 4) avisos.push(`Relação h/b = ${nf1(h / b)} acima de 4: verifique o travamento lateral da peça.`);
+  fixAvisos(e, fix, erros, avisos);
+  return { tipo: 'madeira', ok: !erros.length, erros, avisos, entrada: e, mat, k2, pp, c, Wx, Wy, I, sem, com, fS, fC, lim, phi, fix, util, terca };
+}
+
+function calcAco(e) {
+  const erros = [], avisos = [];
+  const fy = e.fy, sec = secaoAberta(nosUe(e.bw, e.bf, e.D, e.tA), e.tA);
+  const pp = sec.A * 1e-6 * 78.5;                                         // kN/m
+  const c = cargasTelhado(e, e.espA, pp);
+  const ef = wefUe(e.bw, e.bf, e.D, e.tA, fy);
+  const Lb = e.La / (e.nLC + 1), Ly = Lb;
+  const flt = mrdFlt(sec, ef.Wef, fy, Lb, 1.0);
+  const efChi = wefUe(e.bw, e.bf, e.D, e.tA, Math.max(flt.chi * fy, 1));
+  const MRlocal = ef.Wef * fy / 1.1 / 1e6, MRflt = flt.chi * efChi.Wef * fy / 1.1 / 1e6;
+  const cat = e.MRdCat > 0 ? e.MRdCat : 0;
+  const MRdDesce = cat || (e.trav ? MRlocal : Math.min(MRlocal, MRflt)), MRdSobe = cat || Math.min(MRlocal, MRflt);
+  const MRdy = sec.Wy * fy / 1.1 / 1e6;
+  const vr = vrdAlma(e.bw, e.tA, fy);
+  const avalia = lista => {
+    let pior = { fl: 0, cis: 0 };
+    const linhas = lista.map(cb => {
+      const Mx = Math.abs(cb.n) * e.La ** 2 / 8, My = Math.abs(cb.t) * Ly ** 2 / 8, V = Math.abs(cb.n) * e.La / 2;
+      const sobe = cb.n < 0, MRx = sobe ? MRdSobe : MRdDesce;
+      const fl = Mx / MRx + My / MRdy, cis = V / vr.VRd;
+      const r = { ...cb, Mx, My, V, MRx, sobe, fl, cis };
+      if (fl > pior.fl) { pior.fl = fl; pior.cbFl = r; }
+      if (cis > pior.cis) { pior.cis = cis; pior.cbCis = r; }
+      return r;
+    });
+    return { linhas, ...pior };
+  };
+  const sem = avalia(c.sem), com = avalia(c.com);
+  const L = e.La * 1000, lim = L / e.limF;
+  const flecha = pv => { const w = (c.G0 + (pv ? c.Gpv : 0) + c.Q) * c.ca; return { w, u: 5 * w * L ** 4 / (384 * SOL.E_ACO * sec.Ix) }; };
+  const fS = flecha(false), fC = flecha(true);
+  const fix = fixacoes(e, c.v, c.m, e.cpS);
+  const util = { flexao: [sem.fl, com.fl], cisalhamento: [sem.cis, com.cis], flecha: [fS.u / lim, fC.u / lim] };
+  if (com.fl > 1) erros.push(`Flexão da terça acima da resistência (${pct(com.fl)}${com.cbFl?.sobe ? ', na sucção do vento: mesa inferior comprimida sem travamento' : ''}): ${com.cbFl?.sobe ? 'acrescente linhas de corrente, ' : ''}aumente o perfil ou reduza o vão.`);
+  if (com.cis > 1) erros.push(`Cortante na alma acima da resistência (${pct(com.cis)}): aumente a espessura do perfil.`);
+  if (fC.u > lim) erros.push(`Flecha ${nf1(fC.u / 10)} cm acima do limite L/${e.limF} = ${nf1(lim / 10)} cm.`);
+  if (sem.fl > 1 || sem.cis > 1) avisos.push('A terça já não atende mesmo sem as placas: o problema é anterior à instalação e precisa ser resolvido antes dela.');
+  if (e.D < 0.2 * e.bf) avisos.push(`Enrijecedor de ${e.D} mm curto para a mesa de ${e.bf} mm: a flambagem distorcional pode governar. Confira com a tabela do fabricante e informe o MRd do catálogo.`);
+  fixAvisos(e, fix, erros, avisos);
+  return { tipo: 'aco', ok: !erros.length, erros, avisos, entrada: e, sec, ef, efChi, flt, MRlocal, MRflt, MRdDesce, MRdSobe, MRdy, cat, vr, pp, c, Lb, sem, com, fS, fC, lim, fix, util };
+}
+function fixAvisos(e, fix, erros, avisos) {
+  if (fix.Fd <= 0) return;
+  if (e.Rfix > 0) { if (fix.Fd > e.Rfix) erros.push(`Força de arrancamento por fixação ${nf2(fix.Fd)} kN acima da resistência informada de ${nf2(e.Rfix)} kN: aumente o número de fixações.`); }
+  else avisos.push(`Confira com o fabricante a resistência ao arrancamento das fixações: cada uma precisa resistir a ${nf2(fix.Fd)} kN (valor de cálculo).`);
+}
+
+// placa de Kirchhoff por diferenças finitas (mesma rotina do módulo de lajes)
+// bordas: { esq, dir, inf, sup } cada uma 'A' ou 'E'
+function resolverPlaca(lx, ly, bordas, p, D, nu, nBase = 24) {
+  const hg = Math.min(lx, ly) / nBase;
+  const nx = Math.max(6, Math.round(lx / hg)), ny = Math.max(6, Math.round(ly / hg));
+  const hx = lx / nx, hy = ly / ny;
+  const sg = t => (t === 'E' ? 1 : -1);
+  const sL = sg(bordas.esq), sR = sg(bordas.dir), sB = sg(bordas.inf), sT = sg(bordas.sup);
+  const porX = nx <= ny;
+  const mx1 = nx - 1, my1 = ny - 1, N = mx1 * my1;
+  const idx = (i, j) => (porX ? (j - 1) * mx1 + (i - 1) : (i - 1) * my1 + (j - 1));
+  const bw = porX ? 2 * mx1 + 2 : 2 * my1 + 2;
+  const ref = (i, j) => {                            // -> [índice, sinal] ou null (w = 0)
+    let s = 1;
+    if (i < 0) { i = -i; s *= sL; } else if (i > nx) { i = 2 * nx - i; s *= sR; }
+    if (j < 0) { j = -j; s *= sB; } else if (j > ny) { j = 2 * ny - j; s *= sT; }
+    if (i <= 0 || i >= nx || j <= 0 || j >= ny) return null;
+    return [idx(i, j), s];
+  };
+  // matriz em banda: B[r][c - r + bw]
+  const W2 = 2 * bw + 1;
+  const B = Array.from({ length: N }, () => new Float64Array(W2));
+  const F = new Float64Array(N);
+  const a = 1 / hx ** 4, b = 1 / hy ** 4, c2 = 2 / (hx * hx * hy * hy);
+  const k5 = [1, -4, 6, -4, 1], k3 = [1, -2, 1];
+  for (let j = 1; j < ny; j++) for (let i = 1; i < nx; i++) {
+    const r = idx(i, j);
+    const put = (ii, jj, v) => { const q = ref(ii, jj); if (q) B[r][q[0] - r + bw] += v * q[1]; };
+    for (let t = 0; t < 5; t++) { put(i + t - 2, j, a * k5[t]); put(i, j + t - 2, b * k5[t]); }
+    for (let u = 0; u < 3; u++) for (let v = 0; v < 3; v++) put(i + u - 1, j + v - 1, c2 * k3[u] * k3[v]);
+    F[r] = p / D;
+  }
+  // eliminação de Gauss em banda (sem pivotamento; matriz diagonal dominante por blocos)
+  for (let k = 0; k < N; k++) {
+    const piv = B[k][bw];
+    for (let i = k + 1; i <= Math.min(N - 1, k + bw); i++) {
+      const f = B[i][k - i + bw]; if (!f) continue; const m = f / piv;
+      for (let jj = k; jj <= Math.min(N - 1, k + bw); jj++) B[i][jj - i + bw] -= m * B[k][jj - k + bw];
+      F[i] -= m * F[k];
+    }
+  }
+  const x = new Float64Array(N);
+  for (let i = N - 1; i >= 0; i--) {
+    let s = F[i];
+    for (let jj = i + 1; jj <= Math.min(N - 1, i + bw); jj++) s -= B[i][jj - i + bw] * x[jj];
+    x[i] = s / B[i][bw];
+  }
+  const W = (i, j) => { const q = ref(i, j); return q ? x[q[0]] * q[1] : 0; };
+  const grade = [];
+  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+    const wxx = (W(i - 1, j) - 2 * W(i, j) + W(i + 1, j)) / hx ** 2;
+    const wyy = (W(i, j - 1) - 2 * W(i, j) + W(i, j + 1)) / hy ** 2;
+    grade.push({ i, j, x: i * hx, y: j * hy, w: W(i, j), mx: -D * (wxx + nu * wyy), my: -D * (wyy + nu * wxx) });
+  }
+  // reação elástica nas bordas: cortante efetivo de Kirchhoff Vn = −D·(∂³w/∂n³ + (2 − ν)·∂³w/∂n∂t²), por nó da borda
+  const reacBordas = () => {
+    // borda apoiada: diferenças centradas com nós fantasmas (w = 0, M = 0);
+    // borda engastada: ∂w/∂n = 0 ao longo da borda ⇒ termo misto nulo; ∂³w/∂n³ por diferença unilateral de 2ª ordem
+    const wyy = (i, j) => (W(i, j - 1) - 2 * W(i, j) + W(i, j + 1)) / hy ** 2;
+    const wxx = (i, j) => (W(i - 1, j) - 2 * W(i, j) + W(i + 1, j)) / hx ** 2;
+    const uni = (f0, f1, f2, f3, f4, h) => (-5 * f0 + 18 * f1 - 24 * f2 + 14 * f3 - 3 * f4) / (2 * h ** 3);
+    const out = { esq: [], dir: [], inf: [], sup: [] };
+    for (let j = 1; j < ny; j++) {
+      out.esq.push(Math.abs(bordas.esq === 'E' ? D * uni(0, W(1, j), W(2, j), W(3, j), W(4, j), hx)
+        : D * ((W(2, j) - 2 * W(1, j) + 2 * W(-1, j) - W(-2, j)) / (2 * hx ** 3) + (2 - nu) * (wyy(1, j) - wyy(-1, j)) / (2 * hx))));
+      out.dir.push(Math.abs(bordas.dir === 'E' ? D * uni(0, W(nx - 1, j), W(nx - 2, j), W(nx - 3, j), W(nx - 4, j), hx)
+        : D * ((W(nx + 2, j) - 2 * W(nx + 1, j) + 2 * W(nx - 1, j) - W(nx - 2, j)) / (2 * hx ** 3) + (2 - nu) * (wyy(nx + 1, j) - wyy(nx - 1, j)) / (2 * hx))));
+    }
+    for (let i = 1; i < nx; i++) {
+      out.inf.push(Math.abs(bordas.inf === 'E' ? D * uni(0, W(i, 1), W(i, 2), W(i, 3), W(i, 4), hy)
+        : D * ((W(i, 2) - 2 * W(i, 1) + 2 * W(i, -1) - W(i, -2)) / (2 * hy ** 3) + (2 - nu) * (wxx(i, 1) - wxx(i, -1)) / (2 * hy))));
+      out.sup.push(Math.abs(bordas.sup === 'E' ? D * uni(0, W(i, ny - 1), W(i, ny - 2), W(i, ny - 3), W(i, ny - 4), hy)
+        : D * ((W(i, ny + 2) - 2 * W(i, ny + 1) + 2 * W(i, ny - 1) - W(i, ny - 2)) / (2 * hy ** 3) + (2 - nu) * (wxx(i, ny + 1) - wxx(i, ny - 1)) / (2 * hy))));
+    }
+    const r = {};
+    for (const k in out) { const a = out[k]; r[k] = { media: a.reduce((s, v) => s + v, 0) / a.length, max: Math.max(...a) }; }
+    return r;
+  };
+  return { nx, ny, hx, hy, grade, reacBordas };
+}
+
+function calcLaje(e) {
+  const erros = [], avisos = [];
+  const v = solVento(e), m = solModulo(e);
+  const th = e.tilt * Math.PI / 180, ct = Math.cos(th);
+  const Gtot = m.Gmod + e.gEstr * m.Am;                                   // módulo + estrutura de apoio, kN
+  const Fw = Math.abs(e.cnL) * v.q * m.Am;                                 // sucção sobre um módulo
+  const lastroKN = e.fixL === 'lastro' ? Math.max(0, 1.4 * Fw / 0.9 - Gtot) : 0;
+  const tracao = e.fixL === 'chumbada' ? Math.max(0, (1.4 * Fw - 0.9 * Gtot) / e.nAnc) : 0;
+  const proj = m.Am * ct;
+  const gpvL = (Gtot + lastroKN) / proj;                                   // kN/m² sobre a área ocupada
+  const g0 = 25 * e.hL / 100 + e.gRev;
+  const lx = Math.min(e.lx, e.ly), ly = Math.max(e.lx, e.ly);
+  // momentos para 1 kN/m² (kN·m/m), placa apoiada nas quatro bordas
+  const Ecs = Math.min(1, 0.8 + 0.2 * e.fck / 80) * 560 * Math.sqrt(e.fck), nu = 0.2, D = Ecs * e.hL ** 3 / (12 * (1 - nu * nu));
+  const sol = resolverPlaca(lx * 100, ly * 100, { esq: 'A', dir: 'A', inf: 'A', sup: 'A' }, 1 / 1e4, D, nu, 24);
+  const mx1 = Math.max(...sol.grade.map(n => n.mx)), my1 = Math.max(...sol.grade.map(n => n.my));
+  const um = ly / lx > 2;                                                   // armada em uma direção
+  const mx = um ? lx * lx / 8 : mx1, my = um ? 0 : my1;
+  const c = e.cob, phi = e.phiL, s = e.sL;
+  const As = Math.PI * (phi / 10) ** 2 / 4 * 100 / s;                     // cm²/m
+  const fcd = e.fck / 14, fyd = 50 / 1.15, bw = 100;
+  const resist = d => { const x = As * fyd / (0.68 * bw * fcd); return { d, x, MRd: As * fyd * (d - 0.4 * x) / 100 }; };
+  const Rx = resist(e.hL - c - phi / 20), Ry = resist(e.hL - c - 1.5 * phi / 10);
+  const fctd = 0.7 * 0.03 * e.fck ** (2 / 3) / 1.4, kk = Math.max(1, 1.6 - Rx.d / 100), rho1 = Math.min(As / (bw * Rx.d), 0.02);
+  const VRd1 = 0.25 * fctd * kk * (1.2 + 40 * rho1) * bw * Rx.d;
+  const esf = pv => {
+    const pd = 1.4 * (g0 + (pv ? gpvL : 0)) + 1.4 * e.qL;
+    return { pd, Mx: pd * mx, My: pd * my, Vd: pd * lx / (um ? 2 : 2.5) };
+  };
+  const sem = esf(false), com = esf(true);
+  const ut = r => Math.max(r.Mx / Rx.MRd, um ? 0 : r.My / Ry.MRd);
+  const util = { flexao: [ut(sem), ut(com)], cisalhamento: [sem.Vd / VRd1, com.Vd / VRd1] };
+  const acresc = gpvL / (g0 + e.qL);
+  if (Rx.x / Rx.d > 0.45) avisos.push(`Linha neutra x/d = ${nf2(Rx.x / Rx.d)} acima de 0,45: confira a armadura informada.`);
+  if (ut(com) > 1) erros.push(`Momento na laje acima do resistente com a armadura existente (${pct(ut(com))}): reforce a laje, reduza a área ocupada ou apoie a estrutura dos módulos sobre as vigas.`);
+  if (com.Vd > VRd1) erros.push(`Cortante ${nf2(com.Vd)} kN/m acima de VRd1 = ${nf2(VRd1)} kN/m.`);
+  if (ut(sem) > 1) avisos.push('A laje já não atende mesmo sem as placas, com as cargas informadas: confira os dados ou a necessidade de reforço.');
+  if (e.fixL === 'chumbada') {
+    if (e.RfixL > 0 && tracao > e.RfixL) erros.push(`Tração por chumbador ${nf2(tracao)} kN acima da resistência informada de ${nf2(e.RfixL)} kN: aumente o número de chumbadores.`);
+    else if (!(e.RfixL > 0) && tracao > 0) avisos.push(`Confira com o fabricante do chumbador: cada um precisa resistir a ${nf2(tracao)} kN de tração (cálculo) no concreto da laje.`);
+    avisos.push('Chumbadores atravessam a impermeabilização: prever arremate e vedação em cada ponto.');
+  }
+  if (e.fixL === 'lastro') avisos.push(`Lastro mínimo de ${nf0(lastroKN / 9.81 * 1000)} kg por módulo contra o arrancamento pelo vento. Verifique também o deslizamento e proteja a impermeabilização sob os blocos.`);
+  return { tipo: 'laje', ok: !erros.length, erros, avisos, entrada: e, v, m, Gtot, Fw, lastroKN, tracao, proj, gpvL, g0, lx, ly, um, mx, my, As, Rx, Ry, VRd1, fctd, sem, com, util, acresc };
+}
+
+const pct = v => `${Math.round(v * 100)}%`;
+const nf0 = v => Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+const nf1 = v => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const nf2 = v => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+
+</script>
+<script>
+// ---------- utilidades comuns às páginas de módulo ----------
+const $ = id => document.getElementById(id);
+const nf = (v, d = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const asciiPdf = t => String(t).replace(/ρmín/g, 'rho_min').replace(/ρ/g, 'rho').replace(/α/g, 'alfa').replace(/λ/g, 'lambda').replace(/χ/g, 'chi').replace(/ψ/g, 'psi')
+  .replace(/ν/g, 'nu').replace(/γ/g, 'gama').replace(/σ/g, 'sig').replace(/τ/g, 'tau').replace(/φ/g, 'Ø').replace(/θ/g, 'teta')
+  .replace(/≤/g, '<=').replace(/≥/g, '>=').replace(/[−–—]/g, '-').replace(/→/g, '->').replace(/√/g, 'raiz').replace(/′/g, "'").replace(/²/g, '2').replace(/³/g, '3').replace(/⁴/g, '4').replace(/⁶/g, '6').replace(/₀/g, '0').replace(/₁/g, '1');
+function msg(t) { $('expMsg').textContent = t; }
+function renderMemoria(secoes, alvoId, abrirPadrao) {
+  const abertos = new Set([...document.querySelectorAll(`#${alvoId} details.memo[open]`)].map(d => d.dataset.k));
+  if (!document.querySelector(`#${alvoId} details.memo`)) abertos.add(abrirPadrao);
+  $(alvoId).innerHTML = secoes.map(sec => `<details class="memo" data-k="${esc(sec.t)}" ${abertos.has(sec.t) ? 'open' : ''}><summary>${esc(sec.t)}</summary>
+    <div class="tbl"><table><thead><tr><th>Item</th><th>Expressão</th>${sec.cols.map(c => `<th class="v">${esc(c)}</th>`).join('')}<th>Ref.</th></tr></thead><tbody>
+    ${sec.l.map(l => `<tr><td>${l[0]}</td><td class="f">${l[1]}</td>${l[2].map(v => typeof v === 'object' ? `<td class="v${v.alerta ? ' alerta' : ''}">${v.v}</td>` : `<td class="v">${v}</td>`).join('')}<td class="r">${l[3]}</td></tr>`).join('')}
+    </tbody></table></div></details>`).join('');
+}
+// laudo e memória no PDF (retrato A4); devolve a posição y final
+function pdfLaudo(doc, secoes, titulo, subtitulo, r, conc) {
+  const W = 210, HP = 297, M = 14; let y = FC.PDF.topo;
+  const novaPag = n => { if (y + n > HP - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } };
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(20); doc.text(asciiPdf(titulo), M, y + 4); y += 9;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90); doc.text(asciiPdf(subtitulo), M, y); y += 3;
+  doc.setDrawColor(20); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 7;
+  // conclusão em destaque
+  const cor = conc.nivel === 'bad' ? [163, 18, 26] : conc.nivel === 'warn' ? [154, 106, 0] : [47, 122, 77];
+  doc.setDrawColor(...cor); doc.setLineWidth(0.8); doc.line(M, y - 4, M, y + 9);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...cor); doc.text(asciiPdf('CONCLUSÃO: ' + conc.titulo.toUpperCase()), M + 4, y); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.8); doc.setTextColor(20);
+  const lc = doc.splitTextToSize(asciiPdf(conc.texto), W - 2 * M - 4); doc.text(lc, M + 4, y); y += lc.length * 4 + 4;
+  if (r.erros.length || r.avisos.length) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.text(r.erros.length ? 'VERIFICAÇÕES NÃO ATENDIDAS E RESSALVAS' : 'RESSALVAS', M, y); y += 5;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    [...r.erros, ...r.avisos].forEach(m => { const ls = doc.splitTextToSize('• ' + asciiPdf(m), W - 2 * M); novaPag(ls.length * 4); doc.text(ls, M, y); y += ls.length * 4; });
+    y += 3;
+  }
+  // antes e depois
+  novaPag(26);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text('APROVEITAMENTO DA ESTRUTURA', M, y);
+  doc.setFontSize(6.6); doc.setTextColor(110); doc.text('SEM AS PLACAS', 120, y, { align: 'right' }); doc.text('COM AS PLACAS', 160, y, { align: 'right' }); doc.text('LIMITE', W - M, y, { align: 'right' });
+  y += 1.6; doc.setLineWidth(0.2); doc.setDrawColor(150); doc.line(M, y, W - M, y); y += 4;
+  for (const [k, [a, b]] of Object.entries(r.util)) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2); doc.setTextColor(20); doc.text(ROT[k], M, y);
+    doc.setFont('courier', 'bold'); doc.setFontSize(8.2);
+    doc.setTextColor(a > 1 ? 163 : 20, a > 1 ? 18 : 20, a > 1 ? 26 : 20); doc.text(pct(a), 120, y, { align: 'right' });
+    doc.setTextColor(b > 1 ? 163 : 20, b > 1 ? 18 : 20, b > 1 ? 26 : 20); doc.text(pct(b), 160, y, { align: 'right' });
+    doc.setTextColor(110); doc.setFont('helvetica', 'normal'); doc.text('100%', W - M, y, { align: 'right' }); y += 4.4;
+  }
+  y += 4;
+  for (const sec of secoes) {
+    const nC = sec.cols.length, xExpr = M + 42, xVal0 = M + 42 + 56, xRef = W - M, larg = (xRef - 16 - xVal0) / nC;
+    novaPag(16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text(asciiPdf(sec.t).toUpperCase(), M, y);
+    doc.setFontSize(6.6); doc.setTextColor(110); sec.cols.forEach((c, i) => doc.text(asciiPdf(c), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }));
+    y += 1.6; doc.setLineWidth(0.2); doc.setDrawColor(150); doc.line(M, y, W - M, y); y += 3.6;
+    for (const l of sec.l) {
+      const ex = doc.splitTextToSize(asciiPdf(l[1]), 54); const hh = Math.max(1, ex.length) * 3.3 + 0.6; novaPag(hh);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(20); doc.text(doc.splitTextToSize(asciiPdf(l[0]), 40)[0], M, y);
+      doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(90); doc.text(ex, xExpr, y);
+      l[2].forEach((v, i) => { const o = typeof v === 'object' ? v : { v }; doc.setFont('courier', 'bold'); doc.setFontSize(nC > 3 ? 6.8 : 7.6); o.alerta ? doc.setTextColor(163, 18, 26) : doc.setTextColor(20); doc.text(asciiPdf(o.v), xVal0 + larg * (i + 1) - 1, y, { align: 'right' }); });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.6); doc.setTextColor(110); doc.text(asciiPdf(l[3]), xRef, y, { align: 'right' });
+      y += hh;
+    }
+    y += 3;
+  }
+  return { y, novaPag: n => { if (y + n > HP - FC.PDF.base) { doc.addPage(); y = FC.PDF.topo; } return y; }, getY: () => y, setY: v => { y = v; } };
+}
+function ligarProjetos(modulo, nomeSugerido) {
+  let projetoId = null;
+  $('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
+  $('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
+  (async () => {
+    const id = new URLSearchParams(location.search).get('p'); if (!id) return;
+    await new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
+    const p = FC.sessao && await FC.lerProjeto(id);
+    if (p && p.modulo === modulo) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+  })();
+}
+let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requestAnimationFrame(render); };
+
+// ---------- entrada ----------
+const CAMPOS = ['modL', 'modB', 'modP', 'nMod', 'gTrilho', 'V0', 'cat', 'z', 'S3', 'telha', 'gCob', 'incl', 'Qc', 'pos', 'cpS', 'cpP', 'nFix', 'Rfix',
+  'elem', 'classe', 'b', 'h', 'L', 'esp', 'umid', 'limM', 'perfil', 'bw', 'bf', 'D', 'tA', 'fy', 'La', 'espA', 'nLC', 'trav', 'limA', 'MRdCat',
+  'lx', 'ly', 'hL', 'fck', 'phiL', 'sL', 'caa', 'gRev', 'qL', 'tilt', 'gEstr', 'fixL', 'cnL', 'nAnc', 'RfixL'];
+const TEXTO = new Set(['cat', 'telha', 'pos', 'elem', 'classe', 'perfil', 'fixL', 'caa']);
+const TELHAS = { ceramica: 0.50, concreto: 0.55, fibro: 0.20, metalica: 0.10 };
+const COBS = { I: 2.0, II: 2.5, III: 3.5 };
+const ROT = { flexao: 'Flexão', cisalhamento: 'Cisalhamento', flecha: 'Flecha' };
+const tipoAtual = () => document.querySelector('input[name="tipo"]:checked').value;
+function lerEntrada() {
+  const e = { tipo: tipoAtual() };
+  for (const k of CAMPOS) e[k] = k === 'trav' ? $(k).checked : TEXTO.has(k) ? $(k).value : +$(k).value;
+  return e;
+}
+function aplicarEntrada(e) {
+  if (e.tipo) document.querySelector(`input[name="tipo"][value="${e.tipo}"]`).checked = true;
+  for (const k of CAMPOS) if (e[k] != null) { if (k === 'trav') $(k).checked = !!e[k]; else $(k).value = String(e[k]); }
+  mostrarTipo(); render();
+}
+function mostrarTipo() {
+  const t = tipoAtual();
+  document.querySelectorAll('fieldset[data-tipo]').forEach(fs => { fs.hidden = !fs.dataset.tipo.split(' ').includes(t); });
+}
+function calcular(e) {
+  const x = { ...e, limF: e.tipo === 'aco' ? e.limA : e.limM, cob: COBS[e.caa] || 2.5 };
+  return e.tipo === 'aco' ? calcAco(x) : e.tipo === 'laje' ? calcLaje(x) : calcMadeira(x);
+}
+function conclusao(r) {
+  const peca = descricao(r);
+  if (r.erros.length) return { nivel: 'bad', titulo: 'Não apta', texto: `A estrutura verificada (${peca}) não suporta o sistema fotovoltaico nas condições informadas. É necessário reforço ou outra solução de apoio antes da instalação, conforme as verificações não atendidas.` };
+  if (r.avisos.length) return { nivel: 'warn', titulo: 'Apta com ressalvas', texto: `A estrutura verificada (${peca}) suporta o sistema fotovoltaico nas condições informadas, desde que atendidas as ressalvas abaixo.` };
+  return { nivel: 'ok', titulo: 'Apta', texto: `A estrutura verificada (${peca}) suporta o sistema fotovoltaico nas condições informadas, com todas as verificações atendidas.` };
+}
+function descricao(r) {
+  const e = r.entrada;
+  if (r.tipo === 'madeira') return `${r.terca ? 'terça' : 'caibro'} de madeira ${nf(e.b, 0)}×${nf(e.h, 0)} cm ${e.classe}, vão ${nf(e.L)} m, a cada ${nf(e.esp)} m`;
+  if (r.tipo === 'aco') return `terça Ue ${e.bw}×${e.bf}×${e.D}×${nf(e.tA)} mm, vão ${nf(e.La, 1)} m, a cada ${nf(e.espA)} m`;
+  return `laje de ${nf(e.hL, 0)} cm, ${nf(r.lx)} × ${nf(r.ly)} m, Ø${nf(e.phiL, 1)} c/${e.sL}`;
+}
+
+// ---------- memória ----------
+function secAcoes(r) {
+  const e = r.entrada, v = r.tipo === 'laje' ? r.v : r.c.v, m = r.tipo === 'laje' ? r.m : r.c.m;
+  return [{ t: 'Vento (NBR 6123)', cols: ['Valor'], l: [
+    ['Velocidade básica', 'V0', [`${nf(e.V0, 0)} m/s`], 'isopletas'],
+    ['Fator do terreno', `S2 = b·Fr·(z/10)^p · cat. ${e.cat}, b = ${nf(v.b)}, p = ${nf(v.p, 3)}`, [nf(v.S2, 3)], 'Tab. 1'],
+    ['Fator estatístico', 'S3', [nf(e.S3)], ''],
+    ['Velocidade característica', 'Vk = V0·S1·S2·S3', [`${nf(v.Vk, 1)} m/s`], ''],
+    ['Pressão dinâmica', 'q = 0,613·Vk²', [`${nf(v.q, 3)} kN/m²`], ''],
+  ]}, { t: 'Módulos fotovoltaicos', cols: ['Valor'], l: [
+    ['Área de um módulo', 'A = comprimento × largura', [`${nf(m.Am, 3)} m²`], ''],
+    ['Peso de um módulo', 'G', [`${nf(m.Gmod, 3)} kN`], ''],
+    ['Carga distribuída', 'G/A + trilhos e fixações', [`${nf(m.gpv, 3)} kN/m²`], ''],
+    ['Sistema completo', `${e.nMod} módulos`, [`${nf(m.pesoTotal, 0)} kg · ${nf(m.areaTotal, 1)} m²`], ''],
+  ]}];
+}
+function linhaComb(r, campo, rot, expr, ref, fmt) {
+  return [rot, expr, [fmt(r.sem[campo]), { v: fmt(r.com[campo]), alerta: r.com[campo] > 1 }], ref];
+}
+function memoria(r) {
+  const out = secAcoes(r), e = r.entrada;
+  if (r.tipo === 'madeira' || r.tipo === 'aco') {
+    const c = r.c;
+    out.push({ t: 'Cargas sobre a peça (por metro)', cols: ['Valor'], l: [
+      ['Inclinação', 'α = arctg(i)', [`${nf(c.a * 180 / Math.PI, 1)}°`], ''],
+      ['Peso próprio da peça', r.tipo === 'aco' ? 'A·78,5 kN/m³' : 'ρ·b·h', [`${nf(r.pp, 3)} kN/m`], ''],
+      ['Permanente sem placas', 'G0 = telha·espaçamento + peso próprio', [`${nf(c.G0, 3)} kN/m`], 'NBR 6120'],
+      ['Placas e trilhos', 'Gpv = g·espaçamento', [`${nf(c.Gpv, 3)} kN/m`], ''],
+      ['Sobrecarga', 'Q = q·cos α·espaçamento', [`${nf(c.Q, 3)} kN/m`], 'NBR 6120'],
+      ['Vento de sucção', `W = ${nf(e.cpS, 1)}·q·espaçamento`, [`${nf(-c.Ws, 3)} kN/m`], 'NBR 6123'],
+      ...(c.Wp > 0 ? [['Vento de pressão', `W = ${nf(e.cpP, 1)}·q·espaçamento`, [`${nf(c.Wp, 3)} kN/m`], 'NBR 6123']] : []),
+    ]});
+    out.push({ t: 'Combinações (componente normal ao telhado)', cols: ['Sem placas', 'Com placas'], l: r.com.linhas.map((cb, i) => [cb.id, cb.nome + (r.tipo === 'madeira' ? ` · kmod1 = ${nf(cb.kmod1)}` : ''), [`${nf(r.sem.linhas[i].n, 3)}`, `${nf(cb.n, 3)}`], 'kN/m']) });
+  }
+  if (r.tipo === 'madeira') {
+    const mt = r.mat, cS = r.sem.cbFl, cC = r.com.cbFl, vS = r.sem.cbCis, vC = r.com.cbCis;
+    out.push({ t: 'Madeira', cols: ['Valor'], l: [
+      ['Classe', `${e.classe} · fc0,k / fv0,k`, [`${mt.fc} / ${mt.fv} MPa`], 'NBR 7190-1'],
+      ['Módulo de elasticidade', 'E0,med', [`${nf(mt.E, 0)} MPa`], ''],
+      ['Coeficiente de modificação', `kmod = kmod1 · kmod2 (umidade ${e.umid})`, [`kmod1 · ${nf(r.k2)}`], ''],
+      ['Seção', 'W = b·h²/6 ; I = b·h³/12', [`${nf(r.Wx / 1e3, 1)} cm³ ; ${nf(r.I / 1e4, 0)} cm⁴`], ''],
+    ]});
+    out.push({ t: 'Flexão', cols: ['Sem placas', 'Com placas'], l: [
+      ['Combinação crítica', 'maior σ/fmd', [cS.id, cC.id], ''],
+      ['Momento de cálculo', 'Md = p·L²/8', [nf(cS.Mx, 3), nf(cC.Mx, 3)], 'kN·m'],
+      ['Tensão normal', 'σ = Md/W', [nf(cS.sx), nf(cC.sx)], 'MPa'],
+      ['Resistência de cálculo', 'fmd = kmod·fc0,k/1,4', [nf(cS.fmd), nf(cC.fmd)], 'MPa'],
+      [r.terca ? 'Aproveitamento (oblíqua)' : 'Aproveitamento', r.terca ? 'σx/fmd + 0,7·σy/fmd' : 'σ/fmd ≤ 1', [pct(r.sem.fl), { v: pct(r.com.fl), alerta: r.com.fl > 1 }], ''],
+    ]});
+    out.push({ t: 'Cisalhamento', cols: ['Sem placas', 'Com placas'], l: [
+      ['Cortante de cálculo', 'Vd = p·L/2', [nf(vS.V, 3), nf(vC.V, 3)], 'kN'],
+      ['Tensão de cisalhamento', 'τ = 1,5·Vd/(b·h)', [nf(vS.tau), nf(vC.tau)], 'MPa'],
+      ['Resistência de cálculo', 'fvd = kmod·fv0,k/1,8', [nf(vS.fvd), nf(vC.fvd)], 'MPa'],
+      ['Aproveitamento', 'τ/fvd ≤ 1', [pct(r.sem.cis), { v: pct(r.com.cis), alerta: r.com.cis > 1 }], ''],
+    ]});
+    out.push({ t: 'Flecha', cols: ['Sem placas', 'Com placas'], l: [
+      ['Carga permanente normal', 'G·cos α', [nf(r.fS.w, 3), nf(r.fC.w, 3)], 'kN/m'],
+      ['Flecha final', `5·p·L⁴/(384·E·I)·(1 + φ), φ = ${nf(r.phi, 1)}`, [nf(r.fS.u / 10), { v: nf(r.fC.u / 10), alerta: r.fC.u > r.lim }], 'cm'],
+      ['Limite', `L/${e.limF}`, [nf(r.lim / 10), nf(r.lim / 10)], 'cm'],
+    ]});
+  }
+  if (r.tipo === 'aco') {
+    const s = r.sec;
+    out.push({ t: 'Perfil', cols: ['Valor'], l: [
+      ['Área', 'A (linha média, sem raios)', [`${nf(s.A / 100)} cm²`], ''],
+      ['Inércia forte', 'Ix ; Wx', [`${nf(s.Ix / 1e4, 1)} cm⁴ ; ${nf(s.Wx / 1e3)} cm³`], ''],
+      ['Módulo efetivo', `Wef (larguras efetivas, σ = fy)`, [`${nf(r.ef.Wef / 1e3)} cm³`], '9.2'],
+      ['Inércia fraca', 'Iy ; Wy', [`${nf(s.Iy / 1e4)} cm⁴ ; ${nf(s.Wy / 1e3)} cm³`], ''],
+      ['Torção e empenamento', 'J ; Cw', [`${nf(s.J / 1e4, 3)} cm⁴ ; ${nf(s.Cw / 1e6, 0)} cm⁶`], ''],
+      ['Centro de torção', 'x0 (a partir do centroide)', [`${nf(Math.abs(s.x0) / 10)} cm`], ''],
+    ]});
+    out.push({ t: 'Momento resistente', cols: ['Valor'], l: [
+      ['Escoamento da seção', 'MRd = Wef·fy/1,1', [`${nf(r.MRlocal)} kN·m`], '9.8.2.1'],
+      ['Comprimento destravado', 'Lb = L/(linhas de corrente + 1)', [`${nf(r.Lb)} m`], ''],
+      ['Momento crítico', 'Me = Cb·r0·√(Ney·Nez), Cb = 1', [`${nf(r.flt.Me)} kN·m`], '9.8.2.2'],
+      ['Esbeltez e redução', `λ0 = √(Wc·fy/Me) ; χFLT`, [`${nf(r.flt.l0, 3)} ; ${nf(r.flt.chi, 3)}`], ''],
+      ['Com flambagem lateral', 'MRd = χFLT·Wc,ef·fy/1,1', [`${nf(r.MRflt)} kN·m`], ''],
+      ...(r.cat ? [['Adotado do catálogo', 'MRd informado', [`${nf(r.cat)} kN·m`], 'fabricante']] : []),
+      ['Eixo fraco', 'MRd,y = Wy·fy/1,1', [`${nf(r.MRdy)} kN·m`], ''],
+      ['Cortante na alma', `VRd, h/t = ${nf(r.vr.lam, 0)}`, [`${nf(r.vr.VRd)} kN`], '9.8.3'],
+    ]});
+    out.push({ t: 'Verificações por combinação', cols: ['Sem placas', 'Com placas'], l: [
+      ...r.com.linhas.map((cb, i) => [cb.id + (cb.sobe ? ' (sucção)' : ''), 'Mx/MRd,x + My/MRd,y', [pct(r.sem.linhas[i].fl), { v: pct(cb.fl), alerta: cb.fl > 1 }], `Mx = ${nf(cb.Mx)} kN·m`]),
+      ['Cortante', 'Vd/VRd', [pct(r.sem.cis), { v: pct(r.com.cis), alerta: r.com.cis > 1 }], ''],
+      ['Flecha (G + Q)', `5·p·L⁴/(384·E·Ix) ≤ L/${e.limF}`, [nf(r.fS.u / 10), { v: nf(r.fC.u / 10), alerta: r.fC.u > r.lim }], `lim. ${nf(r.lim / 10)} cm`],
+    ]});
+  }
+  if (r.tipo === 'aco' || r.tipo === 'madeira') {
+    out.push({ t: 'Fixações dos módulos', cols: ['Valor'], l: [
+      ['Vento sobre um módulo', `|Cp|·q·A`, [`${nf(r.fix.Ff, 3)} kN`], ''],
+      ['Arrancamento por fixação', '(1,4·W − 1,0·G)/n', [{ v: `${nf(r.fix.Fd, 3)} kN`, alerta: e.Rfix > 0 && r.fix.Fd > e.Rfix }], 'NBR 8681'],
+      ['Resistência informada', 'fabricante', [e.Rfix > 0 ? `${nf(e.Rfix)} kN` : 'não informada'], ''],
+    ]});
+  }
+  if (r.tipo === 'laje') {
+    out.push({ t: 'Cargas na laje', cols: ['Valor'], l: [
+      ['Permanente existente', '25·h + revestimento', [`${nf(r.g0)} kN/m²`], 'NBR 6120'],
+      ['Sobrecarga', 'q', [`${nf(e.qL)} kN/m²`], 'NBR 6120'],
+      ['Módulo + estrutura de apoio', 'G + g·A', [`${nf(r.Gtot, 3)} kN`], ''],
+      ['Vento sobre um módulo', `|Cn|·q·A`, [`${nf(r.Fw, 3)} kN`], ''],
+      ...(e.fixL === 'lastro' ? [['Lastro por módulo', '0,9·(G + lastro) ≥ 1,4·W', [`${nf(r.lastroKN / 9.81 * 1000, 0)} kg`], 'NBR 8681']] : [['Tração por chumbador', '(1,4·W − 0,9·G)/n', [`${nf(r.tracao, 3)} kN`], 'NBR 8681']]),
+      ['Carga do sistema', '(G + lastro)/(A·cos θ)', [`${nf(r.gpvL, 3)} kN/m²`], ''],
+      ['Acréscimo sobre o existente', 'gpv/(g + q)', [`${nf(r.acresc * 100, 1)}%`], ''],
+    ]});
+    out.push({ t: 'Esforços e resistência', cols: ['Sem placas', 'Com placas'], l: [
+      ['Carga de cálculo', 'pd = 1,4·(g + gpv) + 1,4·q', [nf(r.sem.pd), nf(r.com.pd)], 'kN/m²'],
+      ['Momento no menor vão', r.um ? 'pd·lx²/8 (uma direção)' : `placa apoiada, m = ${nf(r.mx / r.lx ** 2, 4)}·pd·lx²`, [nf(r.sem.Mx), nf(r.com.Mx)], 'kN·m/m'],
+      ...(r.um ? [] : [['Momento no maior vão', `m = ${nf(r.my / r.lx ** 2, 4)}·pd·lx²`, [nf(r.sem.My), nf(r.com.My)], 'kN·m/m']]),
+      ['Resistente (menor vão)', `As = ${nf(r.As)} cm²/m, d = ${nf(r.Rx.d, 1)} cm`, [nf(r.Rx.MRd), nf(r.Rx.MRd)], 'kN·m/m'],
+      ...(r.um ? [] : [['Resistente (maior vão)', `d = ${nf(r.Ry.d, 1)} cm`, [nf(r.Ry.MRd), nf(r.Ry.MRd)], 'kN·m/m']]),
+      ['Aproveitamento à flexão', 'Md/MRd ≤ 1', [pct(r.util.flexao[0]), { v: pct(r.util.flexao[1]), alerta: r.util.flexao[1] > 1 }], ''],
+      ['Cortante', 'Vd ≤ VRd1', [nf(r.sem.Vd), { v: nf(r.com.Vd), alerta: r.com.Vd > r.VRd1 }], `VRd1 ${nf(r.VRd1)} kN/m`],
+    ]});
+  }
+  return out;
+}
+function hipoteses(r) {
+  const comum = ['Vento pela NBR 6123 com S1 = 1 (terreno plano) e classe A (edificação de até 20 m); coeficientes de pressão adotados editáveis', 'Combinações da NBR 8681: 1,4·G; 1,4·(G + Q); 1,4·G + 1,4·W; 1,0·G − 1,4·W (sucção)'];
+  if (r.tipo === 'madeira') return [...comum, 'Peça biapoiada com carga distribuída; placas sobre toda a área de influência (a favor da segurança)', 'kmod1 = 0,60 para cargas permanentes e 0,90 para sobrecarga e vento (curta duração, a favor da segurança); kmod3 extinto na NBR 7190-1:2022', 'Flexão com fmd = fc0,d; em terças, flexão oblíqua com kM = 0,7; no caibro, a componente ao longo da queda é tratada como axial e desprezada', 'Fixação dos ganchos na peça verificada, nunca apenas nas ripas ou na telha'];
+  if (r.tipo === 'aco') return [...comum, 'Terça biapoiada; linhas de corrente reduzem o vão no eixo fraco e o comprimento destravado', 'Larguras efetivas da NBR 14762 com enrijecedores adequados; flambagem distorcional não verificada automaticamente (informe o MRd do catálogo quando o fabricante fornecer)', 'Na sucção, a mesa inferior comprimida é tratada sem travamento além das linhas de corrente (Cb = 1)'];
+  return [...comum, 'Laje maciça apoiada nas quatro bordas, momentos pela teoria de placas (ν = 0,2); continuidade com lajes vizinhas desprezada, a favor da segurança', 'Carga do sistema distribuída sobre toda a laje, com o peso dividido pela projeção dos módulos', 'Armadura positiva informada igual nas duas direções; flecha não verificada', 'Lastro: equilíbrio com 0,9 para o peso e 1,4 para o vento; deslizamento não verificado'];
+}
+
+// ---------- desenhos ----------
+function esquema(r) {
+  const e = r.entrada;
+  if (r.tipo === 'laje') {
+    const lastro = e.fixL === 'lastro', th = Math.max(5, Math.min(40, e.tilt)) * Math.PI / 180;
+    let o = `<svg viewBox="0 0 640 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Módulos inclinados sobre a laje">`;
+    o += `<rect x="20" y="150" width="600" height="22" fill="var(--concrete)" stroke="var(--ink)" stroke-width="1"/>`;
+    o += `<path d="M20 172 l0 18 M620 172 l0 18" stroke="var(--ink)" stroke-width="1.2"/>`;
+    for (let i = 0; i < 3; i++) {
+      const x0 = 60 + i * 190, L = 150, dx = L * Math.cos(th), dy = L * Math.sin(th);
+      o += `<line x1="${x0}" y1="${140}" x2="${x0 + dx}" y2="${140 - dy}" stroke="var(--pv)" stroke-width="7" stroke-linecap="round"/>`;
+      o += `<path d="M${x0} 148 L${x0} 140 M${x0 + dx} 148 L${x0 + dx} ${140 - dy}" stroke="var(--steel2)" stroke-width="2"/>`;
+      if (lastro) o += `<rect x="${x0 - 14}" y="136" width="28" height="14" fill="var(--beam)" stroke="var(--ink)" stroke-width=".8"/><rect x="${x0 + dx - 14}" y="136" width="28" height="14" fill="var(--beam)" stroke="var(--ink)" stroke-width=".8"/>`;
+      else o += `<path d="M${x0} 150 v14 M${x0 + dx} 150 v14" stroke="var(--accent)" stroke-width="2.4"/>`;
+      o += `<path d="M${x0 + dx / 2} ${118 - dy / 2} v-34" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#seta)"/>`;
+    }
+    o += `<defs><marker id="seta" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>`;
+    o += `<text x="24" y="204" font-size="11" class="mut">laje h = ${nf(e.hL, 0)} cm · ${nf(r.lx)} × ${nf(r.ly)} m · módulos a ${nf(e.tilt, 0)}° · ${lastro ? `lastro ${nf(r.lastroKN / 9.81 * 1000, 0)} kg por módulo` : `${e.nAnc} chumbadores por módulo`}</text>`;
+    o += `<text x="330" y="24" font-size="11" class="mut" text-anchor="middle">sucção do vento ${nf(Math.abs(e.cnL) * r.v.q, 2)} kN/m²</text>`;
+    return o + '</svg>';
+  }
+  const a = Math.max(Math.atan(e.incl / 100), 0.08), ca = Math.cos(a), sa = Math.sin(a);
+  const x0 = 40, y0 = 190, Lr = 520, P = s => [x0 + s * ca, y0 - s * sa];
+  const terca = r.tipo === 'aco' || r.terca;
+  const esp = r.tipo === 'aco' ? e.espA : e.esp, n = Math.max(3, Math.min(9, Math.round(4 / esp)));
+  let o = `<svg viewBox="0 ${Math.round(y0 - Lr * sa - 70)} 640 ${Math.round(Lr * sa + 120)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Corte do telhado com os módulos">`;
+  o += `<defs><marker id="seta" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>`;
+  // telha
+  const [a1x, a1y] = P(0), [a2x, a2y] = P(Lr);
+  o += `<line x1="${a1x}" y1="${a1y}" x2="${a2x}" y2="${a2y}" stroke="var(--accent)" stroke-opacity=".55" stroke-width="6"/>`;
+  // peças sob a telha
+  const nx = -sa, ny = -ca;                                             // normal para cima (no sistema da tela, y para baixo)
+  if (terca) {
+    for (let i = 0; i < n; i++) {
+      const s = 30 + i * (Lr - 60) / (n - 1), [px, py] = P(s), destaque = i === Math.floor(n / 2);
+      const w = r.tipo === 'aco' ? 10 : 12, h = r.tipo === 'aco' ? 22 : 24;
+      o += `<rect x="${px - w / 2}" y="${py + 4}" width="${w}" height="${h}" transform="rotate(${-a * 180 / Math.PI} ${px} ${py})" fill="${r.tipo === 'aco' ? 'none' : 'var(--wood)'}" stroke="${destaque ? 'var(--accent)' : 'var(--ink)'}" stroke-width="${destaque ? 2.4 : 1}"/>`;
+    }
+  } else {
+    const [b1x, b1y] = P(0), [b2x, b2y] = P(Lr);
+    o += `<line x1="${b1x}" y1="${b1y + 10}" x2="${b2x}" y2="${b2y + 10}" stroke="var(--wood)" stroke-width="12"/>`;
+    o += `<line x1="${b1x}" y1="${b1y + 10}" x2="${b2x}" y2="${b2y + 10}" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="6 4"/>`;
+    for (const s of [40, Lr / 2, Lr - 40]) { const [px, py] = P(s); o += `<rect x="${px - 8}" y="${py + 18}" width="16" height="22" fill="var(--wood)" stroke="var(--ink)" stroke-width="1"/>`; }
+  }
+  // módulos e ganchos
+  const s1 = 70, s2 = Lr - 70, off = 18;
+  const [m1x, m1y] = P(s1), [m2x, m2y] = P(s2);
+  o += `<line x1="${m1x + nx * off}" y1="${m1y + ny * off}" x2="${m2x + nx * off}" y2="${m2y + ny * off}" stroke="var(--pv)" stroke-width="8" stroke-linecap="round"/>`;
+  for (const s of [s1 + 40, (s1 + s2) / 2, s2 - 40]) { const [px, py] = P(s); o += `<line x1="${px}" y1="${py}" x2="${px + nx * off}" y2="${py + ny * off}" stroke="var(--steel2)" stroke-width="2.4"/>`; }
+  // vento
+  for (const s of [s1 + 90, s2 - 90]) { const [px, py] = P(s); o += `<path d="M${px + nx * 30} ${py + ny * 30} l${nx * 34} ${ny * 34}" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#seta)"/>`; }
+  const [tx, ty] = P(Lr * 0.5);
+  o += `<text x="${tx + nx * 92}" y="${ty + ny * 92}" font-size="11" class="mut" text-anchor="middle">sucção ${nf(Math.abs(e.cpS) * r.c.v.q, 2)} kN/m²</text>`;
+  o += `<text x="${x0}" y="${y0 + 44}" font-size="11" class="mut">${esc(descricao(r))} · inclinação ${nf(e.incl, 0)}%</text>`;
+  return o + '</svg>';
+}
+
+// ---------- tela ----------
+function render() {
+  mostrarTipo();
+  const e = lerEntrada();
+  const r = calcular(e); window.__r = r;
+  const conc = conclusao(r), msgs = [...r.erros, ...r.avisos];
+  $('status').className = 'status ' + conc.nivel;
+  $('status').innerHTML = `<b>${conc.titulo}</b>${msgs.length ? `<ul class="msgs">${msgs.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : '<span style="margin-left:8px;color:var(--ink);font-weight:400">Flexão, cisalhamento e flecha dentro dos limites com as placas instaladas.</span>'}`;
+  const m = r.tipo === 'laje' ? r.m : r.c.m;
+  const maior = Object.entries(r.util).reduce((a, [k, v]) => v[1] > a.v ? { k, v: v[1], antes: v[0] } : a, { v: -1 });
+  const fixTxt = r.tipo === 'laje'
+    ? (e.fixL === 'lastro' ? `<dt>Lastro</dt><dd>${nf(r.lastroKN / 9.81 * 1000, 0)} kg<small>por módulo, contra o vento</small></dd>` : `<dt>Chumbador</dt><dd>${nf(r.tracao)} kN<small>tração de cálculo, cada</small></dd>`)
+    : `<dt>Fixação</dt><dd>${nf(r.fix.Fd)} kN<small>arrancamento de cálculo, cada</small></dd>`;
+  $('keys').innerHTML = `<div><dt>Conclusão</dt><dd class="c-${conc.nivel}">${conc.titulo}<small>${r.tipo === 'laje' ? 'laje de concreto' : r.tipo === 'aco' ? 'terça de aço' : r.terca ? 'terça de madeira' : 'caibro de madeira'}</small></dd></div>
+    <div><dt>Sistema</dt><dd>${nf(m.pesoTotal, 0)} kg<small>${e.nMod} módulos · ${nf(r.tipo === 'laje' ? r.gpvL : m.gpv)} kN/m²</small></dd></div>
+    <div><dt>Maior aproveitamento</dt><dd class="${maior.v > 1 ? 'c-bad' : ''}">${pct(maior.v)}<small>${ROT[maior.k].toLowerCase()} · antes ${pct(maior.antes)}</small></dd></div>
+    <div>${fixTxt}</div>`;
+  const w = v => Math.min(v / 1.5, 1) * 100;
+  $('barras').innerHTML = Object.entries(r.util).map(([k, [a, b]]) => `<div class="uso"><span class="uso-n">${ROT[k]}</span>
+    <div class="uso-b" role="img" aria-label="${ROT[k]}: ${pct(a)} sem as placas, ${pct(b)} com as placas"><div class="trilho"><i class="antes" style="width:${w(a)}%"></i></div><div class="trilho"><i class="${b > 1 ? 'bad' : 'depois'}" style="width:${w(b)}%"></i></div><i class="lim" style="left:${w(1)}%"></i></div>
+    <span class="uso-v">${pct(a)} → <b style="color:${b > 1 ? 'var(--bad)' : 'inherit'}">${pct(b)}</b></span></div>`).join('');
+  $('esquema').innerHTML = esquema(r);
+  $('legEsq').textContent = r.tipo === 'laje' ? 'Corte esquemático: módulos inclinados sobre a laje, sem escala.' : `Corte esquemático, sem escala: em destaque, ${r.tipo === 'aco' ? 'a terça' : r.terca ? 'a terça' : 'o caibro'} verificado, que recebe os ganchos dos trilhos.`;
+  renderMemoria(memoria(r), 'memoria', r.tipo === 'laje' ? 'Esforços e resistência' : r.tipo === 'aco' ? 'Verificações por combinação' : 'Flexão');
+  $('hip').innerHTML = hipoteses(r).map(t => `<li>${esc(t)}</li>`).join('');
+  const txt = `Olá! Verifiquei um telhado para placas solares no Foster Calc (${descricao(r)}, ${e.nMod} módulos, resultado: ${conc.titulo.toLowerCase()}) e quero o laudo com ART da Foster Engenharia.`;
+  $('btnFoster').href = `https://wa.me/5524992096103?text=${encodeURIComponent(txt)}`;
+}
+
+function gerarPdf() {
+  const r = window.__r; if (!r || !window.jspdf) { msg('Gerador de PDF não carregou. Recarregue a página.'); return null; }
+  const e = r.entrada, conc = conclusao(r);
+  const doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+  const p = pdfLaudo(doc, memoria(r), 'Laudo de verificação estrutural · Sistema fotovoltaico',
+    `${descricao(r)} · ${e.nMod} módulos de ${nf(e.modP, 0)} kg · V0 = ${nf(e.V0, 0)} m/s`, r, conc);
+  let y = p.getY();
+  const W = 210, M = 14;
+  const blocos = [['HIPÓTESES', hipoteses(r)], ['RECOMENDAÇÕES', [
+    'Conferir em vistoria as dimensões e o estado das peças: madeira sem podridão, cupim ou fissuras; aço sem corrosão; laje sem fissuras ou infiltrações.',
+    r.tipo === 'laje' ? 'Executar a fixação com vedação da impermeabilização em cada ponto e manter o escoamento da água da laje.' : 'Fixar os ganchos diretamente nas peças estruturais verificadas, com os parafusos indicados pelo fabricante, nunca apenas nas ripas ou nas telhas.',
+    'Seguir o manual do fabricante dos módulos e da estrutura de fixação quanto ao espaçamento máximo entre fixações.',
+    'Qualquer alteração na quantidade, no peso ou na posição dos módulos exige nova verificação.']]];
+  for (const [tit, itens] of blocos) {
+    p.setY(y); p.novaPag(14); y = p.getY();
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20); doc.text(tit, M, y); y += 5;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2);
+    for (const t of itens) { const ls = doc.splitTextToSize('• ' + asciiPdf(t), W - 2 * M); p.setY(y); p.novaPag(ls.length * 3.8); y = p.getY(); doc.text(ls, M, y); y += ls.length * 3.8; }
+    y += 3;
+  }
+  FC.finalizarPdf(doc, 'Laudo gerado com apoio do Foster Calc. A validade depende de vistoria e da responsabilidade técnica do profissional que assina, com ART/RRT.');
+  return doc.output('arraybuffer');
+}
+
+// ---------- eventos ----------
+$('telha').addEventListener('change', () => { const g = TELHAS[$('telha').value]; if (g != null) $('gCob').value = g.toFixed(2); });
+$('pos').addEventListener('change', () => { $('cpS').value = $('pos').value === 'borda' ? '-2.0' : '-1.2'; });
+$('perfil').addEventListener('change', () => { const v = $('perfil').value; if (v === 'outro') return; const [bw, bf, D, t] = v.split(','); $('bw').value = bw; $('bf').value = bf; $('D').value = D; $('tA').value = t; });
+['bw', 'bf', 'D', 'tA'].forEach(id => $(id).addEventListener('input', () => { $('perfil').value = 'outro'; }));
+$('elem').addEventListener('change', () => {
+  if ($('elem').value === 'terca') { $('b').value = '6'; $('h').value = '16'; $('L').value = '3.00'; $('esp').value = '1.50'; }
+  else { $('b').value = '5'; $('h').value = '7'; $('L').value = '1.80'; $('esp').value = '0.50'; }
+});
+document.querySelectorAll('input[name="tipo"]').forEach(el => el.addEventListener('change', () => {
+  if (el.value === 'aco' && el.checked && $('telha').value === 'ceramica') { $('telha').value = 'fibro'; $('gCob').value = '0.20'; $('incl').value = '10'; }
+  if (el.value === 'madeira' && el.checked && $('telha').value === 'fibro') { $('telha').value = 'ceramica'; $('gCob').value = '0.50'; $('incl').value = '35'; }
+}));
+$('btnPdf').addEventListener('click', async () => {
+  if (!(await FC.exigirPro('baixar o laudo em PDF'))) return;
+  FC.registrarExport('solar', 'pdf'); msg('Gerando PDF…');
+  const b = gerarPdf(); if (b) { FC.baixar('laudo-telhado-solar.pdf', b); msg('Arquivo baixado.'); }
+});
+ligarProjetos('solar', () => `Telhado solar · ${$('nMod').value} módulos`);
+$('f').addEventListener('input', agendar); $('f').addEventListener('change', agendar); $('f').addEventListener('submit', ev => ev.preventDefault());
+render();
+</script>
+</body>
+</html>

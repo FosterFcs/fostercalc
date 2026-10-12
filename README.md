@@ -17,6 +17,7 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `divisa.html` | Módulo de sapata de divisa com viga alavanca |
 | `associada.html` | Módulo de sapata associada (dois pilares, viga de rigidez) |
 | `muro.html` | Módulo de muro de arrimo de flexão |
+| `solar.html` | Telhado solar: verificação de caibros/terças de madeira (NBR 7190-1), terças de aço (NBR 14762) e lajes (NBR 6118) para sistema fotovoltaico, vento pela NBR 6123 e laudo em PDF |
 | `bloco.html` | Módulo de blocos sobre 1 a 4 estacas (bielas e tirantes) |
 | `validacao.html` | Comparação com exemplos resolvidos publicados (gerada por script a partir dos dados de validação) |
 | `explica.js` | Textos do modo didático (botão “?” na memória de viga, laje e pilar; planos Estudante e Pro) |
@@ -75,7 +76,7 @@ Assinantes com `plano_ate` vencido voltam a ser tratados como grátis automatica
 ## Banco de dados
 
 - `perfis`: nome, CREA/CAU, empresa, telefone, e-mail, cidade, logo, plano e validade. O usuário edita só os dados cadastrais; o plano só muda pelo painel/SQL.
-- `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, trelicada, pilar, sapata, divisa, associada, bloco, escada ou muro). Cada usuário vê apenas os seus.
+- `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, trelicada, pilar, sapata, divisa, associada, bloco, escada, muro ou solar). Cada usuário vê apenas os seus.
 - `exportacoes`: registro de cada PDF/DXF baixado (só aceita inserção de quem é Pro).
 
 - `leads_calc`: contatos deixados nas calculadoras gratuitas (nome, WhatsApp, e-mail, perfil e dados do cálculo). O público só consegue inserir; para ver os contatos, use o Table Editor ou o SQL Editor:
