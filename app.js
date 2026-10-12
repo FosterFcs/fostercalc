@@ -604,7 +604,7 @@
     divisa: [[/alívio|próximos|distância/i, ['l']], [/largura/i, ['bw']], [/tensão no solo/i, ['sadm']], [/diagonal/i, ['fck']]],
     associada: [[/balanço/i, ['limEsq']], [/largura da viga/i, ['bw']], [/tensão no solo/i, ['sadm']], [/diagonal/i, ['fck']]],
     muro: [[/cortina/i, ['t1']], [/tensão|núcleo|tombamento|deslizamento/i, ['sadm', 'H']], [/concreto/i, ['fck']]],
-    solar: [[/flexão do caibro|flexão do terça|cisalhamento acima/i, ['b', 'h', 'L', 'esp']], [/terça acima|alma/i, ['tA', 'nLC', 'La']], [/flecha/i, ['h', 'L', 'La']], [/fixação|arrancamento/i, ['nFix', 'Rfix']], [/laje acima|cortante/i, ['hL', 'phiL', 'sL']], [/chumbador/i, ['nAnc', 'RfixL']]],
+    solar: [[/flexão do caibro|flexão do terça|cisalhamento acima/i, ['b', 'h', 'L', 'esp']], [/terça acima|alma/i, ['tA', 'nLC', 'La']], [/flecha/i, ['h', 'L', 'La']], [/fixação|arrancamento|gancho/i, ['nCada', 'aTr', 'Rfix']], [/laje acima|cortante/i, ['hL', 'phiL', 'sL']], [/chumbador/i, ['nAnc', 'RfixL']]],
   };
   function irParaErro() {
     const s = document.getElementById('status'); if (!s) return;
