@@ -267,7 +267,8 @@
         doc.setFillColor(255, 255, 255); doc.setDrawColor(163, 18, 26); doc.setLineWidth(0.6);
         doc.setFillColor(163, 18, 26); doc.rect(0, 0, W, 5.2, 'F');
         doc.setFont('helvetica', 'bold'); doc.setFontSize(7.4); doc.setTextColor(255, 255, 255);
-        doc.text(txtPdf('NÃO ATENDE À NORMA · ' + (errosPdf[0] || 'há verificações não atendidas')).slice(0, 160), M, 3.6, { maxWidth: W - 2 * M });
+        const faixa = doc.splitTextToSize(txtPdf('NÃO ATENDE À NORMA · ' + (errosPdf[0] || 'há verificações não atendidas')), W - 2 * M - 4);
+        doc.text(faixa[0] + (faixa.length > 1 ? '...' : ''), M, 3.6);
         doc.setTextColor(163, 18, 26);
         try { doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.12 })); } catch (e) {}
         doc.setFontSize(W > H ? 52 : 44); doc.text(txtPdf('NÃO ATENDE'), W / 2, H / 2 + 30, { align: 'center', angle: 35 });
@@ -628,7 +629,7 @@
     divisa: [[/alívio|próximos|distância/i, ['l']], [/largura/i, ['bw']], [/tensão no solo/i, ['sadm']], [/diagonal/i, ['fck']]],
     associada: [[/balanço/i, ['limEsq']], [/largura da viga/i, ['bw']], [/tensão no solo/i, ['sadm']], [/diagonal/i, ['fck']]],
     muro: [[/cortina/i, ['t1']], [/tensão|núcleo|tombamento|deslizamento/i, ['sadm', 'H']], [/concreto/i, ['fck']]],
-    solar: [[/flexão do caibro|flexão do terça|cisalhamento acima/i, ['b', 'h', 'L', 'esp']], [/terça acima|alma/i, ['tA', 'nLC', 'La']], [/flecha/i, ['h', 'L', 'La']], [/fixação|arrancamento|gancho/i, ['nCada', 'aTr', 'Rfix']], [/laje acima|cortante/i, ['hL', 'phiL', 'sL']], [/chumbador/i, ['nAnc', 'RfixL']]],
+    solar: [[/estabilidade lateral/i, ['L1s', 'b', 'h']], [/seção abaixo do mínimo/i, ['b', 'h']], [/flexão do caibro|flexão da terça|cisalhamento acima/i,['b', 'h', 'L', 'esp']], [/terça acima|alma/i, ['tA', 'nLC', 'La']], [/flecha/i, ['h', 'L', 'La']], [/fixação|arrancamento|gancho/i, ['nCada', 'aTr', 'Rfix']], [/laje acima|cortante/i, ['hL', 'phiL', 'sL']], [/chumbador/i, ['nAnc', 'RfixL']]],
   };
   function irParaErro() {
     const s = document.getElementById('status'); if (!s) return;

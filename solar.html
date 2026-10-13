@@ -179,10 +179,13 @@ ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
       <label>Classe<select id="classe"><option>D20</option><option selected>D30</option><option>D40</option><option>D50</option><option>D60</option></select></label>
       <label>Largura b<span class="unit"><input id="b" type="number" step="0.5" min="2" value="5"><i>cm</i></span></label>
       <label>Altura h<span class="unit"><input id="h" type="number" step="0.5" min="3" value="7"><i>cm</i></span></label>
-      <label>Vão entre apoios<span class="unit"><input id="L" type="number" step="0.05" min="0.3" value="1.80"><i>m</i></span></label>
+      <label>Vão entre apoios<span class="unit"><input id="L" type="number" step="0.05" min="0.3" value="1.50"><i>m</i></span></label>
       <label>Espaçamento<span class="unit"><input id="esp" type="number" step="0.05" min="0.2" value="0.50"><i>m</i></span></label>
       <label>Umidade do ar<select id="umid"><option value="1">Classe 1 · ≤ 65%</option><option value="2" selected>Classe 2 · ≤ 75%</option><option value="3">Classe 3 · ≤ 85%</option><option value="4">Classe 4 · > 85%</option></select></label>
-      <label>Flecha limite<span class="unit"><input id="limM" type="number" step="10" min="100" value="200"><i>L/</i></span></label>
+      <label>Flecha instantânea<span class="unit"><input id="limI" type="number" step="10" min="300" max="500" value="300"><i>L/</i></span></label>
+      <label>Flecha final<span class="unit"><input id="limM" type="number" step="10" min="250" max="350" value="250"><i>L/</i></span></label>
+      <label class="full">Travamento da borda de baixo a cada<span class="unit"><input id="L1s" type="number" step="0.1" min="0" value="0"><i>m</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">Limites da Tabela 21 da NBR 7190-1 (instantânea L/300 a L/500; final sem contraflecha L/250 a L/350). Travamento: na sucção do vento a borda de baixo fica comprimida; deixe 0 se não houver mãos-francesas ou tarugos (vão inteiro).</p>
     </fieldset>
 
     <fieldset data-tipo="aco" hidden>
@@ -293,7 +296,9 @@ const SOL = {
   MAD: { D20: { fc: 20, fv: 4, E: 10000, rho: 500 }, D30: { fc: 30, fv: 5, E: 12000, rho: 625 }, D40: { fc: 40, fv: 6, E: 14500, rho: 750 },
          D50: { fc: 50, fv: 7, E: 16500, rho: 850 }, D60: { fc: 60, fv: 8, E: 19500, rho: 1000 } },
   KMOD2: { 1: 1.0, 2: 0.9, 3: 0.8, 4: 0.7 },
-  FLU: { 1: 0.8, 2: 0.8, 3: 2.0, 4: 2.0 },              // coeficiente de fluência, ações permanentes
+  FLU: { 1: 0.6, 2: 0.8, 3: 0.8, 4: 2.0 },              // coeficiente de fluência φ, madeira serrada (NBR 7190-1:2022, Tab. 20)
+  BETA_M: [6, 8.8, 12.3, 15.9, 19.5, 23.1, 26.7, 30.3, 34, 37.6, 41.2, 44.8, 48.5, 52.1, 55.8, 59.4, 63, 66.7, 70.3, 74], // Tab. 8, h/b = 1…20
+  PSI_Q: [0.4, 0.3], PSI_W: [0.3, 0], // ψ1, ψ2 (NBR 8681): sobrecarga e vento
   COB: { 2.0: 2.0, 2.5: 2.5, 3.5: 3.5 },
   E_ACO: 200000, G_ACO: 77000,
 };
@@ -420,7 +425,9 @@ function mrdFlt(sec, wef, fy, Lb, Cb) {
 // n: carga distribuída normal ao telhado (kN/m, + para baixo); P: carga concentrada em cada fixação (kN, + para baixo);
 // t: carga distribuída tangencial (kN/m). As placas chegam à peça pelos ganchos, a cada "aTr" ao longo dela,
 // e cada gancho recebe a faixa de placas entre as peças com fixação (nCada·espaçamento).
-function cargasTelhado(e, linha, pp) {
+// op.gg: γg das ações permanentes; op.kQ / op.kW: kmod1 com sobrecarga / vento como ação variável principal
+function cargasTelhado(e, linha, pp, op = {}) {
+  const gg = op.gg || 1.4, kQ = op.kQ || 0.90, kW = op.kW || 0.90, gs = String(gg).replace('.', ',');
   const a = Math.atan(e.incl / 100), ca = Math.cos(a), sa = Math.sin(a);
   const v = solVento(e), m = solModulo(e);
   const aTr = e.aTr, larg = Math.max(1, Math.round(e.nCada)) * linha, Af = aTr * larg;  // área de placas por fixação (m²)
@@ -432,18 +439,18 @@ function cargasTelhado(e, linha, pp) {
   const WsInt = cpiS * v.q * linha, WpInt = cpiP * v.q * linha;                             // sob as placas, só a pressão interna
   const tPv = Pg / aTr;                                                                    // peso das placas, valor médio por metro
   const sem = [
-    { id: 'C0', nome: '1,4·G', n: 1.4 * G0 * ca, P: 0, t: 1.4 * G0 * sa, kmod1: 0.60 },
-    { id: 'C1', nome: '1,4·G + 1,4·Q', n: 1.4 * (G0 + Q) * ca, P: 0, t: 1.4 * (G0 + Q) * sa, kmod1: 0.90 },
-    ...(WpTelha > 0 ? [{ id: 'C2', nome: '1,4·G + 1,4·W (pressão)', n: 1.4 * G0 * ca + 1.4 * WpTelha, P: 0, t: 1.4 * G0 * sa, kmod1: 0.90 }] : []),
-    { id: 'C3', nome: '1,0·G − 1,4·W (sucção)', n: 1.0 * G0 * ca - 1.4 * WsTelha, P: 0, t: 1.0 * G0 * sa, kmod1: 0.90 },
+    { id: 'C0', nome: `${gs}·G`, n: gg * G0 * ca, P: 0, t: gg * G0 * sa, kmod1: 0.60 },
+    { id: 'C1', nome: `${gs}·G + 1,4·Q`, n: gg * G0 * ca + 1.4 * Q * ca, P: 0, t: (gg * G0 + 1.4 * Q) * sa, kmod1: kQ },
+    ...(WpTelha > 0 ? [{ id: 'C2', nome: `${gs}·G + 1,4·W (pressão)`, n: gg * G0 * ca + 1.4 * WpTelha, P: 0, t: gg * G0 * sa, kmod1: kW }] : []),
+    { id: 'C3', nome: '1,0·G − 1,4·W (sucção)', n: 1.0 * G0 * ca - 1.4 * WsTelha, P: 0, t: 1.0 * G0 * sa, kmod1: kW },
   ];
   const com = [
-    { id: 'C0', nome: '1,4·G', n: 1.4 * G0 * ca, P: 1.4 * Pg * ca, t: 1.4 * (G0 + tPv) * sa, kmod1: 0.60 },
-    { id: 'C1', nome: '1,4·G + 1,4·Q', n: 1.4 * (G0 + Q) * ca, P: 1.4 * Pg * ca, t: 1.4 * (G0 + Q + tPv) * sa, kmod1: 0.90 },
-    ...(WpTelha > 0 ? [{ id: 'C2', nome: '1,4·G + 1,4·W (pressão)', n: 1.4 * G0 * ca + 1.4 * WpInt, P: 1.4 * Pg * ca + 1.4 * Pwp, t: 1.4 * (G0 + tPv) * sa, kmod1: 0.90 }] : []),
-    { id: 'C3', nome: '1,0·G − 1,4·W (sucção)', n: 1.0 * G0 * ca - 1.4 * WsInt, P: 1.0 * Pg * ca - 1.4 * Pws, t: 1.0 * (G0 + tPv) * sa, kmod1: 0.90 },
+    { id: 'C0', nome: `${gs}·G`, n: gg * G0 * ca, P: gg * Pg * ca, t: gg * (G0 + tPv) * sa, kmod1: 0.60 },
+    { id: 'C1', nome: `${gs}·G + 1,4·Q`, n: gg * G0 * ca + 1.4 * Q * ca, P: gg * Pg * ca, t: (gg * (G0 + tPv) + 1.4 * Q) * sa, kmod1: kQ },
+    ...(WpTelha > 0 ? [{ id: 'C2', nome: `${gs}·G + 1,4·W (pressão)`, n: gg * G0 * ca + 1.4 * WpInt, P: gg * Pg * ca + 1.4 * Pwp, t: gg * (G0 + tPv) * sa, kmod1: kW }] : []),
+    { id: 'C3', nome: '1,0·G − 1,4·W (sucção)', n: 1.0 * G0 * ca - 1.4 * WsInt, P: 1.0 * Pg * ca - 1.4 * Pws, t: 1.0 * (G0 + tPv) * sa, kmod1: kW },
   ];
-  return { a, ca, sa, v, m, aTr, larg, Af, cpiS, cpiP, G0, Q, Pg, Pws, Pwp, WsTelha, WpTelha, WsInt, WpInt, tPv, Gpv: Pg / aTr, sem, com };
+  return { a, ca, sa, v, m, aTr, larg, Af, cpiS, cpiP, G0, Q, Pg, Pws, Pwp, WsTelha, WpTelha, WsInt, WpInt, tPv, Gpv: Pg / aTr, sem, com, gg };
 }
 // viga biapoiada com carga distribuída n e cargas P a cada aTr, na posição mais desfavorável
 function esforcosPeca(n, P, L, aTr) {
@@ -462,6 +469,16 @@ function esforcosPeca(n, P, L, aTr) {
   }
   return melhor;
 }
+// flecha no meio do vão (mm) da viga biapoiada: 5·n·L⁴/(384·EI) + Σ P·a·(3L² − 4a²)/(48·EI), ganchos na posição mais desfavorável
+function flechaMeio(n, P, Lm, aTr, EI) {
+  const L = Lm * 1000, a0 = aTr * 1000, passos = P ? 24 : 1; let pior = 0;
+  for (let k = 0; k < passos; k++) {
+    let d = 5 * n * L ** 4 / (384 * EI);                    // n em kN/m = N/mm
+    if (P) for (let x = (k + 0.5) / passos * a0; x < L - 1e-6; x += a0) { const a = Math.min(x, L - x); d += P * 1000 * a * (3 * L * L - 4 * a * a) / (48 * EI); }
+    if (Math.abs(d) > Math.abs(pior)) pior = d;
+  }
+  return pior;
+}
 function fixacoes(e, c) {
   const Ff = c.Pws;                                         // vento sobre a área de uma fixação (kN)
   const Fd = 1.4 * Ff - 1.0 * c.Pg;
@@ -473,41 +490,68 @@ function calcMadeira(e) {
   const mat = SOL.MAD[e.classe] || SOL.MAD.D30, k2 = SOL.KMOD2[e.umid] || 0.9;
   const b = e.b * 10, h = e.h * 10, L = e.L * 1000;                     // mm
   const pp = mat.rho * 9.81 / 1000 * (e.b / 100) * (e.h / 100);         // kN/m
-  const c = cargasTelhado(e, e.esp, pp);
+  // NBR 7190-1:2022: γg = 1,3 (6.1); kmod1 curta 0,90 com sobrecarga principal e instantânea 1,10 com vento principal (Tab. 4)
+  const c = cargasTelhado(e, e.esp, pp, { gg: 1.3, kQ: 0.90, kW: 1.10 });
   const terca = e.elem === 'terca';
   const Wx = b * h * h / 6, Wy = h * b * b / 6, I = b * h ** 3 / 12;
+  // estabilidade lateral (6.5.6): βM pela Tabela 8, interpolado em h/b
+  const hb = h / b, BM = SOL.BETA_M;
+  const betaM = hb <= 1 ? BM[0] : hb >= 20 ? BM[19] : BM[Math.floor(hb) - 1] + (BM[Math.floor(hb)] - BM[Math.floor(hb) - 1]) * (hb - Math.floor(hb));
+  const L1s = e.L1s > 0 ? Math.min(e.L1s * 1000, L) : L;   // borda inferior: travamento informado ou vão inteiro
   const avalia = lista => {
-    let pior = { fl: 0, cis: 0 };
+    let pior = { fl: 0, cis: 0, lat: 0 };
     const linhas = lista.map(cb => {
-      const kmod = cb.kmod1 * k2, fmd = kmod * mat.fc / 1.4, fvd = kmod * mat.fv / 1.8;
+      const kmod = cb.kmod1 * k2, fmd = kmod * mat.fc / 1.4, fvd = kmod * mat.fv / 1.8, Eef = kmod * mat.E;
       const es = esforcosPeca(cb.n, cb.P, e.L, c.aTr);
       const Mx = Math.abs(es.M), My = terca ? Math.abs(cb.t) * e.L ** 2 / 8 : 0, V = es.V;
       const sx = Mx * 1e6 / Wx, sy = My * 1e6 / Wy, tau = 1.5 * V * 1000 / (b * h);
       const fl = terca ? Math.max(sx / fmd + 0.7 * sy / fmd, 0.7 * sx / fmd + sy / fmd) : sx / fmd;
       const cis = tau / fvd;
-      const r = { ...cb, kmod, fmd, fvd, Mx, My, V, sx, sy, tau, fl, cis, sobe: es.M < 0 };
+      // borda de cima travada pela cobertura; com o momento invertido (sucção) a borda de baixo comprime ao longo de L1
+      const sobe = es.M < 0, L1 = sobe ? L1s : 0;
+      const sLim = L1 > 0 ? Eef / (betaM * L1 / b) : Infinity;   // σc,d ≤ E0,ef/(βM·L1/b)
+      const lat = L1 > 0 ? sx / sLim : 0;
+      const r = { ...cb, kmod, fmd, fvd, Eef, Mx, My, V, sx, sy, tau, fl, cis, sobe, L1, sLim, lat, dispensa: L1 > 0 && L1 / b <= Eef / (betaM * fmd) };
       if (fl > pior.fl) { pior.fl = fl; pior.cbFl = r; }
       if (cis > pior.cis) { pior.cis = cis; pior.cbCis = r; }
+      if (lat >= pior.lat && L1 > 0) { pior.lat = lat; pior.cbLat = r; }
       return r;
     });
     return { linhas, ...pior };
   };
   const sem = avalia(c.sem), com = avalia(c.com);
   const phi = SOL.FLU[e.umid] || 0.8;
-  // flecha pelo momento de serviço: δ = 5·M·L²/(48·E·I) (exata para carga distribuída, a favor da segurança para concentrada)
-  const flecha = pv => { const es = esforcosPeca(c.G0 * c.ca, pv ? c.Pg * c.ca : 0, e.L, c.aTr); const u0 = 5 * Math.abs(es.M) * 1e6 * L * L / (48 * mat.E * I); return { M: es.M, u0, u: u0 * (1 + phi) }; };
-  const fS = flecha(false), fC = flecha(true), lim = L / e.limF;
+  // deslocamentos (8.1): flexão 5·M·L²/(48·E·I) (exata para distribuída, a favor da segurança para concentrada)
+  // + cisalhamento M/(κ·G·A), κ = 5/6, G = E0,med/16
+  const A = b * h, Gm = mat.E / 16;
+  const desl = (n, P) => { const es = esforcosPeca(n, P, e.L, c.aTr), M = Math.abs(es.M) * 1e6; return { M: es.M, u: Math.abs(flechaMeio(n, P, e.L, c.aTr, mat.E * I)) + 1.2 * M / (Gm * A) }; };
+  const [psi1Q, psi2Q] = SOL.PSI_Q, [psi1W, psi2W] = SOL.PSI_W;
+  const flecha = pv => {
+    const dG = desl(c.G0 * c.ca, pv ? c.Pg * c.ca : 0), dQ = desl(c.Q * c.ca, 0);
+    const dW = c.WpTelha > 0 ? (pv ? desl(c.WpInt, c.Pwp) : desl(c.WpTelha, 0)) : { M: 0, u: 0 };
+    const inst = dG.u + Math.max(dQ.u + psi1W * dW.u, dW.u + psi1Q * dQ.u);      // combinação rara
+    const fin = (dG.u + psi2Q * dQ.u + psi2W * dW.u) * (1 + phi);                 // quase permanente com fluência
+    return { M: dG.M, uG: dG.u, uQ: dQ.u, uW: dW.u, inst, fin, u: fin };
+  };
+  const fS = flecha(false), fC = flecha(true), limI = L / e.limI, lim = L / e.limF;
+  const uf = f => Math.max(f.inst / limI, f.fin / lim);
   const fix = fixacoes(e, c);
   const util = {
-    flexao: [sem.fl, com.fl], cisalhamento: [sem.cis, com.cis], flecha: [fS.u / lim, fC.u / lim],
+    flexao: [sem.fl, com.fl], cisalhamento: [sem.cis, com.cis], flecha: [uf(fS), uf(fC)],
+    ...(com.cbLat || sem.cbLat ? { estabilidade: [sem.lat, com.lat] } : {}),
   };
+  // dimensões mínimas (9.2.1): terça é peça principal, caibro secundária
+  const Acm = e.b * e.h, tmin = Math.min(e.b, e.h), [Amin, tMin] = terca ? [50, 5] : [18, 2.5];
+  const dimOk = Acm >= Amin && tmin >= tMin;
+  if (!dimOk) erros.push(`Seção abaixo do mínimo da NBR 7190-1 (9.2.1) para ${terca ? 'peça principal' : 'peça secundária'}: ${nf1(Acm)} cm² e ${nf1(tmin)} cm, exigido ${Amin} cm² e ${nf1(tMin)} cm de espessura. Substitua a peça.`);
   if (com.fl > 1) erros.push(`Flexão ${terca ? 'da terça' : 'do caibro'} com gancho acima da resistência (${pct(com.fl)}): aumente a seção, reduza o vão, ponha ganchos em mais peças para dividir a carga, ou reforce.`);
   if (com.cis > 1) erros.push(`Cisalhamento acima da resistência (${pct(com.cis)}): aumente a seção ou reduza o vão.`);
-  if (fC.u > lim) erros.push(`Flecha ${nf1(fC.u / 10)} cm acima do limite L/${e.limF} = ${nf1(lim / 10)} cm.`);
-  if (sem.fl > 1 || sem.cis > 1) avisos.push('A estrutura já não atende mesmo sem as placas: o problema é anterior à instalação e precisa ser resolvido antes dela.');
-  if (h / b > 4) avisos.push(`Relação h/b = ${nf1(h / b)} acima de 4: verifique o travamento lateral da peça.`);
+  if (com.lat > 1) erros.push(`Estabilidade lateral na sucção do vento (${pct(com.lat)}): a borda de baixo comprimida precisa de travamento (tarugos ou mãos-francesas) a cada ${nf1(L1s / 1000 / com.lat)} m ou menos.`);
+  if (fC.inst > limI) erros.push(`Flecha instantânea ${nf1(fC.inst / 10)} cm acima do limite L/${e.limI} = ${nf1(limI / 10)} cm.`);
+  if (fC.fin > lim) erros.push(`Flecha final ${nf1(fC.fin / 10)} cm acima do limite L/${e.limF} = ${nf1(lim / 10)} cm.`);
+  if (sem.fl > 1 || sem.cis > 1 || sem.lat > 1 || !dimOk) avisos.push('A estrutura já não atende mesmo sem as placas: o problema é anterior à instalação e precisa ser resolvido antes dela.');
   fixAvisos(e, fix, erros, avisos);
-  return { tipo: 'madeira', ok: !erros.length, erros, avisos, entrada: e, mat, k2, pp, c, Wx, Wy, I, sem, com, fS, fC, lim, phi, fix, util, terca };
+  return { tipo: 'madeira', ok: !erros.length, erros, avisos, entrada: e, mat, k2, pp, c, Wx, Wy, I, sem, com, fS, fC, lim, limI, phi, fix, util, terca, betaM, L1s, Acm, tmin, Amin, tMin, dimOk };
 }
 
 function calcAco(e) {
@@ -697,7 +741,7 @@ const nf2 = v => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, m
 const $ = id => document.getElementById(id);
 const nf = (v, d = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-const asciiPdf = t => String(t).replace(/ρmín/g, 'rho_min').replace(/ρ/g, 'rho').replace(/α/g, 'alfa').replace(/λ/g, 'lambda').replace(/χ/g, 'chi').replace(/ψ/g, 'psi')
+const asciiPdf = t => String(t).replace(/ρmín/g, 'rho_min').replace(/ρ/g, 'rho').replace(/α/g, 'alfa').replace(/λ/g, 'lambda').replace(/χ/g, 'chi').replace(/ψ/g, 'psi').replace(/β/g, 'beta').replace(/δ/g, 'd').replace(/κ/g, 'kappa')
   .replace(/ν/g, 'nu').replace(/γ/g, 'gama').replace(/σ/g, 'sig').replace(/τ/g, 'tau').replace(/φ/g, 'Ø').replace(/θ/g, 'teta')
   .replace(/≤/g, '<=').replace(/≥/g, '>=').replace(/[−–—]/g, '-').replace(/→/g, '->').replace(/√/g, 'raiz').replace(/′/g, "'").replace(/²/g, '2').replace(/³/g, '3').replace(/⁴/g, '4').replace(/⁶/g, '6').replace(/₀/g, '0').replace(/₁/g, '1');
 function msg(t) { $('expMsg').textContent = t; }
@@ -774,12 +818,12 @@ let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requ
 
 // ---------- entrada ----------
 const CAMPOS = ['modL', 'modB', 'modP', 'nMod', 'gTrilho', 'V0', 'cat', 'z', 'S3', 'telha', 'gCob', 'incl', 'Qc', 'pos', 'cpS', 'cpP', 'pint', 'aTr', 'nCada', 'Rfix',
-  'elem', 'classe', 'b', 'h', 'L', 'esp', 'umid', 'limM', 'perfil', 'bw', 'bf', 'D', 'tA', 'fy', 'La', 'espA', 'nLC', 'trav', 'limA', 'MRdCat',
+  'elem', 'classe', 'b', 'h', 'L', 'esp', 'umid', 'limI', 'limM', 'L1s', 'perfil', 'bw', 'bf', 'D', 'tA', 'fy', 'La', 'espA', 'nLC', 'trav', 'limA', 'MRdCat',
   'lx', 'ly', 'hL', 'fck', 'phiL', 'sL', 'caa', 'gRev', 'qL', 'tilt', 'gEstr', 'fixL', 'cnL', 'nAnc', 'RfixL'];
 const TEXTO = new Set(['cat', 'telha', 'pos', 'pint', 'elem', 'classe', 'perfil', 'fixL', 'caa']);
 const TELHAS = { ceramica: 0.50, concreto: 0.55, fibro: 0.20, metalica: 0.10 };
 const COBS = { I: 2.0, II: 2.5, III: 3.5 };
-const ROT = { flexao: 'Flexão', cisalhamento: 'Cisalhamento', flecha: 'Flecha' };
+const ROT = { flexao: 'Flexão', cisalhamento: 'Cisalhamento', flecha: 'Flecha', estabilidade: 'Estabilidade lateral' };
 const tipoAtual = () => document.querySelector('input[name="tipo"]:checked').value;
 function lerEntrada() {
   const e = { tipo: tipoAtual() };
@@ -854,9 +898,12 @@ function memoria(r) {
     const mt = r.mat, cS = r.sem.cbFl, cC = r.com.cbFl, vS = r.sem.cbCis, vC = r.com.cbCis;
     out.push({ t: 'Madeira', cols: ['Valor'], l: [
       ['Classe', `${e.classe} · fc0,k / fv0,k`, [`${mt.fc} / ${mt.fv} MPa`], 'NBR 7190-1'],
-      ['Módulo de elasticidade', 'E0,med', [`${nf(mt.E, 0)} MPa`], ''],
-      ['Coeficiente de modificação', `kmod = kmod1 · kmod2 (umidade ${e.umid})`, [`kmod1 · ${nf(r.k2)}`], ''],
+      ['Módulo de elasticidade', 'E0,med ; G = E0,med/16', [`${nf(mt.E, 0)} ; ${nf(mt.E / 16, 0)} MPa`], '5.8.7'],
+      ['Coeficiente de modificação', `kmod = kmod1 · kmod2 (umidade ${e.umid})`, [`kmod1 · ${nf(r.k2)}`], 'Tab. 4 e 5'],
+      ['kmod1 por combinação', 'permanente ; sobrecarga (curta) ; vento (instantânea)', ['0,60 ; 0,90 ; 1,10'], 'Tab. 4'],
+      ['Ponderação das permanentes', 'γg (madeira em geral)', ['1,3'], '6.1'],
       ['Seção', 'W = b·h²/6 ; I = b·h³/12', [`${nf(r.Wx / 1e3, 1)} cm³ ; ${nf(r.I / 1e4, 0)} cm⁴`], ''],
+      ['Dimensões mínimas', `A ≥ ${r.Amin} cm² ; espessura ≥ ${nf(r.tMin, 1)} cm (${r.terca ? 'principal' : 'secundária'})`, [{ v: `${nf(r.Acm, 0)} cm² ; ${nf(r.tmin, 1)} cm`, alerta: !r.dimOk }], '9.2.1'],
     ]});
     out.push({ t: 'Flexão', cols: ['Sem placas', 'Com placas'], l: [
       ['Combinação crítica', 'maior σ/fmd', [cS.id, cC.id], ''],
@@ -871,10 +918,22 @@ function memoria(r) {
       ['Resistência de cálculo', 'fvd = kmod·fv0,k/1,8', [nf(vS.fvd), nf(vC.fvd)], 'MPa'],
       ['Aproveitamento', 'τ/fvd ≤ 1', [pct(r.sem.cis), { v: pct(r.com.cis), alerta: r.com.cis > 1 }], ''],
     ]});
-    out.push({ t: 'Flecha', cols: ['Sem placas', 'Com placas'], l: [
-      ['Momento de serviço', 'G distribuído + placas nos ganchos', [nf(Math.abs(r.fS.M), 3), nf(Math.abs(r.fC.M), 3)], 'kN·m'],
-      ['Flecha final', `5·M·L²/(48·E·I)·(1 + φ), φ = ${nf(r.phi, 1)}`, [nf(r.fS.u / 10), { v: nf(r.fC.u / 10), alerta: r.fC.u > r.lim }], 'cm'],
-      ['Limite', `L/${e.limF}`, [nf(r.lim / 10), nf(r.lim / 10)], 'cm'],
+    const lS = r.sem.cbLat, lC = r.com.cbLat;
+    if (lC || lS) out.push({ t: 'Estabilidade lateral (sucção do vento)', cols: ['Sem placas', 'Com placas'], l: [
+      ['Coeficiente', `βM (Tabela 8), h/b = ${nf(e.h / e.b, 2)}`, [nf(r.betaM, 1), nf(r.betaM, 1)], '6.5.6'],
+      ['Comprimento sem travamento', 'L1 da borda de baixo, comprimida', [nf((lS || lC).L1 / 1000), nf((lC || lS).L1 / 1000)], 'm'],
+      ['Módulo efetivo', 'E0,ef = kmod1·kmod2·E0,med', [lS ? nf(lS.Eef, 0) : '—', lC ? nf(lC.Eef, 0) : '—'], 'MPa'],
+      ['Tensão de compressão', 'σc,d = Md/W', [lS ? nf(lS.sx) : '—', lC ? nf(lC.sx) : '—'], 'MPa'],
+      ['Tensão limite', 'E0,ef/(βM·L1/b)', [lS ? nf(lS.sLim) : '—', lC ? nf(lC.sLim) : '—'], 'MPa'],
+      ['Aproveitamento', 'σc,d ≤ E0,ef/(βM·L1/b)', [pct(r.sem.lat), { v: pct(r.com.lat), alerta: r.com.lat > 1 }], ''],
+    ]});
+    out.push({ t: 'Flecha (NBR 7190-1, seção 8)', cols: ['Sem placas', 'Com placas'], l: [
+      ['Permanentes', 'δG = 5·M·L²/(48·E·I) + 1,2·M/(G·A)', [nf(r.fS.uG / 10, 3), nf(r.fC.uG / 10, 3)], 'cm'],
+      ['Sobrecarga ; vento (pressão)', 'δQ ; δW', [`${nf(r.fS.uQ / 10, 3)} ; ${nf(r.fS.uW / 10, 3)}`, `${nf(r.fC.uQ / 10, 3)} ; ${nf(r.fC.uW / 10, 3)}`], 'cm'],
+      ['Instantânea (rara)', 'δG + δQ1 + ψ1·δQj', [nf(r.fS.inst / 10), { v: nf(r.fC.inst / 10), alerta: r.fC.inst > r.limI }], 'cm'],
+      ['Limite instantânea', `L/${e.limI}`, [nf(r.limI / 10), nf(r.limI / 10)], 'Tab. 21'],
+      ['Final (quase permanente)', `(δG + ψ2·δQ)·(1 + φ), φ = ${nf(r.phi, 1)}, ψ2 = ${nf(SOL.PSI_Q[1], 1)}`, [nf(r.fS.fin / 10), { v: nf(r.fC.fin / 10), alerta: r.fC.fin > r.lim }], 'cm'],
+      ['Limite final', `L/${e.limF} (sem contraflecha)`, [nf(r.lim / 10), nf(r.lim / 10)], 'Tab. 21'],
     ]});
   }
   if (r.tipo === 'aco') {
@@ -934,8 +993,8 @@ function memoria(r) {
   return out;
 }
 function hipoteses(r) {
-  const comum = ['Vento pela NBR 6123 com S1 = 1 (terreno plano) e classe A (edificação de até 20 m); coeficientes de pressão adotados editáveis; nas peças do telhado soma-se a pressão interna (Cpi +0,2 na sucção, −0,3 na pressão), que não atua nos ganchos', 'Combinações da NBR 8681: 1,4·G; 1,4·(G + Q); 1,4·G + 1,4·W; 1,0·G − 1,4·W (sucção)'];
-  if (r.tipo === 'madeira') return [...comum, 'Peça biapoiada; telha e sobrecarga distribuídas, placas e vento sobre elas como cargas concentradas nos ganchos, a cada distância entre trilhos, na posição mais desfavorável; sob as placas a telha fica protegida do vento externo', 'kmod1 = 0,60 para cargas permanentes e 0,90 para sobrecarga e vento (curta duração, a favor da segurança); kmod3 extinto na NBR 7190-1:2022', 'Flexão com fmd = fc0,d; em terças, flexão oblíqua com kM = 0,7; no caibro, a componente ao longo da queda é tratada como axial e desprezada', 'Fixação dos ganchos na peça verificada, nunca apenas nas ripas ou na telha'];
+  const comum = ['Vento pela NBR 6123 com S1 = 1 (terreno plano) e classe A (edificação de até 20 m); coeficientes de pressão adotados editáveis; nas peças do telhado soma-se a pressão interna (Cpi +0,2 na sucção, −0,3 na pressão), que não atua nos ganchos', r.tipo === 'madeira' ? 'Combinações da NBR 8681 com γg = 1,3 da NBR 7190-1:2022 (6.1): 1,3·G; 1,3·G + 1,4·Q; 1,3·G + 1,4·W; 1,0·G − 1,4·W (sucção)' : 'Combinações da NBR 8681: 1,4·G; 1,4·(G + Q); 1,4·G + 1,4·W; 1,0·G − 1,4·W (sucção)'];
+  if (r.tipo === 'madeira') return [...comum, 'Peça biapoiada; telha e sobrecarga distribuídas, placas e vento sobre elas como cargas concentradas nos ganchos, a cada distância entre trilhos, na posição mais desfavorável; sob as placas a telha fica protegida do vento externo', 'kmod1 pela ação variável principal (Tab. 4): 0,60 só permanentes, 0,90 com sobrecarga (curta duração), 1,10 com vento (instantânea); kmod2 pela classe de umidade (Tab. 5)', 'Flexão com fmd = ft0,d = fc0,d (6.2.2); em terças, flexão oblíqua com kM = 0,7; no caibro, a componente ao longo da queda é tratada como axial e desprezada', 'Estabilidade lateral (6.5.6): borda de cima travada pela cobertura; na sucção, borda de baixo comprimida com o travamento informado ou o vão inteiro', `Flechas (8.1 e 8.2): instantânea na combinação rara e final na quase permanente com fluência φ (Tab. 20), incluindo a deformação por cisalhamento; ψ1 = 0,4 e ψ2 = 0,3 para a sobrecarga, ψ1 = 0,3 e ψ2 = 0 para o vento (NBR 8681); sem contraflecha`, 'Dimensões mínimas (9.2.1): terça como peça principal, caibro como secundária', 'Fixação dos ganchos na peça verificada, nunca apenas nas ripas ou na telha'];
   if (r.tipo === 'aco') return [...comum, 'Terça biapoiada; placas e vento sobre elas como cargas concentradas nos ganchos; linhas de corrente reduzem o vão no eixo fraco e o comprimento destravado', 'Larguras efetivas da NBR 14762 com enrijecedores adequados; flambagem distorcional não verificada automaticamente (informe o MRd do catálogo quando o fabricante fornecer)', 'Na sucção, a mesa inferior comprimida é tratada sem travamento além das linhas de corrente (Cb = 1)'];
   return [...comum, 'Laje maciça apoiada nas quatro bordas, momentos pela teoria de placas (ν = 0,2); continuidade com lajes vizinhas desprezada, a favor da segurança', 'Carga do sistema distribuída sobre toda a laje, com o peso dividido pela projeção dos módulos', 'Armadura positiva informada igual nas duas direções; flecha não verificada', 'Lastro: equilíbrio com 0,9 para o peso e 1,4 para o vento; deslizamento não verificado'];
 }
