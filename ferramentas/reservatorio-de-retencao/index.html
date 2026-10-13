@@ -146,6 +146,7 @@ summary{font-weight:700;cursor:pointer}
 .cta-col p{margin:0}
 .cta-col .phone{font-family:var(--mono);font-size:15px;color:var(--muted);overflow-wrap:anywhere}
 .cta-col .btn{justify-self:start}
+.cta-col.central{grid-column:1/-1;border-top:3px solid var(--ink)}
 .cta-col.pro{border-top:3px solid var(--accent)}
 footer{padding-block:24px;font-size:13px;color:var(--muted)}
 
@@ -395,6 +396,12 @@ footer{padding-block:24px;font-size:13px;color:var(--muted)}
         <p>Plano Estudante a partir de R$ 9,90/mês.</p>
         <a class="btn ghost" href="/#planos">Conhecer o Foster Calc</a>
       </div>
+      <div class="cta-col central">
+        <div class="eyebrow">Precisa de quem execute?</div>
+        <h2>Receba contato de profissionais da sua região</h2>
+        <p>Publique seu pedido grátis na Foster Central e receba contato de profissionais da sua região pelo WhatsApp, para o projeto e a execução do reservatório. O volume calculado já vai junto no pedido.</p>
+        <a class="btn" id="btnCentral" href="https://fosterfcs.github.io/foster-central/" target="_blank" rel="noopener">Publicar pedido grátis na Foster Central</a>
+      </div>
     </div>
   </section>
 </main>
@@ -514,6 +521,12 @@ $("lead").addEventListener("submit", async e => {
 });
 
 calc();
+// pedido pré-preenchido na Foster Central com o resultado do cálculo
+document.getElementById("btnCentral").addEventListener("click", ev => {
+  const desc = last && last.V ? `Reservatório de retenção de águas pluviais de ${fmt(last.V, 2)} m³ para lote de ${fmt(last.lote)} m² (Lei das Piscininhas). Cálculo feito na calculadora de retenção do Foster Calc.` : 'Reservatório de retenção de águas pluviais (Lei das Piscininhas). Cálculo feito na calculadora de retenção do Foster Calc.';
+  const q = new URLSearchParams({cat: "hidraulica", servico: "Reservatório de Retenção", desc});
+  ev.currentTarget.href = "https://fosterfcs.github.io/foster-central/?" + q.toString();
+});
 </script>
 </body>
 </html>
