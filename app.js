@@ -314,11 +314,35 @@
   async function iniciar() {
     if (!sb) { desenharBarra(); return; }
     const { data } = await sb.auth.getSession(); sessao = data.session;
-    await carregarPerfil(); desenharBarra(); ouvintes.forEach(f => f());
+    await carregarPerfil(); desenharBarra(); ouvintes.forEach(f => f()); avisoPlano();
     sb.auth.onAuthStateChange(async (ev, s) => {
       if (ev === 'PASSWORD_RECOVERY') novaSenha();
-      sessao = s; await carregarPerfil(); desenharBarra(); ouvintes.forEach(f => f());
+      sessao = s; await carregarPerfil(); desenharBarra(); ouvintes.forEach(f => f()); avisoPlano();
     });
+  }
+
+  // ---------- aviso de plano ativado ou renovado (uma vez por mudança, neste aparelho) ----------
+  function avisoPlano() {
+    if (!sessao || (plano !== 'pro' && plano !== 'estudante')) return;
+    if (document.querySelector('.fc-dlg[open]')) return;
+    const chave = 'fc-plano-visto:' + sessao.user.id, atual = plano + '|' + (perfil?.plano_ate || '');
+    let anterior = null; try { anterior = localStorage.getItem(chave); } catch (e) {}
+    if (anterior === atual) return;
+    try { localStorage.setItem(chave, atual); } catch (e) {}
+    const renovado = !!anterior && anterior.split('|')[0] === plano;
+    const nome = plano === 'pro' ? 'Pro' : 'Estudante';
+    const ate = perfil?.plano_ate ? new Date(perfil.plano_ate).toLocaleDateString('pt-BR') : null;
+    const itens = plano === 'pro'
+      ? ['Memória de cálculo em PDF com seu cabeçalho, logo e carimbo para a ART', 'Desenhos em DXF', 'Laudo do telhado solar', 'Modo didático em vigas, lajes e pilares']
+      : ['Memória de cálculo em PDF e desenhos em DXF, com a marca de uso acadêmico', 'Modo didático: o "?" ao lado de cada item explica a fórmula e o item da norma'];
+    const semPerfil = plano === 'pro' && !perfil?.nome;
+    const d = dialogo(`<div class="fc-in"><h3>${renovado ? `Plano ${nome} renovado` : `Plano ${nome} ativo`}</h3>
+      <p>${renovado ? 'Recebemos sua renovação.' : 'Pagamento confirmado. Obrigado por assinar o Foster Calc!'}${ate ? ` Seu plano vale até <b style="color:var(--ink)">${esc(ate)}</b>.` : ''}</p>
+      ${renovado ? '' : `<ul style="margin:0;padding-left:18px;font-size:.88rem;color:var(--ink)">${itens.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`}
+      ${semPerfil ? '<p>Preencha seu perfil para o PDF sair com seu nome, CREA e logo.</p>' : ''}
+      <div class="fc-row">${semPerfil ? '<button class="fc-btn" type="button" data-perfil>Preencher meu perfil</button><button class="fc-btn ghost" type="button" data-fechar>Depois</button>' : '<button class="fc-btn" type="button" data-fechar>Começar</button>'}</div></div>`);
+    d.querySelector('[data-fechar]').onclick = () => d.close();
+    d.querySelector('[data-perfil]')?.addEventListener('click', () => { d.close(); setTimeout(telaPerfil, 80); });
   }
 
   function desenharBarra() {
