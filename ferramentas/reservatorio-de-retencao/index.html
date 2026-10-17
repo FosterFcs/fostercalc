@@ -416,6 +416,8 @@ footer{padding-block:24px;font-size:13px;color:var(--muted)}
 
 <div id="memorial"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/ferramentas/memorial-pdf.js"></script>
 <script>
 /* Contatos vão para a tabela public.leads_calc do projeto foster-calc no Supabase.
    Se o envio falhar, o PDF é gerado normalmente. */
@@ -518,9 +520,10 @@ $("lead").addEventListener("submit", async e => {
   if (!$("nome").value.trim() || $("zap").value.replace(/\D/g, "").length < 10){ msg.className = "msg err"; msg.textContent = "Preencha nome e WhatsApp com DDD."; return; }
   if (!$("ok").checked){ msg.className = "msg err"; msg.textContent = "Marque a autorização de contato para receber o memorial."; return; }
   calc(); memorial();
-  msg.textContent = "Gerando o PDF… na janela que abrir, escolha Salvar como PDF.";
+  msg.textContent = "Gerando o PDF…";
   try { await salvarLead(); } catch(err) { /* o PDF sai mesmo se o envio falhar */ }
-  window.print();
+  try { await FCMemorial.baixar($("memorial"), "memorial-reservatorio-retencao.pdf"); }
+  catch (err) { msg.textContent = "Na janela que abrir, escolha Salvar como PDF."; window.print(); }
   msg.textContent = "Pronto. Se precisar do projeto com ART, fale com a gente pelo WhatsApp abaixo.";
 });
 
