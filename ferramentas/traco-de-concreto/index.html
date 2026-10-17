@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Traço de Concreto: cimento, areia e brita por m³ | Foster Calc</title>
+<meta name="description" content="Calcule grátis quantos sacos de cimento, quanta areia, brita e água você precisa para o seu concreto. Traço por saco em latas de 18 litros, para laje, viga, calçada e contrapiso.">
+<link rel="canonical" href="https://fostercalc.com.br/ferramentas/traco-de-concreto/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Calculadora de Traço de Concreto">
+<meta property="og:description" content="Quantos sacos de cimento, quanta areia e brita para o seu concreto. Traço em latas por saco. Grátis, com memorial em PDF.">
+<meta property="og:url" content="https://fostercalc.com.br/ferramentas/traco-de-concreto/">
+<meta property="og:image" content="https://fostercalc.com.br/og/traco-de-concreto.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#c4161c">
+<link rel="icon" href="/icon-192.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "Calculadora de Traço de Concreto",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "pt-BR",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"},
+      "url": "https://fostercalc.com.br/ferramentas/traco-de-concreto/",
+      "provider": {"@type": "Organization", "name": "Foster Engenharia & Construção", "email": "comercial@fosterconstrucoes.com.br", "url": "https://fostercalc.com.br/"}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "Quantos sacos de cimento vão em 1 m³ de concreto?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Depende do traço. No traço 1:2:3 em volume, comum em pequenas obras, vão cerca de 7 sacos de 50 kg por metro cúbico. Em concreto magro para lastro, cerca de 3,5 sacos. Em concreto mais forte, 8 sacos ou mais."}},
+        {"@type": "Question", "name": "Qual o traço de concreto para laje?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Para estrutura em área urbana, a NBR 6118 pede concreto com no mínimo 25 MPa e fator água/cimento até 0,60. Na prática, um traço próximo de 1:1,5:2,5 em volume, com pouca água e boa cura. Para lajes e estruturas maiores, o concreto usinado com resistência garantida é o mais seguro."}},
+        {"@type": "Question", "name": "Quantas latas de areia e brita por saco de cimento?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Um saco de cimento de 50 kg ocupa cerca de 35 litros, quase duas latas de 18 litros. No traço 1:2:3, vão cerca de 4 latas de areia e 6 latas de brita por saco."}},
+        {"@type": "Question", "name": "Quanta água colocar no concreto?",
+         "acceptedAnswer": {"@type": "Answer", "text": "A água define a resistência: quanto mais água, mais fraco o concreto. Use o fator água/cimento do traço, por exemplo 0,55 litro de água por quilo de cimento, cerca de 27 litros por saco de 50 kg, e desconte a umidade da areia."}}
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* Layout: ferramenta no topo (formulário + resultado com o reservatório desenhado), texto de referência abaixo, CTA final */
+:root{
+  --bg:#f0f0ee; --surface:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-ink:#ffffff; --water:#2f8fa3; --water-soft:#dcecef; --warm:#c4161c;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px}
+header.top{padding-block:18px;border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.2px;text-decoration:none;color:var(--ink)}
+.brand span{color:var(--accent)}
+.toplink{font-size:14px;color:var(--muted);text-decoration:none}
+.toplink:hover{color:var(--accent)}
+
+.hero{padding-block:36px 8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:700;text-transform:none;font-size:clamp(30px,5.4vw,48px);line-height:1.08;margin:8px 0 10px;text-wrap:balance;max-width:20ch}
+.lead{color:var(--muted);max-width:62ch;margin:0}
+
+.tool{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;padding-block:24px 40px}
+@media (max-width:880px){.tool{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;min-width:0}
+.card h2{font-family:var(--display);font-size:20px;margin:0 0 14px}
+fieldset{border:0;padding:0;margin:0 0 18px;display:grid;gap:12px}
+legend{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.row{grid-template-columns:1fr}}
+label{display:grid;gap:4px;font-weight:700;font-size:15px}
+label small{font-weight:400;color:var(--muted);font-size:13px;line-height:1.4}
+input,select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.unit{position:relative}
+.unit input{padding-right:58px}
+.unit i{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--mono);font-size:13px;color:var(--muted);pointer-events:none}
+
+.result{display:grid;gap:16px;align-content:start}
+.big{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.tank{width:120px;max-width:100%}
+.vol{font-family:var(--display);font-weight:700;font-size:clamp(40px,7vw,58px);line-height:1;font-variant-numeric:tabular-nums}
+.vol small{font-size:.42em;color:var(--muted);font-weight:600}
+.vol-note{color:var(--muted);font-size:14px;margin-top:6px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{border-top:2px solid var(--line);padding-top:8px}
+.stat b{display:block;font-family:var(--mono);font-weight:500;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat.hl{border-color:var(--warm)}
+.calc-line{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+
+.capture{border-top:1px dashed var(--line);padding-top:16px;display:grid;gap:10px}
+.capture h3{font-family:var(--display);font-size:18px;margin:0}
+.capture p{margin:0;font-size:14px;color:var(--muted)}
+.btn{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:8px;padding:12px 16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.consent{display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:13px;color:var(--muted)}
+.consent input{width:auto;margin-top:3px}
+.msg{font-size:14px;min-height:1.2em}
+.msg.err{color:var(--warm)}
+
+article{background:var(--surface);border-top:1px solid var(--line);padding-block:44px}
+article .wrap{max-width:760px}
+article h2{font-family:var(--display);font-size:28px;line-height:1.2;margin:36px 0 10px;text-wrap:balance}
+article h2:first-child{margin-top:0}
+article h3{font-family:var(--display);font-size:20px;margin:24px 0 6px}
+article p,article li{max-width:66ch}
+.formula{font-family:var(--mono);font-size:15px;background:var(--water-soft);border-radius:8px;padding:14px 16px;overflow-x:auto}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.warn{border-left:3px solid var(--warm);padding:4px 0 4px 14px;margin:14px 0}
+details{border-bottom:1px solid var(--line);padding:12px 0}
+summary{font-weight:700;cursor:pointer}
+
+.cta{padding-block:40px;border-top:2px solid var(--ink)}
+.ctas{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.ctas{grid-template-columns:1fr}}
+.cta-col{display:grid;gap:10px;align-content:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;min-width:0}
+.cta-col h2{font-family:var(--display);font-size:clamp(24px,4vw,30px);margin:0;line-height:1.1;text-wrap:balance}
+.cta-col p{margin:0}
+.cta-col .phone{font-family:var(--mono);font-size:15px;color:var(--muted);overflow-wrap:anywhere}
+.cta-col .btn{justify-self:start}
+.cta-col.central{grid-column:1/-1;border-top:3px solid var(--ink)}
+.cta-col.pro{border-top:3px solid var(--accent)}
+footer{padding-block:24px;font-size:13px;color:var(--muted)}
+
+/* Memorial para impressão / PDF */
+#memorial{display:none}
+@media print{
+  body{background:#fff;color:#000;font-size:12pt}
+  body > *:not(#memorial){display:none !important}
+  #memorial{display:block;padding:0}
+  #memorial h1{font-size:20pt;max-width:none;margin:0 0 4pt}
+  #memorial table{font-size:11pt}
+  #memorial th,#memorial td{border-bottom:1px solid #999;color:#000}
+  @page{margin:18mm}
+}
+@media (prefers-reduced-motion:no-preference){.water-rect{transition:y .4s ease,height .4s ease}}
+
+/* Corte esquemático: fossa + sumidouro */
+.corte{width:100%;max-width:100%;height:auto;display:block}
+.dims{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.dims{grid-template-columns:1fr}}
+.dim{background:var(--bg);border-radius:8px;padding:10px 12px;min-width:0}
+.dim h4{margin:0 0 4px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.dim p{margin:0;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+.alerta{border-left:3px solid var(--accent);padding:6px 0 6px 12px;font-size:14px}
+</style>
+<style>
+.mix{display:flex;height:28px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.mix span{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:#fff;min-width:0;white-space:nowrap;overflow:hidden}
+.mix .c{background:#5c5f63}.mix .a{background:#c9a36a;color:#141414}.mix .b{background:#8a8d91}.mix .w{background:var(--water)}
+.porsaco{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:480px){.porsaco{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.porsaco div{background:var(--bg);border-radius:8px;padding:10px;text-align:center;min-width:0}
+.porsaco b{display:block;font-family:var(--display);font-size:30px;line-height:1}
+.porsaco span{font-size:12.5px;color:var(--muted)}
+.dimsin[hidden]{display:none}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">Foster <span>Calc</span></a>
+    <a class="toplink" href="/ferramentas/">Ferramentas gratuitas</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Calculadora grátis · consumo de materiais por m³</div>
+      <h1>Calculadora de traço de concreto</h1>
+      <p class="lead">Informe o volume ou as medidas da peça e o uso do concreto. Você recebe quantos sacos de cimento comprar, quanta areia, brita e água, e a receita por saco em latas de 18 litros para fazer na obra.</p>
+    </div>
+  </section>
+
+  <section class="wrap tool" aria-label="Calculadora">
+    <form class="card" id="calc" novalidate>
+      <h2>Seus dados</h2>
+
+      <fieldset>
+        <legend>Quanto concreto</legend>
+        <label for="modo">Como você quer informar
+          <select id="modo">
+            <option value="dim" selected>Pelas medidas da peça</option>
+            <option value="vol">Já sei o volume em m³</option>
+          </select>
+        </label>
+        <div class="row dimsin" id="boxDim">
+          <label for="comp">Comprimento<span class="unit"><input id="comp" type="number" inputmode="decimal" min="0" step="0.01" value="5"><i>m</i></span></label>
+          <label for="larg">Largura<span class="unit"><input id="larg" type="number" inputmode="decimal" min="0" step="0.01" value="4"><i>m</i></span></label>
+          <label for="esp">Espessura ou altura<span class="unit"><input id="esp" type="number" inputmode="decimal" min="0" step="0.5" value="10"><i>cm</i></span>
+            <small>Laje maciça: 8 a 12 cm. Calçada: 6 a 8 cm. Contrapiso: 3 a 5 cm.</small></label>
+          <label for="qtd">Quantidade de peças<span class="unit"><input id="qtd" type="number" inputmode="numeric" min="1" step="1" value="1"><i>un</i></span>
+            <small>Para várias sapatas ou vigas iguais.</small></label>
+        </div>
+        <label for="volIn" class="dimsin" id="boxVol" hidden>Volume de concreto<span class="unit"><input id="volIn" type="number" inputmode="decimal" min="0" step="0.01" value="2"><i>m³</i></span></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Uso do concreto</legend>
+        <label for="uso">Para que é o concreto
+          <select id="uso">
+            <option value="magro">Lastro e concreto magro (fundo de sapata, regularização)</option>
+            <option value="piso">Calçada, contrapiso, piso e muro de divisa</option>
+            <option value="geral" selected>Uso geral e peças pequenas (vergas, cintas, sapatas de muro)</option>
+            <option value="estrutural">Estrutural em área urbana (lajes, vigas e pilares)</option>
+            <option value="custom">Quero informar o traço</option>
+          </select>
+        </label>
+        <div class="row" id="boxTraco">
+          <label for="ta">Areia por 1 de cimento<span class="unit"><input id="ta" type="number" inputmode="decimal" min="0" step="0.1" value="2"><i>vol.</i></span></label>
+          <label for="tb">Brita por 1 de cimento<span class="unit"><input id="tb" type="number" inputmode="decimal" min="0" step="0.1" value="3"><i>vol.</i></span></label>
+          <label for="ac">Fator água/cimento<span class="unit"><input id="ac" type="number" inputmode="decimal" min="0.3" max="1" step="0.01" value="0.55"><i>L/kg</i></span>
+            <small>Litros de água por quilo de cimento. Menos água, mais resistência.</small></label>
+          <label for="perda">Perdas<span class="unit"><input id="perda" type="number" inputmode="decimal" min="0" max="30" step="1" value="10"><i>%</i></span>
+            <small>Sobra na betoneira, desnível do fundo e desperdício.</small></label>
+        </div>
+      </fieldset>
+    </form>
+
+    <div class="card result" aria-live="polite">
+      <h2>Resultado</h2>
+      <div>
+        <div class="vol" id="sacos">— <small>sacos de cimento</small></div>
+        <div class="vol-note" id="volNote">Cimento de 50 kg</div>
+      </div>
+      <div class="mix" id="mix" aria-hidden="true"></div>
+      <div class="stats">
+        <div class="stat hl"><b id="sVol">—</b><span>Volume de concreto (com perdas)</span></div>
+        <div class="stat"><b id="sCim">—</b><span>Cimento</span></div>
+        <div class="stat"><b id="sAreia">—</b><span>Areia média</span></div>
+        <div class="stat"><b id="sBrita">—</b><span>Brita 1</span></div>
+        <div class="stat"><b id="sAgua">—</b><span>Água</span></div>
+        <div class="stat"><b id="sKg">—</b><span>Cimento por m³</span></div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px">Receita por saco de cimento (latas de 18 L)</div>
+        <div class="porsaco">
+          <div><b>1</b><span>saco de cimento</span></div>
+          <div><b id="lA">—</b><span>latas de areia</span></div>
+          <div><b id="lB">—</b><span>latas de brita</span></div>
+          <div><b id="lW">—</b><span>litros de água</span></div>
+        </div>
+      </div>
+      <div class="alerta" id="alerta" hidden></div>
+      <div class="calc-line" id="calcLine">—</div>
+
+      <form class="capture" id="lead" novalidate>
+        <h3>Receba a lista de materiais em PDF</h3>
+        <p>Com o traço, as quantidades para comprar e a receita por saco, para levar ao depósito e à obra.</p>
+        <div class="row">
+          <label for="nome">Nome<input id="nome" autocomplete="name" required></label>
+          <label for="zap">WhatsApp<input id="zap" type="tel" inputmode="tel" autocomplete="tel" placeholder="(11) 90000-0000" required></label>
+        </div>
+        <div class="row">
+          <label for="email">E-mail<input id="email" type="email" autocomplete="email"></label>
+          <label for="perfil">Você é
+            <select id="perfil">
+              <option value="morador">Dono do imóvel</option>
+              <option value="profissional">Engenheiro, arquiteto ou técnico</option>
+              <option value="instalador">Pedreiro ou construtor</option>
+            </select>
+          </label>
+        </div>
+        <label class="consent" for="ok"><input id="ok" type="checkbox"> Aceito receber contato da Foster Engenharia sobre este cálculo. Meus dados não serão compartilhados.</label>
+        <button class="btn" type="submit">Gerar minha lista em PDF</button>
+        <div class="msg" id="msg" role="status"></div>
+      </form>
+    </div>
+  </section>
+
+  <article>
+    <div class="wrap">
+      <h2>Como a calculadora encontra a quantidade de cada material</h2>
+      <p>O traço diz a proporção entre cimento, areia e brita. Aqui ele é informado em volume, como se mede na obra com lata ou padiola: <b>1 : 2 : 3</b> quer dizer 1 parte de cimento, 2 de areia e 3 de brita. A calculadora transforma essas partes em massa, usando a massa de cada material solto, e aplica o método do volume absoluto: soma o espaço que cada grão e a água ocupam de fato dentro de 1 m³ de concreto.</p>
+      <div class="formula">C = 980 ÷ (1/3,10 + a/2,63 + p/2,70 + x)</div>
+      <ul>
+        <li><strong>C</strong> é o consumo de cimento, em kg por m³ de concreto. O 980 deixa 2% do volume para o ar preso no concreto.</li>
+        <li><strong>a</strong> e <strong>p</strong> são a areia e a brita em massa por kg de cimento, convertidas do traço em volume.</li>
+        <li><strong>x</strong> é o fator água/cimento, em litros por kg de cimento.</li>
+        <li>3,10, 2,63 e 2,70 são as massas específicas do cimento, da areia e da brita, em kg/dm³.</li>
+      </ul>
+      <h3>Massas usadas na conversão</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Material</th><th>Massa solta (kg/m³)</th><th>Massa específica (kg/dm³)</th></tr></thead>
+        <tbody>
+          <tr><td>Cimento Portland</td><td class="n">1.420</td><td class="n">3,10</td></tr>
+          <tr><td>Areia média seca</td><td class="n">1.500</td><td class="n">2,63</td></tr>
+          <tr><td>Brita 1</td><td class="n">1.400</td><td class="n">2,70</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2>Traços usados pela calculadora</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Uso</th><th>Traço em volume</th><th>Água/cimento</th></tr></thead>
+        <tbody>
+          <tr><td>Lastro e concreto magro</td><td class="n">1 : 4 : 8</td><td class="n">0,80</td></tr>
+          <tr><td>Calçada, contrapiso e piso</td><td class="n">1 : 3 : 4</td><td class="n">0,65</td></tr>
+          <tr><td>Uso geral e peças pequenas</td><td class="n">1 : 2 : 3</td><td class="n">0,55</td></tr>
+          <tr><td>Estrutural em área urbana</td><td class="n">1 : 1,5 : 2,5</td><td class="n">0,50</td></tr>
+        </tbody>
+      </table></div>
+      <p class="warn"><strong>Resistência não se garante só pelo traço.</strong> Ela depende da qualidade da areia e da brita, da água colocada de verdade, do adensamento e da cura. Para lajes, vigas e pilares, a NBR 6118 pede no mínimo concreto C25 com fator água/cimento até 0,60 em área urbana, e a NBR 12655 exige dosagem e controle. Nessas peças, o concreto usinado com resistência garantida é o caminho mais seguro.</p>
+
+      <h2>Dicas para o concreto feito na obra</h2>
+      <ul>
+        <li><strong>Areia úmida incha.</strong> Areia molhada ocupa até 30% mais volume que a seca. Se medir areia úmida na lata, coloque um pouco mais de areia e menos água.</li>
+        <li><strong>Água por último e aos poucos.</strong> Coloque na betoneira parte da água, a brita, o cimento, a areia e o resto da água. Pare quando o concreto ficar trabalhável.</li>
+        <li><strong>Use em até 2 horas</strong> depois de misturar e não acrescente água para "amolecer" concreto que já começou a pegar.</li>
+        <li><strong>Cure por 7 dias.</strong> Mantenha a superfície molhada ou coberta. Concreto que seca rápido perde resistência e trinca.</li>
+      </ul>
+
+      <h2>Perguntas frequentes</h2>
+      <details>
+        <summary>Quantos sacos de cimento vão em 1 m³ de concreto?</summary>
+        <p>No traço 1:2:3, cerca de 7 sacos de 50 kg. No concreto magro 1:4:8, cerca de 3,5 sacos. No traço estrutural 1:1,5:2,5, cerca de 8,5 sacos.</p>
+      </details>
+      <details>
+        <summary>Quantas latas de areia e brita por saco de cimento?</summary>
+        <p>O saco de 50 kg tem cerca de 35 litros, quase 2 latas de 18 litros. No traço 1:2:3 vão cerca de 4 latas de areia e 6 de brita por saco.</p>
+      </details>
+      <details>
+        <summary>Posso fazer laje com concreto de betoneira?</summary>
+        <p>Pode, desde que com traço dosado, pouca água, boa vibração e cura. Para lajes maiores, o usinado costuma sair mais barato quando se soma mão de obra e perdas, e vem com resistência garantida. Em qualquer caso, a laje precisa de projeto estrutural.</p>
+      </details>
+      <details>
+        <summary>Qual a diferença entre brita 0 e brita 1?</summary>
+        <p>A brita 0 (pedrisco) tem grãos de até 9,5 mm e serve para peças finas e enchimento de blocos. A brita 1 vai até 19 mm e é a mais usada em lajes, vigas, pilares e pisos.</p>
+      </details>
+
+      <p style="color:var(--muted);font-size:14px;margin-top:28px">Esta calculadora estima o consumo de materiais. Não substitui a dosagem experimental nem o projeto estrutural feito por profissional habilitado.</p>
+    </div>
+  </article>
+
+  <section class="cta" aria-label="Próximos passos">
+    <div class="wrap ctas">
+      <div class="cta-col">
+        <div class="eyebrow">Para quem vai construir</div>
+        <h2>Vai concretar laje, viga ou fundação?</h2>
+        <p>A Foster Engenharia faz o projeto estrutural com ART e acompanha a concretagem na sua obra.</p>
+        <p class="phone">(24) 99209-6103 · comercial@fosterconstrucoes.com.br</p>
+        <a class="btn" href="https://wa.me/5524992096103?text=Ol%C3%A1%2C%20usei%20a%20calculadora%20de%20tra%C3%A7o%20de%20concreto%20do%20Foster%20Calc%20e%20quero%20um%20or%C3%A7amento." target="_blank" rel="noopener">Pedir orçamento pelo WhatsApp</a>
+      </div>
+      <div class="cta-col pro">
+        <div class="eyebrow">Para engenheiros, arquitetos e estudantes</div>
+        <h2>Dimensione a estrutura no Foster Calc</h2>
+        <p>Vigas, lajes maciças e treliçadas, pilares, escadas, sapatas, blocos e muros de arrimo pela NBR 6118, com memória de cálculo e PDF com o seu carimbo.</p>
+        <p>Crie a conta e use o Pro por 7 dias grátis.</p>
+        <a class="btn ghost" href="/#planos">Conhecer o Foster Calc</a>
+      </div>
+      <div class="cta-col central">
+        <div class="eyebrow">Precisa de quem faça?</div>
+        <h2>Receba contato de profissionais da sua região</h2>
+        <p>Publique seu pedido grátis na Foster Central e receba contato de pedreiros e armadores da sua região pelo WhatsApp. O volume calculado já vai junto no pedido.</p>
+        <a class="btn" id="btnCentral" href="https://fosterfcs.github.io/foster-central/" target="_blank" rel="noopener">Publicar pedido grátis na Foster Central</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© Foster Engenharia & Construção · Estimativa de materiais, sem substituir dosagem nem projeto de profissional habilitado. · <a href="/termos.html" style="color:inherit">Termos de uso e privacidade</a> · <a href="/ferramentas/" style="color:inherit">Outras ferramentas</a></div>
+</footer>
+
+<div id="memorial"></div>
+
+<script>
+/* Contatos vão para a tabela public.leads_calc do projeto foster-calc no Supabase.
+   Se o envio falhar, o PDF é gerado normalmente. */
+const SUPABASE_URL = "https://fvsdlpnvqfvjdxmfgbjx.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_VT3XEbInyTr2Eu-AuLnrqw_BOrA2jYy";
+
+const $ = id => document.getElementById(id);
+const num = id => { const v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) && v > 0 ? v : 0; };
+const fmt = (v, d = 0) => v.toLocaleString("pt-BR", {minimumFractionDigits: d, maximumFractionDigits: d});
+
+// massas soltas (kg/m³) e específicas (kg/dm³)
+const GS = {c: 1420, a: 1500, b: 1400}, GE = {c: 3.10, a: 2.63, b: 2.70};
+const AR = 0.02, SACO = 50, LATA = 18;
+const PRESETS = {
+  magro:      {a: 4,   b: 8,   x: 0.80},
+  piso:       {a: 3,   b: 4,   x: 0.65},
+  geral:      {a: 2,   b: 3,   x: 0.55},
+  estrutural: {a: 1.5, b: 2.5, x: 0.50}
+};
+let last = null;
+
+function aplicarPreset(){
+  const p = PRESETS[$("uso").value];
+  const travar = !!p;
+  ["ta", "tb", "ac"].forEach(id => { $(id).readOnly = travar; });
+  if (p){ $("ta").value = p.a; $("tb").value = p.b; $("ac").value = p.x; }
+}
+
+function calc(){
+  const modo = $("modo").value;
+  $("boxDim").hidden = modo !== "dim"; $("boxVol").hidden = modo !== "vol";
+  const V0 = modo === "dim" ? num("comp") * num("larg") * num("esp") / 100 * Math.max(1, Math.round(num("qtd"))) : num("volIn");
+  const perda = Math.max(0, parseFloat(String($("perda").value).replace(",", ".")) || 0);
+  const V = V0 * (1 + perda / 100);
+  const av = num("ta"), bv = num("tb"), x = num("ac");
+  // traço em volume -> traço em massa (por kg de cimento)
+  const am = av * GS.a / GS.c, bm = bv * GS.b / GS.c;
+  const C = (1000 * (1 - AR)) / (1 / GE.c + am / GE.a + bm / GE.b + x); // kg/m³
+  const cim = C * V, sacos = Math.ceil(cim / SACO - 1e-9);
+  const areia = C * am * V / GS.a, brita = C * bm * V / GS.b, agua = C * x * V;
+  const volSaco = SACO / GS.c * 1000; // litros ocupados por um saco
+  const latA = av * volSaco / LATA, latB = bv * volSaco / LATA, aguaSaco = x * SACO;
+  last = {modo, V0, V, perda, av, bv, x, am, bm, C, cim, sacos, areia, brita, agua, latA, latB, aguaSaco, volSaco,
+    usoTxt: $("uso").selectedOptions[0].text, dims: [num("comp"), num("larg"), num("esp"), Math.max(1, Math.round(num("qtd")))]};
+
+  const ok = V > 0 && x > 0;
+  $("sacos").innerHTML = (ok ? fmt(sacos) : "—") + " <small>sacos de cimento</small>";
+  $("volNote").textContent = ok ? `Cimento de 50 kg · traço 1 : ${fmt(av, 1)} : ${fmt(bv, 1)} em volume` : "Informe o volume ou as medidas";
+  $("sVol").textContent = ok ? `${fmt(V, 2)} m³` : "—";
+  $("sCim").textContent = ok ? `${fmt(cim)} kg` : "—";
+  $("sAreia").textContent = ok ? `${fmt(areia, 2)} m³` : "—";
+  $("sBrita").textContent = ok ? `${fmt(brita, 2)} m³` : "—";
+  $("sAgua").textContent = ok ? `${fmt(agua)} L` : "—";
+  $("sKg").textContent = ok ? `${fmt(C)} kg/m³` : "—";
+  $("lA").textContent = ok ? fmt(latA, 1) : "—";
+  $("lB").textContent = ok ? fmt(latB, 1) : "—";
+  $("lW").textContent = ok ? fmt(aguaSaco, 0) : "—";
+  const tot = 1 + av + bv;
+  $("mix").innerHTML = ok ? `<span class="c" style="flex:${1 / tot}">cimento</span><span class="a" style="flex:${av / tot}">areia</span><span class="b" style="flex:${bv / tot}">brita</span>` : "";
+
+  const al = $("alerta"); al.hidden = true;
+  if (ok && $("uso").value === "estrutural"){ al.hidden = false; al.textContent = "Peças estruturais precisam de projeto. Para lajes e estruturas maiores, prefira concreto usinado com resistência garantida (C25 ou mais) e faça cura por 7 dias."; }
+  else if (ok && x > 0.65 && $("uso").value !== "magro"){ al.hidden = false; al.textContent = "Fator água/cimento alto: o concreto fica fraco e poroso. Para estruturas, a NBR 6118 limita a 0,60 em área urbana."; }
+
+  $("calcLine").textContent = ok ? `C = 980 ÷ (1/3,10 + ${fmt(am, 2)}/2,63 + ${fmt(bm, 2)}/2,70 + ${fmt(x, 2)}) = ${fmt(C)} kg/m³ × ${fmt(V, 2)} m³ = ${fmt(cim)} kg` : "—";
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function memorial(){
+  const d = last, hoje = new Date().toLocaleDateString("pt-BR");
+  const row = (a, b) => `<tr><td>${a}</td><td style="text-align:right">${b}</td></tr>`;
+  $("memorial").innerHTML = `
+    <h1>Lista de materiais para concreto</h1>
+    <p>Método do volume absoluto · ${hoje}<br>Solicitante: ${escapeHtml($("nome").value)}</p>
+    <h3>1. Volume</h3>
+    <table>${d.modo === "dim" ? row("Peça", `${fmt(d.dims[0], 2)} × ${fmt(d.dims[1], 2)} m × ${fmt(d.dims[2], 1)} cm × ${d.dims[3]} un`) : ""}
+    ${row("Volume calculado", fmt(d.V0, 3) + " m³")}${row("Perdas", fmt(d.perda) + "%")}${row("Volume para compra", "<b>" + fmt(d.V, 3) + " m³</b>")}</table>
+    <h3>2. Traço</h3>
+    <table>${row("Uso", escapeHtml(d.usoTxt))}${row("Traço em volume (cimento : areia : brita)", `1 : ${fmt(d.av, 2)} : ${fmt(d.bv, 2)}`)}
+    ${row("Traço em massa", `1 : ${fmt(d.am, 2)} : ${fmt(d.bm, 2)}`)}${row("Fator água/cimento", fmt(d.x, 2) + " L/kg")}</table>
+    <p>C = 980 ÷ (1/3,10 + ${fmt(d.am, 2)}/2,63 + ${fmt(d.bm, 2)}/2,70 + ${fmt(d.x, 2)}) = <b>${fmt(d.C)} kg de cimento por m³</b></p>
+    <h3>3. Materiais para comprar</h3>
+    <table>${row("Cimento Portland (sacos de 50 kg)", "<b>" + fmt(d.sacos) + " sacos</b> (" + fmt(d.cim) + " kg)")}
+    ${row("Areia média", fmt(d.areia, 2) + " m³")}${row("Brita 1", fmt(d.brita, 2) + " m³")}${row("Água", fmt(d.agua) + " L")}</table>
+    <h3>4. Receita por saco de cimento (latas de 18 L)</h3>
+    <table>${row("Cimento", "1 saco de 50 kg")}${row("Areia", fmt(d.latA, 1) + " latas")}${row("Brita", fmt(d.latB, 1) + " latas")}${row("Água (descontar a umidade da areia)", fmt(d.aguaSaco) + " litros")}</table>
+    <h3>5. Recomendações</h3>
+    <p>Medir os materiais sempre com a mesma lata. Areia úmida incha até 30%: aumente a areia e reduza a água. Usar o concreto em até 2 horas e fazer cura úmida por 7 dias. Peças estruturais exigem projeto estrutural; a NBR 6118 pede no mínimo C25 e fator água/cimento até 0,60 em área urbana.</p>
+    <p style="font-size:10pt">Estimativa de consumo. Não substitui dosagem experimental nem projeto de profissional habilitado.<br>
+    Foster Engenharia & Construção · (24) 99209-6103 · comercial@fosterconstrucoes.com.br · fostercalc.com.br</p>`;
+}
+
+async function salvarLead(){
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  const d = last;
+  await fetch(`${SUPABASE_URL}/rest/v1/leads_calc`, {
+    method: "POST",
+    headers: {"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json", "Prefer": "return=minimal"},
+    body: JSON.stringify({calculadora: "traco-concreto", nome: $("nome").value.trim(), whatsapp: $("zap").value.trim(),
+      email: $("email").value.trim() || null, perfil: $("perfil").value,
+      dados: {uso: $("uso").value, volume_m3: Math.round(d.V * 100) / 100, traco: `1:${d.av}:${d.bv}`, ac: d.x, sacos: d.sacos}})
+  });
+}
+
+$("uso").addEventListener("change", () => { aplicarPreset(); calc(); });
+$("calc").addEventListener("input", calc);
+$("calc").addEventListener("change", calc);
+$("calc").addEventListener("submit", e => e.preventDefault());
+
+$("lead").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = $("msg"); msg.className = "msg";
+  if (!$("nome").value.trim() || $("zap").value.replace(/\D/g, "").length < 10){ msg.className = "msg err"; msg.textContent = "Preencha nome e WhatsApp com DDD."; return; }
+  if (!$("ok").checked){ msg.className = "msg err"; msg.textContent = "Marque a autorização de contato para receber a lista."; return; }
+  calc(); memorial();
+  msg.textContent = "Gerando o PDF… na janela que abrir, escolha Salvar como PDF.";
+  try { await salvarLead(); } catch(err) { /* o PDF sai mesmo se o envio falhar */ }
+  window.print();
+  msg.textContent = "Pronto. Se precisar do projeto estrutural com ART, fale com a gente pelo WhatsApp abaixo.";
+});
+
+aplicarPreset(); calc();
+document.getElementById("btnCentral").addEventListener("click", ev => {
+  const desc = last && last.V ? `Concretagem de ${fmt(last.V, 2)} m³ (${last.usoTxt.toLowerCase()}), cerca de ${fmt(last.sacos)} sacos de cimento. Cálculo feito na calculadora de traço do Foster Calc.` : 'Concretagem. Cálculo feito na calculadora de traço do Foster Calc.';
+  const q = new URLSearchParams({cat: "civil", servico: "Estrutura de Concreto", desc});
+  ev.currentTarget.href = "https://fosterfcs.github.io/foster-central/?" + q.toString();
+});
+</script>
+</body>
+</html>

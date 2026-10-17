@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Tijolos e Blocos por m² de parede | Foster Calc</title>
+<meta name="description" content="Calcule grátis quantos tijolos ou blocos comprar para a sua parede, descontando portas e janelas, e quanta argamassa de assentamento vai usar. Bloco cerâmico, de concreto e tijolo maciço.">
+<link rel="canonical" href="https://fostercalc.com.br/ferramentas/quantidade-de-tijolos-e-blocos/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Calculadora de Tijolos e Blocos">
+<meta property="og:description" content="Quantos tijolos ou blocos comprar para a sua parede, já descontando portas e janelas. Grátis, com lista em PDF.">
+<meta property="og:url" content="https://fostercalc.com.br/ferramentas/quantidade-de-tijolos-e-blocos/">
+<meta property="og:image" content="https://fostercalc.com.br/og/quantidade-de-tijolos-e-blocos.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#c4161c">
+<link rel="icon" href="/icon-192.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "Calculadora de Tijolos e Blocos",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "pt-BR",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "BRL"},
+      "url": "https://fostercalc.com.br/ferramentas/quantidade-de-tijolos-e-blocos/",
+      "provider": {"@type": "Organization", "name": "Foster Engenharia & Construção", "email": "comercial@fosterconstrucoes.com.br", "url": "https://fostercalc.com.br/"}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "Quantos blocos de 14x19x29 vão em 1 m²?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Com junta de 1 cm, cerca de 16,7 blocos por metro quadrado, sem contar perdas. Com 5% de perda, compre 17 a 18 por m²."}},
+        {"@type": "Question", "name": "Quantos tijolos baianos vão em 1 m² de parede?",
+         "acceptedAnswer": {"@type": "Answer", "text": "O bloco cerâmico de 9x19x19, assentado em pé, dá 25 peças por m² com junta de 1 cm. O de 9x14x19 dá cerca de 33 peças por m²."}},
+        {"@type": "Question", "name": "Quantos blocos de concreto vão em 1 m²?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Os blocos de 39 cm de comprimento por 19 cm de altura (14x19x39 ou 19x19x39) dão 12,5 peças por metro quadrado com junta de 1 cm."}},
+        {"@type": "Question", "name": "Devo descontar portas e janelas?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Sim. Desconte a área dos vãos, mas lembre que as vergas e contravergas sobre e sob as aberturas também ocupam espaço. A calculadora desconta os vãos e acrescenta a perda informada."}}
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* Layout: ferramenta no topo (formulário + resultado com o reservatório desenhado), texto de referência abaixo, CTA final */
+:root{
+  --bg:#f0f0ee; --surface:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-ink:#ffffff; --water:#2f8fa3; --water-soft:#dcecef; --warm:#c4161c;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121314; --surface:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-ink:#121314; --water:#3fa6b9; --water-soft:#17292d; --warm:#ef5b5f; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}
+a{color:var(--accent)}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px}
+header.top{padding-block:18px;border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.2px;text-decoration:none;color:var(--ink)}
+.brand span{color:var(--accent)}
+.toplink{font-size:14px;color:var(--muted);text-decoration:none}
+.toplink:hover{color:var(--accent)}
+
+.hero{padding-block:36px 8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:700;text-transform:none;font-size:clamp(30px,5.4vw,48px);line-height:1.08;margin:8px 0 10px;text-wrap:balance;max-width:20ch}
+.lead{color:var(--muted);max-width:62ch;margin:0}
+
+.tool{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;padding-block:24px 40px}
+@media (max-width:880px){.tool{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;min-width:0}
+.card h2{font-family:var(--display);font-size:20px;margin:0 0 14px}
+fieldset{border:0;padding:0;margin:0 0 18px;display:grid;gap:12px}
+legend{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.row{grid-template-columns:1fr}}
+label{display:grid;gap:4px;font-weight:700;font-size:15px}
+label small{font-weight:400;color:var(--muted);font-size:13px;line-height:1.4}
+input,select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.unit{position:relative}
+.unit input{padding-right:58px}
+.unit i{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--mono);font-size:13px;color:var(--muted);pointer-events:none}
+
+.result{display:grid;gap:16px;align-content:start}
+.big{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.tank{width:120px;max-width:100%}
+.vol{font-family:var(--display);font-weight:700;font-size:clamp(40px,7vw,58px);line-height:1;font-variant-numeric:tabular-nums}
+.vol small{font-size:.42em;color:var(--muted);font-weight:600}
+.vol-note{color:var(--muted);font-size:14px;margin-top:6px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{border-top:2px solid var(--line);padding-top:8px}
+.stat b{display:block;font-family:var(--mono);font-weight:500;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat.hl{border-color:var(--warm)}
+.calc-line{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+
+.capture{border-top:1px dashed var(--line);padding-top:16px;display:grid;gap:10px}
+.capture h3{font-family:var(--display);font-size:18px;margin:0}
+.capture p{margin:0;font-size:14px;color:var(--muted)}
+.btn{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:8px;padding:12px 16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center;text-decoration:none;display:inline-block}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.consent{display:flex;gap:8px;align-items:flex-start;font-weight:400;font-size:13px;color:var(--muted)}
+.consent input{width:auto;margin-top:3px}
+.msg{font-size:14px;min-height:1.2em}
+.msg.err{color:var(--warm)}
+
+article{background:var(--surface);border-top:1px solid var(--line);padding-block:44px}
+article .wrap{max-width:760px}
+article h2{font-family:var(--display);font-size:28px;line-height:1.2;margin:36px 0 10px;text-wrap:balance}
+article h2:first-child{margin-top:0}
+article h3{font-family:var(--display);font-size:20px;margin:24px 0 6px}
+article p,article li{max-width:66ch}
+.formula{font-family:var(--mono);font-size:15px;background:var(--water-soft);border-radius:8px;padding:14px 16px;overflow-x:auto}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.warn{border-left:3px solid var(--warm);padding:4px 0 4px 14px;margin:14px 0}
+details{border-bottom:1px solid var(--line);padding:12px 0}
+summary{font-weight:700;cursor:pointer}
+
+.cta{padding-block:40px;border-top:2px solid var(--ink)}
+.ctas{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.ctas{grid-template-columns:1fr}}
+.cta-col{display:grid;gap:10px;align-content:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;min-width:0}
+.cta-col h2{font-family:var(--display);font-size:clamp(24px,4vw,30px);margin:0;line-height:1.1;text-wrap:balance}
+.cta-col p{margin:0}
+.cta-col .phone{font-family:var(--mono);font-size:15px;color:var(--muted);overflow-wrap:anywhere}
+.cta-col .btn{justify-self:start}
+.cta-col.central{grid-column:1/-1;border-top:3px solid var(--ink)}
+.cta-col.pro{border-top:3px solid var(--accent)}
+footer{padding-block:24px;font-size:13px;color:var(--muted)}
+
+/* Memorial para impressão / PDF */
+#memorial{display:none}
+@media print{
+  body{background:#fff;color:#000;font-size:12pt}
+  body > *:not(#memorial){display:none !important}
+  #memorial{display:block;padding:0}
+  #memorial h1{font-size:20pt;max-width:none;margin:0 0 4pt}
+  #memorial table{font-size:11pt}
+  #memorial th,#memorial td{border-bottom:1px solid #999;color:#000}
+  @page{margin:18mm}
+}
+@media (prefers-reduced-motion:no-preference){.water-rect{transition:y .4s ease,height .4s ease}}
+
+/* Corte esquemático: fossa + sumidouro */
+.corte{width:100%;max-width:100%;height:auto;display:block}
+.dims{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.dims{grid-template-columns:1fr}}
+.dim{background:var(--bg);border-radius:8px;padding:10px 12px;min-width:0}
+.dim h4{margin:0 0 4px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.dim p{margin:0;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+.alerta{border-left:3px solid var(--accent);padding:6px 0 6px 12px;font-size:14px}
+</style>
+<style>
+.parede{width:100%;height:auto;display:block}
+#boxCustom[hidden]{display:none}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">Foster <span>Calc</span></a>
+    <a class="toplink" href="/ferramentas/">Ferramentas gratuitas</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Calculadora grátis · alvenaria de vedação</div>
+      <h1>Calculadora de tijolos e blocos</h1>
+      <p class="lead">Informe o tamanho das paredes, as portas e janelas e o tipo de bloco. Você recebe quantas peças comprar, quantas vão por metro quadrado e o volume de argamassa de assentamento.</p>
+    </div>
+  </section>
+
+  <section class="wrap tool" aria-label="Calculadora">
+    <form class="card" id="calc" novalidate>
+      <h2>Seus dados</h2>
+
+      <fieldset>
+        <legend>Paredes</legend>
+        <div class="row">
+          <label for="comp">Comprimento total das paredes<span class="unit"><input id="comp" type="number" inputmode="decimal" min="0" step="0.1" value="40"><i>m</i></span>
+            <small>Some o comprimento de todas as paredes do mesmo bloco.</small></label>
+          <label for="alt">Altura<span class="unit"><input id="alt" type="number" inputmode="decimal" min="0" step="0.05" value="2.8"><i>m</i></span>
+            <small>Do piso até a laje ou viga.</small></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Portas e janelas (descontar)</legend>
+        <div class="row">
+          <label for="nPorta">Portas<span class="unit"><input id="nPorta" type="number" inputmode="numeric" min="0" step="1" value="4"><i>un</i></span>
+            <small>Medida padrão 0,80 × 2,10 m.</small></label>
+          <label for="nJanela">Janelas<span class="unit"><input id="nJanela" type="number" inputmode="numeric" min="0" step="1" value="4"><i>un</i></span>
+            <small>Medida padrão 1,20 × 1,00 m.</small></label>
+        </div>
+        <label for="outros">Outros vãos<span class="unit"><input id="outros" type="number" inputmode="decimal" min="0" step="0.1" value="0"><i>m²</i></span>
+          <small>Portões, vitrôs grandes, portas de correr. Some a área.</small></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Bloco</legend>
+        <label for="tipo">Tipo de bloco ou tijolo
+          <select id="tipo">
+            <option value="9,19,19">Bloco cerâmico 9 × 19 × 19 cm (baiano de 8 furos)</option>
+            <option value="9,14,19">Bloco cerâmico 9 × 14 × 19 cm (6 furos)</option>
+            <option value="14,19,29" selected>Bloco cerâmico 14 × 19 × 29 cm</option>
+            <option value="14,19,39">Bloco de concreto 14 × 19 × 39 cm</option>
+            <option value="19,19,39">Bloco de concreto 19 × 19 × 39 cm</option>
+            <option value="10,5,20">Tijolo maciço 5 × 10 × 20 cm · parede de meia vez</option>
+            <option value="20,5,20,2">Tijolo maciço 5 × 10 × 20 cm · parede de uma vez</option>
+            <option value="custom">Outro tamanho</option>
+          </select>
+          <small>Medidas: espessura × altura × comprimento.</small>
+        </label>
+        <div class="row" id="boxCustom" hidden>
+          <label for="cE">Espessura<span class="unit"><input id="cE" type="number" inputmode="decimal" min="1" step="0.5" value="11.5"><i>cm</i></span></label>
+          <label for="cH">Altura<span class="unit"><input id="cH" type="number" inputmode="decimal" min="1" step="0.5" value="14"><i>cm</i></span></label>
+          <label for="cL">Comprimento<span class="unit"><input id="cL" type="number" inputmode="decimal" min="1" step="0.5" value="24"><i>cm</i></span></label>
+        </div>
+        <div class="row">
+          <label for="junta">Espessura da junta<span class="unit"><input id="junta" type="number" inputmode="decimal" min="0.5" max="3" step="0.1" value="1"><i>cm</i></span>
+            <small>O usual é 1 cm.</small></label>
+          <label for="perda">Perdas<span class="unit"><input id="perda" type="number" inputmode="decimal" min="0" max="30" step="1" value="5"><i>%</i></span>
+            <small>Quebras e cortes. Use 10% em obras com muitos recortes.</small></label>
+        </div>
+      </fieldset>
+    </form>
+
+    <div class="card result" aria-live="polite">
+      <h2>Resultado</h2>
+      <div>
+        <div class="vol" id="pecas">— <small>peças</small></div>
+        <div class="vol-note" id="volNote">Quantidade para comprar, com perdas</div>
+      </div>
+
+      <svg class="parede" viewBox="0 0 360 150" role="img" aria-labelledby="pTitle">
+        <title id="pTitle">Desenho de uma parede com as fiadas de blocos</title>
+        <g id="fiadas"></g>
+        <rect x="40" y="40" width="44" height="95" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+        <text x="62" y="92" text-anchor="middle" font-size="10" fill="var(--muted)">porta</text>
+        <rect x="220" y="45" width="70" height="45" fill="var(--water-soft)" stroke="var(--ink)" stroke-width="1.5"/>
+        <text x="255" y="72" text-anchor="middle" font-size="10" fill="var(--muted)">janela</text>
+        <rect x="10" y="10" width="340" height="125" fill="none" stroke="var(--ink)" stroke-width="2"/>
+      </svg>
+
+      <div class="stats">
+        <div class="stat hl"><b id="sArea">—</b><span>Área de parede sem os vãos</span></div>
+        <div class="stat"><b id="sPorM2">—</b><span>Peças por m²</span></div>
+        <div class="stat"><b id="sSem">—</b><span>Peças sem perdas</span></div>
+        <div class="stat"><b id="sArg">—</b><span>Argamassa de assentamento</span></div>
+      </div>
+      <div class="alerta" id="alerta" hidden></div>
+      <div class="calc-line" id="calcLine">—</div>
+
+      <form class="capture" id="lead" novalidate>
+        <h3>Receba a lista de materiais em PDF</h3>
+        <p>Com a área, a quantidade de blocos e a argamassa, para pedir orçamento no depósito.</p>
+        <div class="row">
+          <label for="nome">Nome<input id="nome" autocomplete="name" required></label>
+          <label for="zap">WhatsApp<input id="zap" type="tel" inputmode="tel" autocomplete="tel" placeholder="(11) 90000-0000" required></label>
+        </div>
+        <div class="row">
+          <label for="email">E-mail<input id="email" type="email" autocomplete="email"></label>
+          <label for="perfil">Você é
+            <select id="perfil">
+              <option value="morador">Dono do imóvel</option>
+              <option value="profissional">Engenheiro, arquiteto ou técnico</option>
+              <option value="instalador">Pedreiro ou construtor</option>
+            </select>
+          </label>
+        </div>
+        <label class="consent" for="ok"><input id="ok" type="checkbox"> Aceito receber contato da Foster Engenharia sobre este cálculo. Meus dados não serão compartilhados.</label>
+        <button class="btn" type="submit">Gerar minha lista em PDF</button>
+        <div class="msg" id="msg" role="status"></div>
+      </form>
+    </div>
+  </section>
+
+  <article>
+    <div class="wrap">
+      <h2>Como a calculadora conta os blocos</h2>
+      <p>Cada bloco cobre um retângulo da parede igual ao seu comprimento mais uma junta, vezes a sua altura mais uma junta. Dividindo 1 m² por essa área, sai o número de peças por metro quadrado.</p>
+      <div class="formula">Peças por m² = 1 ÷ [(comprimento + junta) × (altura + junta)]</div>
+      <p>Depois a calculadora multiplica pela área de parede já sem as portas e janelas e soma a perda. A argamassa de assentamento é o volume das juntas: a espessura da parede vezes a área que os blocos não cobrem, com 20% a mais para o material que entra nos furos e cai no assentamento.</p>
+      <div class="formula">Argamassa (m³) = espessura × (1 − peças por m² × área da face do bloco) × área × 1,20</div>
+
+      <h2>Peças por m² dos blocos mais usados (junta de 1 cm)</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Bloco</th><th>Peças por m²</th><th>Espessura da parede</th></tr></thead>
+        <tbody>
+          <tr><td>Cerâmico 9 × 19 × 19</td><td class="n">25,0</td><td class="n">9 cm</td></tr>
+          <tr><td>Cerâmico 9 × 14 × 19</td><td class="n">33,3</td><td class="n">9 cm</td></tr>
+          <tr><td>Cerâmico 14 × 19 × 29</td><td class="n">16,7</td><td class="n">14 cm</td></tr>
+          <tr><td>Concreto 14 × 19 × 39</td><td class="n">12,5</td><td class="n">14 cm</td></tr>
+          <tr><td>Concreto 19 × 19 × 39</td><td class="n">12,5</td><td class="n">19 cm</td></tr>
+          <tr><td>Tijolo maciço · meia vez</td><td class="n">79,4</td><td class="n">10 cm</td></tr>
+          <tr><td>Tijolo maciço · uma vez</td><td class="n">158,7</td><td class="n">20 cm</td></tr>
+        </tbody>
+      </table></div>
+      <p>A espessura final da parede ainda recebe o revestimento: cerca de 2 a 2,5 cm de cada lado com chapisco, emboço e reboco.</p>
+
+      <h2>Cuidados na alvenaria</h2>
+      <ul>
+        <li><strong>Vergas e contravergas.</strong> Toda porta e janela precisa de verga em cima e contraverga embaixo, passando pelo menos 30 cm para cada lado, para evitar trincas nos cantos.</li>
+        <li><strong>Encunhamento.</strong> A última fiada junto à laje ou viga só deve ser fechada depois que a estrutura acima estiver carregada, com argamassa fraca ou espuma, para não trincar.</li>
+        <li><strong>Amarração.</strong> Desencontre as juntas verticais entre as fiadas e amarre as paredes que se cruzam.</li>
+        <li><strong>Bloco de vedação não é estrutural.</strong> Blocos cerâmicos de vedação não devem receber laje sem estrutura de concreto. Alvenaria estrutural usa blocos próprios e projeto específico.</li>
+      </ul>
+
+      <h2>Perguntas frequentes</h2>
+      <details>
+        <summary>Quantos blocos de 14 × 19 × 29 vão em 1 m²?</summary>
+        <p>Cerca de 16,7 com junta de 1 cm. Com 5% de perda, conte 17,5 por m².</p>
+      </details>
+      <details>
+        <summary>Quantos tijolos baianos por m²?</summary>
+        <p>O 9 × 19 × 19 dá 25 peças por m². O 9 × 14 × 19 dá cerca de 33 peças por m².</p>
+      </details>
+      <details>
+        <summary>Qual bloco é mais barato por metro quadrado?</summary>
+        <p>Compare o preço do milheiro dividido pelas peças por m². Blocos maiores costumam sair mais em conta por m² e gastam menos argamassa e mão de obra.</p>
+      </details>
+      <details>
+        <summary>Qual argamassa usar para assentar?</summary>
+        <p>Para vedação, um traço comum é 1 : 2 : 8 (cimento, cal e areia) em volume, ou argamassa industrializada própria para assentamento.</p>
+      </details>
+
+      <p style="color:var(--muted);font-size:14px;margin-top:28px">Esta calculadora estima quantidades para alvenaria de vedação. Medidas reais dos blocos variam por fabricante; confira na nota do depósito.</p>
+    </div>
+  </article>
+
+  <section class="cta" aria-label="Próximos passos">
+    <div class="wrap ctas">
+      <div class="cta-col">
+        <div class="eyebrow">Para quem vai construir</div>
+        <h2>Vai construir ou ampliar?</h2>
+        <p>A Foster Engenharia faz o projeto, o orçamento completo da obra com ART e acompanha a execução.</p>
+        <p class="phone">(24) 99209-6103 · comercial@fosterconstrucoes.com.br</p>
+        <a class="btn" href="https://wa.me/5524992096103?text=Ol%C3%A1%2C%20usei%20a%20calculadora%20de%20tijolos%20e%20blocos%20do%20Foster%20Calc%20e%20quero%20um%20or%C3%A7amento." target="_blank" rel="noopener">Pedir orçamento pelo WhatsApp</a>
+      </div>
+      <div class="cta-col pro">
+        <div class="eyebrow">Para engenheiros, arquitetos e estudantes</div>
+        <h2>Dimensione a estrutura no Foster Calc</h2>
+        <p>Vigas, lajes maciças e treliçadas, pilares, escadas, sapatas, blocos e muros de arrimo pela NBR 6118, com memória de cálculo e PDF com o seu carimbo.</p>
+        <p>Crie a conta e use o Pro por 7 dias grátis.</p>
+        <a class="btn ghost" href="/#planos">Conhecer o Foster Calc</a>
+      </div>
+      <div class="cta-col central">
+        <div class="eyebrow">Precisa de quem faça?</div>
+        <h2>Receba contato de pedreiros da sua região</h2>
+        <p>Publique seu pedido grátis na Foster Central e receba contato de profissionais pelo WhatsApp. A área e a quantidade de blocos já vão junto no pedido.</p>
+        <a class="btn" id="btnCentral" href="https://fosterfcs.github.io/foster-central/" target="_blank" rel="noopener">Publicar pedido grátis na Foster Central</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© Foster Engenharia & Construção · Estimativa de materiais, sem substituir projeto de profissional habilitado. · <a href="/termos.html" style="color:inherit">Termos de uso e privacidade</a> · <a href="/ferramentas/" style="color:inherit">Outras ferramentas</a></div>
+</footer>
+
+<div id="memorial"></div>
+
+<script>
+/* Contatos vão para a tabela public.leads_calc do projeto foster-calc no Supabase.
+   Se o envio falhar, o PDF é gerado normalmente. */
+const SUPABASE_URL = "https://fvsdlpnvqfvjdxmfgbjx.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_VT3XEbInyTr2Eu-AuLnrqw_BOrA2jYy";
+
+const $ = id => document.getElementById(id);
+const num = id => { const v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) && v > 0 ? v : 0; };
+const fmt = (v, d = 0) => v.toLocaleString("pt-BR", {minimumFractionDigits: d, maximumFractionDigits: d});
+const PORTA = 0.80 * 2.10, JANELA = 1.20 * 1.00;
+let last = null;
+
+function bloco(){
+  const v = $("tipo").value;
+  $("boxCustom").hidden = v !== "custom";
+  if (v === "custom") return {e: num("cE"), h: num("cH"), l: num("cL"), camadas: 1};
+  const [e, h, l, camadas] = v.split(",").map(Number);
+  return {e, h, l, camadas: camadas || 1};
+}
+
+function desenhar(b){
+  // fiadas proporcionais ao bloco escolhido, só para ilustrar
+  const g = $("fiadas"); const W = 340, H = 125, x0 = 10, y0 = 10;
+  const ph = Math.max(6, Math.min(16, b.h * 0.6)), pl = Math.max(10, Math.min(40, b.l * 0.75));
+  let html = "";
+  for (let y = 0, i = 0; y < H; y += ph, i++){
+    const off = i % 2 ? pl / 2 : 0;
+    for (let x = -off; x < W; x += pl){
+      const xa = Math.max(0, x), xb = Math.min(W, x + pl - 1.5);
+      if (xb > xa) html += `<rect x="${x0 + xa}" y="${y0 + y}" width="${xb - xa}" height="${Math.min(ph - 1.5, H - y)}" fill="#c87a4f" opacity=".55"/>`;
+    }
+  }
+  g.innerHTML = html;
+}
+
+function calc(){
+  const b = bloco();
+  const j = num("junta") / 100, perda = Math.max(0, parseFloat(String($("perda").value).replace(",", ".")) || 0);
+  const comp = num("comp"), alt = num("alt");
+  const nP = Math.max(0, Math.round(parseFloat($("nPorta").value) || 0)), nJ = Math.max(0, Math.round(parseFloat($("nJanela").value) || 0));
+  const outros = Math.max(0, parseFloat(String($("outros").value).replace(",", ".")) || 0);
+  const bruta = comp * alt, vaos = nP * PORTA + nJ * JANELA + outros;
+  const area = Math.max(0, bruta - vaos);
+  const l = b.l / 100, h = b.h / 100, e = b.e / 100;
+  const porM2 = l > 0 && h > 0 ? b.camadas / ((l + j) * (h + j)) : 0;
+  const sem = porM2 * area;
+  const pecas = Math.ceil(sem * (1 + perda / 100) - 1e-9);
+  const argM2 = Math.max(0, e * (1 - porM2 / b.camadas * l * h)) * 1.20; // por camada de tijolos
+  const arg = argM2 * area;
+  last = {b, j, perda, comp, alt, nP, nJ, outros, bruta, vaos, area, porM2, sem, pecas, argM2, arg, tipoTxt: $("tipo").selectedOptions[0].text};
+  desenhar(b);
+
+  const ok = area > 0 && porM2 > 0;
+  $("pecas").innerHTML = (ok ? fmt(pecas) : "—") + " <small>peças</small>";
+  $("volNote").textContent = ok ? `Quantidade para comprar, com ${fmt(perda)}% de perdas` : (bruta > 0 && vaos >= bruta ? "Os vãos são maiores que a parede" : "Informe as medidas da parede");
+  $("sArea").textContent = ok ? `${fmt(area, 2)} m²` : "—";
+  $("sPorM2").textContent = ok ? fmt(porM2, 1) : "—";
+  $("sSem").textContent = ok ? fmt(Math.ceil(sem)) : "—";
+  $("sArg").textContent = ok ? `${fmt(arg, 2)} m³` : "—";
+  const al = $("alerta"); al.hidden = true;
+  if (ok && vaos > bruta * 0.4){ al.hidden = false; al.textContent = "Os vãos passam de 40% da parede. Confira as medidas e lembre das vergas e contravergas em cada abertura."; }
+  $("calcLine").textContent = ok ? `1 ÷ [(${fmt(l + j, 2)}) × (${fmt(h + j, 2)})]${b.camadas > 1 ? " × 2" : ""} = ${fmt(porM2, 2)} pç/m² × ${fmt(area, 2)} m² × ${fmt(1 + perda / 100, 2)} = ${fmt(pecas)} peças` : "—";
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function memorial(){
+  const d = last, hoje = new Date().toLocaleDateString("pt-BR");
+  const row = (a, b) => `<tr><td>${a}</td><td style="text-align:right">${b}</td></tr>`;
+  $("memorial").innerHTML = `
+    <h1>Lista de materiais para alvenaria</h1>
+    <p>${hoje}<br>Solicitante: ${escapeHtml($("nome").value)}</p>
+    <h3>1. Área de parede</h3>
+    <table>${row("Comprimento total × altura", `${fmt(d.comp, 2)} × ${fmt(d.alt, 2)} m = ${fmt(d.bruta, 2)} m²`)}
+    ${row("Portas (0,80 × 2,10 m)", d.nP + " un")}${row("Janelas (1,20 × 1,00 m)", d.nJ + " un")}${row("Outros vãos", fmt(d.outros, 2) + " m²")}
+    ${row("Vãos descontados", fmt(d.vaos, 2) + " m²")}${row("Área líquida", "<b>" + fmt(d.area, 2) + " m²</b>")}</table>
+    <h3>2. Bloco</h3>
+    <table>${row("Tipo", escapeHtml(d.tipoTxt))}${row("Junta", fmt(d.j * 100, 1) + " cm")}
+    ${row("Peças por m²", `1 ÷ [(${fmt(d.b.l / 100 + d.j, 2)}) × (${fmt(d.b.h / 100 + d.j, 2)})]${d.b.camadas > 1 ? " × 2" : ""} = ${fmt(d.porM2, 2)}`)}</table>
+    <h3>3. Materiais para comprar</h3>
+    <table>${row("Blocos sem perdas", fmt(Math.ceil(d.sem)) + " peças")}${row("Perdas", fmt(d.perda) + "%")}
+    ${row("Blocos para comprar", "<b>" + fmt(d.pecas) + " peças</b>")}${row("Argamassa de assentamento (estimada)", fmt(d.arg, 2) + " m³ (" + fmt(d.argM2 * 1000, 1) + " L/m²)")}</table>
+    <h3>4. Recomendações</h3>
+    <p>Prever vergas e contravergas em todas as aberturas, passando 30 cm para cada lado. Desencontrar as juntas verticais e amarrar as paredes que se cruzam. Encunhar a última fiada só depois do carregamento da estrutura. Blocos de vedação não recebem carga de laje sem estrutura de concreto.</p>
+    <p style="font-size:10pt">Estimativa de quantidades. Medidas dos blocos variam por fabricante.<br>
+    Foster Engenharia & Construção · (24) 99209-6103 · comercial@fosterconstrucoes.com.br · fostercalc.com.br</p>`;
+}
+
+async function salvarLead(){
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  const d = last;
+  await fetch(`${SUPABASE_URL}/rest/v1/leads_calc`, {
+    method: "POST",
+    headers: {"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json", "Prefer": "return=minimal"},
+    body: JSON.stringify({calculadora: "tijolos-blocos", nome: $("nome").value.trim(), whatsapp: $("zap").value.trim(),
+      email: $("email").value.trim() || null, perfil: $("perfil").value,
+      dados: {bloco: $("tipo").value, area_m2: Math.round(d.area * 100) / 100, pecas: d.pecas}})
+  });
+}
+
+$("calc").addEventListener("input", calc);
+$("calc").addEventListener("change", calc);
+$("calc").addEventListener("submit", e => e.preventDefault());
+
+$("lead").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = $("msg"); msg.className = "msg";
+  if (!$("nome").value.trim() || $("zap").value.replace(/\D/g, "").length < 10){ msg.className = "msg err"; msg.textContent = "Preencha nome e WhatsApp com DDD."; return; }
+  if (!$("ok").checked){ msg.className = "msg err"; msg.textContent = "Marque a autorização de contato para receber a lista."; return; }
+  calc(); memorial();
+  msg.textContent = "Gerando o PDF… na janela que abrir, escolha Salvar como PDF.";
+  try { await salvarLead(); } catch(err) { /* o PDF sai mesmo se o envio falhar */ }
+  window.print();
+  msg.textContent = "Pronto. Se precisar de projeto ou orçamento da obra, fale com a gente pelo WhatsApp abaixo.";
+});
+
+calc();
+document.getElementById("btnCentral").addEventListener("click", ev => {
+  const desc = last && last.area ? `Levantar ${fmt(last.area, 1)} m² de parede (${last.tipoTxt}), cerca de ${fmt(last.pecas)} blocos. Cálculo feito na calculadora de tijolos e blocos do Foster Calc.` : 'Levantar paredes de alvenaria. Cálculo feito na calculadora de tijolos e blocos do Foster Calc.';
+  const q = new URLSearchParams({cat: "civil", servico: "Alvenaria", desc});
+  ev.currentTarget.href = "https://fosterfcs.github.io/foster-central/?" + q.toString();
+});
+</script>
+</body>
+</html>

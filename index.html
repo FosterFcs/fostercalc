@@ -7,6 +7,16 @@
 <meta name="theme-color" content="#141414">
 <title>Foster Calc · Cálculo estrutural NBR 6118</title>
 <meta name="description" content="Dimensionamento de lajes maciças e treliçadas, vigas, pilares, escadas, sapatas, blocos sobre estacas e muros de arrimo de concreto armado pela NBR 6118, com memória de cálculo em PDF e detalhamento em DXF.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Foster Calc">
+<meta property="og:title" content="Foster Calc · Cálculo estrutural NBR 6118">
+<meta property="og:description" content="Dimensionamento de lajes maciças e treliçadas, vigas, pilares, escadas, sapatas, blocos sobre estacas e muros de arrimo de concreto armado pela NBR 6118, com memória de cálculo em PDF e detalhamento em DXF.">
+<meta property="og:url" content="https://fostercalc.com.br/">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:image" content="https://fostercalc.com.br/og/fostercalc.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -44,6 +54,9 @@ body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--f-body)}
 .hero h1 em{font-style:normal;color:var(--accent)}
 .hero p{font-size:1.05rem;color:var(--muted);max-width:52ch;margin:0 0 22px}
 .ctas{display:flex;flex-wrap:wrap;gap:10px}
+.teste-gratis{margin:14px 0 0;font-size:.95rem;color:var(--muted)}
+.teste-gratis a,.link-teste{color:var(--ink);font:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.link-teste b{color:var(--accent)}
 .bt{display:inline-block;font:600 .95rem var(--f-body);border-radius:4px;padding:11px 18px;text-decoration:none;border:1px solid var(--accent);background:var(--accent);color:var(--sheet);cursor:pointer}
 .bt.ghost{background:transparent;color:var(--accent)}
 .bt:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -107,6 +120,7 @@ footer p{margin:0;max-width:70ch}
     <h1>Você projeta. <em>O Foster Calc calcula e mostra cada passo.</em></h1>
     <p>Você define vãos, cargas, seções e materiais. O sistema dimensiona pela NBR 6118 e entrega a memória de cálculo com cada fórmula e item da norma, para você conferir, ajustar e assinar com segurança.</p>
     <div class="ctas"><a class="bt" href="viga.html">Começar pela viga</a><a class="bt ghost" href="laje.html">Começar pela laje</a></div>
+    <p class="teste-gratis"><button type="button" class="link-teste" data-criar-conta>Crie sua conta e ganhe <b>7 dias de Pro grátis</b></button> · sem cartão · <a href="exemplo/memoria-viga-exemplo.pdf" target="_blank" rel="noopener">ver um exemplo da memória em PDF</a></p>
   </div>
   <figure class="prancha" style="margin:0" aria-label="Exemplo de diagrama de momentos e detalhamento de viga contínua">
     <svg viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg">
@@ -195,6 +209,16 @@ footer p{margin:0;max-width:70ch}
   <p>Ferramentas rápidas para casas e pequenas obras, sem login, com memorial em PDF.</p>
   <div class="mods">
     <article class="mod">
+      <span class="tag">Grátis · novo</span><h3>Traço de concreto</h3>
+      <ul><li>Sacos de cimento, areia, brita e água</li><li>Receita por saco em latas</li><li>Laje, piso, calçada e lastro</li></ul>
+      <a class="bt" href="ferramentas/traco-de-concreto/">Abrir calculadora</a>
+    </article>
+    <article class="mod">
+      <span class="tag">Grátis · novo</span><h3>Tijolos e blocos</h3>
+      <ul><li>Peças por m² e total a comprar</li><li>Desconto de portas e janelas</li><li>Argamassa de assentamento</li></ul>
+      <a class="bt" href="ferramentas/quantidade-de-tijolos-e-blocos/">Abrir calculadora</a>
+    </article>
+    <article class="mod">
       <span class="tag">Grátis · NBR 15527</span><h3>Cisterna de água de chuva</h3>
       <ul><li>Volume do reservatório</li><li>Parte da demanda atendida</li><li>Economia e retorno por ano</li></ul>
       <a class="bt" href="ferramentas/cisterna-agua-de-chuva/">Abrir calculadora</a>
@@ -224,8 +248,8 @@ footer p{margin:0;max-width:70ch}
   <p>Sem fidelidade. Quem assinar agora mantém o preço de lançamento enquanto a assinatura estiver ativa.</p>
   <div class="planos">
     <div class="plano"><h3>Grátis</h3><div class="preco">R$ 0</div>
-      <ul><li>Todos os módulos de cálculo</li><li>Resultados e verificações na tela</li><li>Projetos salvos na conta</li></ul>
-      <a class="bt ghost" href="viga.html">Começar</a></div>
+      <ul><li>Todos os módulos de cálculo</li><li>Resultados e verificações na tela</li><li>Projetos salvos na conta</li><li><b>Ao criar a conta: 7 dias de Pro grátis</b></li></ul>
+      <button class="bt ghost" type="button" data-criar-conta>Criar conta grátis</button></div>
     <div class="plano"><span class="etiqueta sobria">Para estudantes</span><h3>Estudante</h3><div class="preco">R$ 9,90/mês</div>
       <p class="sub">ou R$ 79/ano</p>
       <ul><li>Tudo do Grátis</li><li>PDF e DXF com marca “uso acadêmico”</li><li>Modo didático: explicação de cada fórmula</li><li>50% de desconto no 1º ano do Pro ao se formar</li></ul>
@@ -261,6 +285,10 @@ document.querySelectorAll('[data-assinar]').forEach(b => b.addEventListener('cli
   if (FC.pro) FC.toast('Sua conta já é Pro.'); else FC.telaPlanos('Escolha o plano e fale com a gente para ativar.', b.dataset.assinar);
 }));
 $('projEntrar').addEventListener('click', () => FC.entrar());
+document.querySelectorAll('[data-criar-conta]').forEach(b => b.addEventListener('click', async () => {
+  if (FC.sessao) { location.href = 'viga.html'; return; }
+  if (await FC.entrar('Crie sua conta e use o Pro por 7 dias, sem cartão. Depois, continue no Grátis ou assine.', 'criar')) location.href = 'viga.html';
+}));
 async function listar() {
   const logado = !!FC.sessao;
   $('projEntrar').hidden = logado;

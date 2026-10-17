@@ -21,7 +21,9 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | `bloco.html` | Módulo de blocos sobre 1 a 4 estacas (bielas e tirantes) |
 | `validacao.html` | Comparação com exemplos resolvidos publicados (gerada por script a partir dos dados de validação) |
 | `explica.js` | Textos do modo didático (botão “?” na memória de viga, laje e pilar; planos Estudante e Pro) |
-| `ferramentas/` | Calculadoras gratuitas e públicas (sem login), feitas para atrair visitas pelo Google. Hoje: `cisterna-agua-de-chuva/`, `fossa-septica/` e `reservatorio-de-retencao/`. Contatos vão para a tabela `leads_calc` |
+| `ferramentas/` | Calculadoras gratuitas e públicas (sem login), feitas para atrair visitas pelo Google. Hoje: `traco-de-concreto/`, `quantidade-de-tijolos-e-blocos/`, `cisterna-agua-de-chuva/`, `fossa-septica/` e `reservatorio-de-retencao/`. Contatos vão para a tabela `leads_calc` |
+| `og/` | Imagens 1200×630 de prévia de link (WhatsApp, Instagram, LinkedIn), uma por página |
+| `exemplo/memoria-viga-exemplo.pdf` | Memória de viga real, marcada EXEMPLO, aberta sem login a partir da página inicial |
 | `robots.txt`, `sitemap.xml` | Orientam o Google; incluir cada nova calculadora no `sitemap.xml` |
 | `termos.html` | Termos de uso e política de privacidade (LGPD) |
 | `LICENSE` | Licença proprietária: © Foster Engenharia & Construção, todos os direitos reservados |
@@ -48,6 +50,12 @@ Sem isso, os links de confirmação de e-mail e de recuperação de senha voltam
 
 O envio de e-mails do Supabase gratuito tem limite baixo por hora. Para produção, configure um SMTP próprio
 em **Authentication → Emails → SMTP Settings** (ex.: Resend, Brevo ou o e-mail da Foster).
+
+## Teste grátis de 7 dias
+
+Todo novo cadastro recebe o plano Pro por 7 dias (`perfis.plano = 'pro'`, `plano_ate = now() + 7 dias`, `em_teste = true`), feito pela função `criar_perfil`.
+A barra superior mostra "Pro grátis · N dias" e o botão Assinar. Ao vencer, a conta volta sozinha ao Grátis.
+Quem paga durante o teste: o Pro soma os dias pagos aos dias de teste que faltam; o Estudante começa na hora (`ativar_plano` zera `em_teste`).
 
 ## Ativar o plano Pro de um cliente
 

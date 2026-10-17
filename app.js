@@ -102,7 +102,7 @@
   async function carregarPerfil() {
     perfil = null; pro = false; plano = 'gratis';
     if (!sb || !sessao) return;
-    const { data } = await sb.from('perfis').select('nome, registro_profissional, empresa, telefone, email_contato, cidade, logo_path, plano, plano_ate').eq('id', sessao.user.id).maybeSingle();
+    const { data } = await sb.from('perfis').select('nome, registro_profissional, empresa, telefone, email_contato, cidade, logo_path, plano, plano_ate, em_teste').eq('id', sessao.user.id).maybeSingle();
     perfil = data;
     const r = await sb.rpc('plano_atual');
     if (!r.error && typeof r.data === 'string') plano = r.data;
@@ -322,10 +322,29 @@
     });
   }
 
+  // ---------- teste grátis de 7 dias do Pro ----------
+  function emTeste() { return !!(perfil && perfil.em_teste && plano === 'pro'); }
+  function diasTeste() { return perfil?.plano_ate ? Math.max(0, Math.ceil((new Date(perfil.plano_ate) - Date.now()) / 86400000)) : 0; }
+  function avisoTeste() {
+    const chave = 'fc-teste-visto:' + sessao.user.id;
+    let visto = null; try { visto = localStorage.getItem(chave); } catch (e) {}
+    if (visto) return;
+    try { localStorage.setItem(chave, '1'); } catch (e) {}
+    const ate = perfil?.plano_ate ? new Date(perfil.plano_ate).toLocaleDateString('pt-BR') : '';
+    const d = dialogo(`<div class="fc-in"><h3>Você ganhou 7 dias de Pro grátis</h3>
+      <p>Até <b style="color:var(--ink)">${esc(ate)}</b> você usa tudo do Pro, sem cartão e sem compromisso:</p>
+      <ul style="margin:0;padding-left:18px;font-size:.88rem;color:var(--ink)"><li>Memória de cálculo em PDF com seu cabeçalho, logo e carimbo</li><li>Desenhos em DXF</li><li>Laudo do telhado solar</li><li>Modo didático em vigas, lajes e pilares</li></ul>
+      <p>Depois do teste a conta volta para o plano Grátis, com todos os cálculos na tela. Seus projetos continuam salvos.</p>
+      <div class="fc-row">${!perfil?.nome ? '<button class="fc-btn" type="button" data-perfil>Colocar meu nome e logo no PDF</button><button class="fc-btn ghost" type="button" data-fechar>Começar a calcular</button>' : '<button class="fc-btn" type="button" data-fechar>Começar a calcular</button>'}</div></div>`);
+    d.querySelector('[data-fechar]').onclick = () => d.close();
+    d.querySelector('[data-perfil]')?.addEventListener('click', () => { d.close(); setTimeout(telaPerfil, 80); });
+  }
+
   // ---------- aviso de plano ativado ou renovado (uma vez por mudança, neste aparelho) ----------
   function avisoPlano() {
     if (!sessao || (plano !== 'pro' && plano !== 'estudante')) return;
     if (document.querySelector('.fc-dlg[open]')) return;
+    if (emTeste()) { avisoTeste(); return; }
     const chave = 'fc-plano-visto:' + sessao.user.id, atual = plano + '|' + (perfil?.plano_ate || '');
     let anterior = null; try { anterior = localStorage.getItem(chave); } catch (e) {}
     if (anterior === atual) return;
@@ -355,16 +374,17 @@
     alvo.innerHTML = `<a class="fc-logo" href="./"><b>FC</b>Foster Calc</a>
       <nav class="fc-nav" aria-label="Módulos">${link('./', 'Início', 'inicio')}${link('laje.html', 'Lajes', 'lajes')}${link('viga.html', 'Vigas', 'vigas')}${link('pilar.html', 'Pilares', 'pilares')}${link('sapata.html', 'Fundações', 'fundacoes')}${link('escada.html', 'Escadas', 'escadas')}${link('muro.html', 'Muros', 'muros')}${link('solar.html', 'Telhado solar', 'solar')}${link('ferramentas/', 'Calculadoras grátis', 'ferramentas')}${link('./#projetos', 'Meus projetos', '-')}</nav>
       <div class="fc-user">${sessao
-        ? `<span class="fc-plano ${pro ? 'pro' : plano === 'estudante' ? 'est' : ''}">${pro ? 'Pro' : plano === 'estudante' ? 'Estudante' : 'Grátis'}</span><button class="fc-nome" type="button" data-fc="perfil" title="Meu perfil · ${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</button><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
+        ? `<span class="fc-plano ${pro ? 'pro' : plano === 'estudante' ? 'est' : ''}" ${emTeste() ? 'title="Teste grátis do Pro"' : ''}>${emTeste() ? `Pro grátis · ${diasTeste()} ${diasTeste() === 1 ? 'dia' : 'dias'}` : pro ? 'Pro' : plano === 'estudante' ? 'Estudante' : 'Grátis'}</span>${emTeste() ? '<button class="fc-btn" type="button" data-fc="assinar">Assinar</button>' : ''}<button class="fc-nome" type="button" data-fc="perfil" title="Meu perfil · ${esc(sessao.user.email)}">${esc(perfil?.nome || sessao.user.email)}</button><button class="fc-btn ghost" type="button" data-fc="sair">Sair</button>`
         : `<button class="fc-btn" type="button" data-fc="entrar">Entrar</button>`}</div>`;
     alvo.querySelector('[data-fc="entrar"]')?.addEventListener('click', () => entrar());
     alvo.querySelector('[data-fc="perfil"]')?.addEventListener('click', () => telaPerfil());
+    alvo.querySelector('[data-fc="assinar"]')?.addEventListener('click', () => telaPlanos('Gostou do Pro? Assine para continuar depois do teste. Quem assina durante o teste não perde os dias que faltam.'));
     alvo.querySelector('[data-fc="sair"]')?.addEventListener('click', async () => { await sb.auth.signOut(); toast('Você saiu da conta.'); });
   }
 
-  function entrar(motivo) {
+  function entrar(motivo, modoInicial) {
     return new Promise(resolve => {
-      let modo = 'entrar';
+      let modo = modoInicial === 'criar' ? 'criar' : 'entrar';
       const d = dialogo(`<form method="dialog" novalidate>
         <h3 data-t>Entrar</h3>
         <p>${esc(motivo || 'Entre para salvar projetos e acessar seus cálculos de qualquer aparelho.')}</p>
@@ -374,22 +394,23 @@
         <small data-aceite hidden style="display:block;font-size:.78rem;color:var(--muted,#666);margin:-2px 0 4px">Ao criar a conta, você concorda com os <a href="termos.html" target="_blank" rel="noopener" style="color:inherit">Termos de uso e a Política de privacidade</a>.</small>
         <span class="fc-erro" data-erro role="alert"></span>
         <div class="fc-row"><button class="fc-btn" data-ok>Entrar</button><button class="fc-btn ghost" type="button" data-fechar>Cancelar</button></div>
-        <div class="fc-row"><button type="button" class="fc-link" data-alt>Criar conta grátis</button><button type="button" class="fc-link" data-esq>Esqueci a senha</button></div>
+        <div class="fc-row"><button type="button" class="fc-link" data-alt>Criar conta grátis (7 dias de Pro)</button><button type="button" class="fc-link" data-esq>Esqueci a senha</button></div>
       </form>`);
       const f = d.querySelector('form'), erro = d.querySelector('[data-erro]');
       const aplicar = () => {
-        d.querySelector('[data-t]').textContent = { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Recuperar senha' }[modo];
+        d.querySelector('[data-t]').textContent = { entrar: 'Entrar', criar: 'Criar conta · 7 dias de Pro grátis', esqueci: 'Recuperar senha' }[modo];
         d.querySelector('[data-ok]').textContent = { entrar: 'Entrar', criar: 'Criar conta', esqueci: 'Enviar link' }[modo];
         d.querySelector('[data-nome]').hidden = modo !== 'criar';
         d.querySelector('[data-aceite]').hidden = modo !== 'criar';
         d.querySelector('[data-senha]').hidden = modo === 'esqueci';
-        d.querySelector('[data-alt]').textContent = modo === 'entrar' ? 'Criar conta grátis' : 'Já tenho conta';
+        d.querySelector('[data-alt]').textContent = modo === 'entrar' ? 'Criar conta grátis (7 dias de Pro)' : 'Já tenho conta';
         f.senha.autocomplete = modo === 'criar' ? 'new-password' : 'current-password'; erro.textContent = '';
       };
       d.querySelector('[data-alt]').onclick = () => { modo = modo === 'entrar' ? 'criar' : 'entrar'; aplicar(); };
       d.querySelector('[data-esq]').onclick = () => { modo = 'esqueci'; aplicar(); };
       d.querySelector('[data-fechar]').onclick = () => d.close();
       d.addEventListener('close', () => resolve(!!sessao));
+      if (modo !== 'entrar') aplicar();
       f.addEventListener('submit', async ev => {
         ev.preventDefault(); erro.textContent = '';
         const email = f.email.value.trim(), senha = f.senha.value;
