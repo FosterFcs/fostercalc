@@ -2,10 +2,12 @@
 // Autenticação: cabeçalho 'asaas-access-token' igual ao segredo ASAAS_WEBHOOK_TOKEN (sem JWT).
 // Segredos: ASAAS_WEBHOOK_TOKEN, ASAAS_API_KEY (para ler o e-mail do cliente no Asaas).
 //
+// Produtos atendidos: Foster Calc (tabela perfis) e VistorIA (tabela vist_contas).
 // Como o produto é identificado, nesta ordem:
 //   1) externalReference no formato "produto:plano" (ex.: "fostercalc:pro-anual"), quando a cobrança for criada pela API;
 //   2) id do link de pagamento (LINKS abaixo = final do endereço asaas.com/c/<id>);
-//   3) valor cobrado (PLANOS abaixo), só quando a cobrança não veio de um link.
+//   3) link ainda não cadastrado aqui: só vale o valor de um plano do VistorIA (valores exclusivos dele);
+//   4) valor cobrado (PLANOS abaixo), só quando a cobrança não veio de um link.
 // Links de outros produtos (OUTROS_LINKS) nunca ativam plano aqui: ficam registrados como "outro_produto".
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -16,6 +18,10 @@ const PLANOS: Plano[] = [
   { produto: "fostercalc", chave: "est-anual", plano: "estudante", dias: 366, valor: 79 },
   { produto: "fostercalc", chave: "pro-mensal", plano: "pro", dias: 31, valor: 29.9 },
   { produto: "fostercalc", chave: "pro-anual", plano: "pro", dias: 366, valor: 299 },
+  { produto: "vistoria", chave: "essencial-mensal", plano: "essencial", dias: 31, valor: 49 },
+  { produto: "vistoria", chave: "essencial-anual", plano: "essencial", dias: 366, valor: 490 },
+  { produto: "vistoria", chave: "profissional-mensal", plano: "profissional", dias: 31, valor: 89 },
+  { produto: "vistoria", chave: "profissional-anual", plano: "profissional", dias: 366, valor: 890 },
 ];
 // id do link de pagamento do Asaas -> "produto:chave"
 const LINKS: Record<string, string> = {
@@ -42,11 +48,16 @@ function iguais(a: string, b: string) {
 }
 // tira espaços, quebras de linha e aspas que costumam vir ao copiar e colar
 const limpar = (s: string) => s.trim().replace(/^["']+|["']+$/g, "").trim();
+const porValor = (valor: number, produto?: string) =>
+  PLANOS.find((x) => (!produto || x.produto === produto) && Math.abs(x.valor - valor) < 0.01) || null;
 function identificar(p: any, valor: number): Plano | null {
   const porChave = (ref: string) => { const [prod, chave] = ref.split(":"); return PLANOS.find((x) => x.produto === prod && x.chave === chave) || null; };
   if (typeof p.externalReference === "string" && p.externalReference.includes(":")) { const x = porChave(p.externalReference); if (x) return x; }
-  if (p.paymentLink) return LINKS[p.paymentLink] ? porChave(LINKS[p.paymentLink]) : null;   // link desconhecido: não adivinha pelo valor
-  return PLANOS.find((x) => Math.abs(x.valor - valor) < 0.01) || null;
+  if (p.paymentLink) {
+    if (LINKS[p.paymentLink]) return porChave(LINKS[p.paymentLink]);
+    return porValor(valor, "vistoria");   // link novo: só aceita se o valor for de um plano do VistorIA
+  }
+  return porValor(valor);
 }
 async function emailDoCliente(cliente: string): Promise<string | null> {
   const chave = limpar(Deno.env.get("ASAAS_API_KEY") || "");
@@ -58,6 +69,12 @@ async function emailDoCliente(cliente: string): Promise<string | null> {
   const c = await r.json();
   return (c?.email || "").trim() || null;
 }
+
+// funções do banco de cada produto
+const FUNCOES: Record<string, { ativar: string; cancelar: string; nome: string }> = {
+  fostercalc: { ativar: "ativar_plano", cancelar: "cancelar_plano_se", nome: "Foster Calc" },
+  vistoria: { ativar: "vist_ativar_plano", cancelar: "vist_cancelar_se", nome: "VistorIA" },
+};
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return ok();
@@ -99,11 +116,12 @@ Deno.serve(async (req) => {
     if (!email) { await marcar({ produto, status: "sem_email", detalhe: "não foi possível ler o e-mail do cliente no Asaas (confira ASAAS_API_KEY)" }); return ok(); }
 
     if (!pl) { await marcar({ email, status: "valor_desconhecido", detalhe: `valor ${valor} ou link ${p.paymentLink ?? "-"} não corresponde a nenhum plano` }); return ok(); }
-    if (pl.produto !== "fostercalc") { await marcar({ email, produto, plano: pl.plano, dias: pl.dias, status: "outro_produto" }); return ok(); }
+    const fn = FUNCOES[pl.produto];
+    if (!fn) { await marcar({ email, produto, plano: pl.plano, dias: pl.dias, status: "outro_produto" }); return ok(); }
 
     if (CANCELAR.has(ev.event)) {
       // só cancela se o plano ativo for o mesmo do pagamento estornado
-      const r = await sb.rpc("cancelar_plano_se", { p_email: email, p_plano: pl.plano });
+      const r = await sb.rpc(fn.cancelar, { p_email: email, p_plano: pl.plano });
       const st = r.data ?? "erro";
       await marcar({ email, produto, plano: pl.plano, status: st,
         detalhe: r.error?.message ?? (st === "mantido" ? "estorno de um plano diferente do ativo: conta mantida" : null) });
@@ -116,10 +134,10 @@ Deno.serve(async (req) => {
       if (ja.data && ja.data.length) { await marcar({ email, produto, status: "ja_processado" }); return ok(); }
     }
 
-    const r = await sb.rpc("ativar_plano", { p_email: email, p_plano: pl.plano, p_dias: pl.dias });
+    const r = await sb.rpc(fn.ativar, { p_email: email, p_plano: pl.plano, p_dias: pl.dias });
     if (r.error) { await marcar({ email, produto, plano: pl.plano, dias: pl.dias, status: "erro", detalhe: r.error.message }); return ok(); }
     await marcar({ email, produto, plano: pl.plano, dias: pl.dias, status: r.data ? "ativado" : "sem_conta",
-      detalhe: r.data ? `válido até ${r.data}` : "e-mail ainda sem cadastro no Foster Calc: ativa sozinho quando a conta for criada com esse e-mail" });
+      detalhe: r.data ? `válido até ${r.data}` : `e-mail ainda sem cadastro no ${fn.nome}: ativa sozinho quando a conta for criada com esse e-mail` });
     return ok();
   } catch (e) {
     await marcar({ status: "erro", detalhe: String(e).slice(0, 300) });
