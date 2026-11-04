@@ -123,7 +123,6 @@ ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
 @media (max-width:800px){.reac4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* ---- Pórtico 2D ---- */
-.grid{grid-template-columns:minmax(0,330px) minmax(0,1fr)}
 .tool{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
 .seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;max-width:100%;overflow-x:auto}
 .seg button{font:500 .82rem var(--f-body);background:var(--sheet);color:var(--muted);border:0;border-right:1px solid var(--line);padding:6px 10px;cursor:pointer;white-space:nowrap}
@@ -138,6 +137,7 @@ ul.todo{margin:6px 0 0;padding-left:18px;font-size:.86rem}
 @media (max-width:900px){.cv{height:60vh;min-height:360px}}
 #cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;user-select:none;cursor:crosshair}
 #cv.sel{cursor:default}
+@media (max-width:600px){#hint{font-size:.68rem}#hint:not(.err){opacity:.85}}
 #hint{position:absolute;left:8px;top:8px;font-size:.76rem;color:var(--muted);background:color-mix(in srgb,var(--sheet) 90%,transparent);border:1px solid var(--line);border-radius:4px;padding:4px 8px;max-width:75%}
 #hint.err{color:var(--bad);border-color:var(--bad);font-weight:600}
 #legend{position:absolute;left:8px;bottom:8px;font-size:.76rem;color:var(--muted);background:color-mix(in srgb,var(--sheet) 90%,transparent);padding:3px 8px;border-radius:4px}
@@ -426,7 +426,7 @@ const toScr=(x,y,vp=S.vp,H=S.H)=>[(x-vp.x0)*vp.s,H-(y-vp.y0)*vp.s];
 const toW=(px,py)=>[px/S.vp.s+S.vp.x0,(S.H-py)/S.vp.s+S.vp.y0];
 function fitVp(W,H){const ns=S.m.nodes;let x0=0,x1=8,y0=0,y1=4;
  if(ns.length){x0=Math.min(...ns.map(n=>n.x));x1=Math.max(...ns.map(n=>n.x));y0=Math.min(...ns.map(n=>n.y));y1=Math.max(...ns.map(n=>n.y));}
- const bw=Math.max(x1-x0,1),bh=Math.max(y1-y0,1),s=Math.max(5,Math.min((W-260)/bw,(H-280)/bh,250));
+ const bw=Math.max(x1-x0,1),bh=Math.max(y1-y0,1),px=Math.min(260,W*0.28),py=Math.min(280,H*0.36),s=Math.max(5,Math.min((W-px)/bw,(H-py)/bh,250));
  return{s,x0:(x0+x1)/2-W/2/s,y0:(y0+y1)/2-H/2/s};}
 function fit(){S.vp=fitVp(S.W,S.H);}
 const snap=v=>S.grid>0?Math.round(v/S.grid)*S.grid:Math.round(v*1000)/1000;
@@ -436,7 +436,7 @@ function arrow(x1,y1,x2,y2,col,w=2){const a=Math.atan2(y2-y1,x2-x1),h=8;
  return`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${w}"/><path d="M${x2},${y2} L${x2-h*Math.cos(a-0.4)},${y2-h*Math.sin(a-0.4)} L${x2-h*Math.cos(a+0.4)},${y2-h*Math.sin(a+0.4)}Z" fill="${col}"/>`;}
 function momentArc(px,py,val,col,r=18){
  const a0=-50*Math.PI/180,a1=200*Math.PI/180,pt=a=>[px+r*Math.cos(a),py-r*Math.sin(a)];
- const[sx,sy]=pt(a0),[ex,ey]=pt(a1);let o=`<path d="M${sx},${sy} A${r},${r} 0 1 0 ${ex},${ey}" fill="none" stroke="${col}" stroke-width="2"/>`;
+ const[sx,sy]=pt(a0),[ex,ey]=pt(a1),arc=[];for(let i=0;i<=24;i++)arc.push(pt(a0+(a1-a0)*i/24).join(','));let o=`<polyline points="${arc.join(' ')}" fill="none" stroke="${col}" stroke-width="2"/>`;
  const ccw=val>0,a=ccw?a1:a0,[hx,hy]=ccw?[ex,ey]:[sx,sy];let tx=-Math.sin(a),ty=-Math.cos(a);if(!ccw){tx=-tx;ty=-ty;}
  const h=8,ang=Math.atan2(ty,tx);
  return o+`<path d="M${hx+tx*2},${hy+ty*2} L${hx+tx*2-h*Math.cos(ang-0.45)},${hy+ty*2-h*Math.sin(ang-0.45)} L${hx+tx*2-h*Math.cos(ang+0.45)},${hy+ty*2-h*Math.sin(ang+0.45)}Z" fill="${col}"/>`;}
@@ -680,9 +680,41 @@ function validModel(m){return m&&Array.isArray(m.nodes)&&Array.isArray(m.bars)&&
 
 /* ---------- PDF ---------- */
 const pdfTxt=t=>String(t??'').replace(/[−–—]/g,'-').replace(/→/g,'->').replace(/↑/g,'(cima)').replace(/↓/g,'(baixo)').replace(/↺/g,'(anti-hor.)').replace(/[θ]/g,'rot').replace(/Σ/g,'Soma ').replace(/[^\x00-\xFF]/g,'');
-function svgPng(view,title){return new Promise(res=>{const W=1100,H=600,vp=fitVp(W,H),{body}=drawSvg(W,H,vp,view,palette(true),{print:true,bg:true,noGrid:true,title});
- const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=W*1.6;c.height=H*1.6;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.scale(1.6,1.6);g.drawImage(img,0,0);res(c.toDataURL('image/jpeg',0.82));};img.onerror=()=>res(null);
- img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Helvetica,Arial,sans-serif">${body}</svg>`);});}
+/* desenha no PDF, em vetor, o mesmo SVG da tela (linhas, polígonos, caminhos M/L/Z, círculos, retângulos e textos) */
+function corPdf(c){if(!c||c==='none')return null;let m=c.match(/^#([0-9a-f]{3})$/i);if(m)return{r:parseInt(m[1][0]+m[1][0],16),g:parseInt(m[1][1]+m[1][1],16),b:parseInt(m[1][2]+m[1][2],16),a:1};
+ m=c.match(/^#([0-9a-f]{6})$/i);if(m)return{r:parseInt(m[1].slice(0,2),16),g:parseInt(m[1].slice(2,4),16),b:parseInt(m[1].slice(4,6),16),a:1};
+ m=c.match(/rgba?\(([^)]+)\)/i);if(m){const v=m[1].split(',').map(x=>parseFloat(x));return{r:v[0],g:v[1],b:v[2],a:v.length>3?v[3]:1};}return{r:0,g:0,b:0,a:1};}
+function pdfDiagrama(doc,view,title,X0,Y0,w,h){
+ const W=1100,H=600,vp=fitVp(W,H),{body}=drawSvg(W,H,vp,view,palette(true),{print:true,noGrid:true,title});
+ const dom=new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`,'image/svg+xml'),k=w/W;
+ const X=x=>X0+(+x)*k,Y=y=>Y0+(+y)*k;
+ let alfa=1;const setA=a=>{if(Math.abs(a-alfa)<1e-3)return;try{doc.setGState(new doc.GState({opacity:a,'stroke-opacity':a}));alfa=a;}catch(e){}};
+ const estilo=el=>{const st=el.getAttribute('style')||'',fs=(st.match(/fill:([^;]+)/)||[])[1];
+  const f=corPdf(fs||el.getAttribute('fill')||(el.tagName==='text'?'#141414':'#000')),sc=corPdf(el.getAttribute('stroke'));
+  const sw=+(el.getAttribute('stroke-width')||1),da=el.getAttribute('stroke-dasharray');
+  if(sc){doc.setDrawColor(sc.r,sc.g,sc.b);doc.setLineWidth(Math.max(0.05,sw*k));}
+  try{doc.setLineDashPattern(da?da.split(/[ ,]+/).map(v=>+v*k):[],0);}catch(e){}
+  if(f)doc.setFillColor(f.r,f.g,f.b);
+  setA(Math.min(f?f.a:1,sc?sc.a:1)<1?(f&&f.a<1?f.a:sc.a):1);
+  return f&&sc?'FD':f?'F':sc?'S':null;};
+ const pts=str=>str.trim().split(/\s+/).map(p=>p.split(',').map(Number)).filter(p=>p.length===2&&isFinite(p[0])&&isFinite(p[1]));
+ const poly=(ps,closed,stl)=>{if(ps.length<2||!stl)return;const d=[];for(let i=1;i<ps.length;i++)d.push([(ps[i][0]-ps[i-1][0])*k,(ps[i][1]-ps[i-1][1])*k]);doc.lines(d,X(ps[0][0]),Y(ps[0][1]),[1,1],stl,closed);};
+ try{doc.saveGraphicsState();doc.rect(X0,Y0,w,h,null);doc.clip();doc.discardPath&&doc.discardPath();}catch(e){}
+ for(const el of dom.documentElement.children){const t=el.tagName;
+  if(t==='line'){const stl=estilo(el);if(stl)doc.line(X(el.getAttribute('x1')),Y(el.getAttribute('y1')),X(el.getAttribute('x2')),Y(el.getAttribute('y2')));}
+  else if(t==='polyline'){if((el.getAttribute('fill')||'')==='none'||!el.getAttribute('fill'))el.setAttribute('fill','none');poly(pts(el.getAttribute('points')),false,estilo(el));}
+  else if(t==='polygon'){poly(pts(el.getAttribute('points')),true,estilo(el));}
+  else if(t==='path'){const stl=estilo(el),d=el.getAttribute('d')||'',closed=/z\s*$/i.test(d);const ps=[...d.matchAll(/[ML]\s*(-?[\d.e+-]+)[ ,](-?[\d.e+-]+)/gi)].map(m=>[+m[1],+m[2]]);poly(ps,closed,stl);}
+  else if(t==='circle'){const stl=estilo(el);if(stl)doc.circle(X(el.getAttribute('cx')),Y(el.getAttribute('cy')),(+el.getAttribute('r'))*k,stl);}
+  else if(t==='rect'){const stl=estilo(el);if(stl)doc.rect(X(el.getAttribute('x')),Y(el.getAttribute('y')),(+el.getAttribute('width'))*k,(+el.getAttribute('height'))*k,stl);}
+  else if(t==='text'){estilo(el);setA(1);const fsz=+(el.getAttribute('font-size')||11),bold=(el.getAttribute('font-weight')||'')>=600,anc=el.getAttribute('text-anchor');
+   const st=el.getAttribute('style')||'',c=corPdf((st.match(/fill:([^;]+)/)||[])[1]||el.getAttribute('fill')||'#141414');doc.setTextColor(c.r,c.g,c.b);
+   doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(fsz*k*2.835);
+   doc.text(pdfTxt(el.textContent),X(el.getAttribute('x')),Y(el.getAttribute('y')),{align:anc==='middle'?'center':anc==='end'?'right':'left'});}}
+ setA(1);try{doc.setLineDashPattern([],0);}catch(e){}
+ try{doc.restoreGraphicsState();}catch(e){}
+ doc.setTextColor(20);doc.setDrawColor(200);doc.setLineWidth(0.2);doc.rect(X0,Y0,w,h);
+}
 async function gerarPdf(){
  const R=S.res;if(!R||!R.ok){FC.toast('Corrija o modelo antes de gerar a memória.');return null;}
  const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'}),W=210,HP=297,M=14;let y=FC.PDF.topo;
@@ -693,7 +725,7 @@ async function gerarPdf(){
  const e=R.eq;doc.setTextColor(20);doc.setFontSize(9);doc.text(pdfTxt(`Equilíbrio global: ΣFx = ${fmt(e.sx,4)} kN · ΣFy = ${fmt(e.sy,4)} kN · ΣM = ${fmt(e.sm,4)} kN·m`),M,y);y+=6;
  const views=[['model','Modelo'],['M','Momento fletor (kN·m)'],['V','Esforço cortante (kN)'],['N','Esforço normal (kN)'],['def','Deformada'],['reac','Reações de apoio']];
  const iw=W-2*M,ih=iw*600/1100;
- for(const[v,t]of views){const png=await svgPng(v,t);if(!png)continue;novaPag(ih+4);doc.addImage(png,'JPEG',M,y,iw,ih,undefined,'FAST');doc.setDrawColor(200);doc.setLineWidth(0.2);doc.rect(M,y,iw,ih);y+=ih+5;}
+ for(const[v,t]of views){novaPag(ih+4);pdfDiagrama(doc,v,t,M,y,iw,ih);y+=ih+5;}
  const table=(title,head,rows,widths)=>{novaPag(14);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(20);doc.text(pdfTxt(title),M,y);y+=5;doc.setFontSize(7.6);
   let x=M;head.forEach((h,i)=>{doc.text(pdfTxt(h),i?x+widths[i]-1:x,y,{align:i?'right':'left'});x+=widths[i];});y+=1.5;doc.setDrawColor(150);doc.line(M,y,W-M,y);y+=3.5;doc.setFont('helvetica','normal');
   for(const r of rows){novaPag(5);x=M;r.forEach((c,i)=>{doc.text(pdfTxt(c),i?x+widths[i]-1:x,y,{align:i?'right':'left'});x+=widths[i];});y+=4;}y+=3;};
@@ -709,7 +741,12 @@ async function gerarPdf(){
  return doc.output('arraybuffer');
 }
 const msg=t=>{$('expMsg').textContent=t;};
-$('btnPdf').addEventListener('click',async()=>{if(!(await FC.exigirPro('baixar a memória de cálculo em PDF')))return;FC.registrarExport('portico','pdf');msg('Gerando PDF…');const b=await gerarPdf();if(b){FC.baixar('memoria-portico.pdf',b,'application/pdf');msg('Arquivo baixado.');}});
+$('btnPdf').addEventListener('click',async()=>{
+ try{if(!(await FC.exigirPro('baixar a memória de cálculo em PDF')))return;
+  if(!window.jspdf){msg('O gerador de PDF não carregou. Verifique a internet e recarregue a página.');FC.toast('Gerador de PDF não carregou. Recarregue a página.');return;}
+  FC.registrarExport('portico','pdf');msg('Gerando PDF…');const b=await gerarPdf();
+  if(b){FC.baixar('memoria-portico.pdf',new Blob([b],{type:'application/pdf'}),'application/pdf');msg('PDF gerado. Se não abriu, veja a pasta Downloads do aparelho.');}}
+ catch(e){console.error(e);msg('Não foi possível gerar o PDF: '+(e&&e.message||e));FC.toast('Erro ao gerar o PDF. Tente de novo ou reporte pelo WhatsApp.');}});
 
 /* ---------- início ---------- */
 (function init(){let m=null;try{const t=localStorage.getItem(KEY);if(t){m=JSON.parse(t);if(!validModel(m))m=null;}}catch(e){}
