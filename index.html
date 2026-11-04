@@ -147,6 +147,11 @@ footer p{margin:0;max-width:70ch}
   <p>Da laje à fundação, na ordem em que a carga desce. O cálculo é livre e roda no seu aparelho; entre para salvar projetos e assine o Pro para baixar memória e desenho.</p>
   <div class="mods">
     <article class="mod">
+      <span class="tag">0 · Análise · beta</span><h3>Pórtico 2D</h3>
+      <ul><li>Vigas, pórticos e treliças planas</li><li>Desenho com o mouse ou o dedo</li><li>Apoios, rótulas e cargas distribuídas</li><li>Diagramas N, V, M e deformada</li><li>Leva N e M direto para o pilar</li></ul>
+      <a class="bt" href="portico.html">Abrir módulo</a>
+    </article>
+    <article class="mod">
       <span class="tag">1 · Lajes</span><h3>Lajes maciças</h3>
       <ul><li>Bordas apoiadas ou engastadas</li><li>Teoria de placas, sem tabelas</li><li>Armaduras por faixa, mínimas da Tab. 19.1</li><li>Cisalhamento, fissuração e flecha</li><li>Reações nas vigas, em g e q</li></ul>
       <a class="bt" href="laje.html">Abrir módulo</a>
@@ -297,7 +302,7 @@ async function listar() {
   $('projMsg').textContent = ps.length ? 'Abra um projeto para continuar de onde parou.' : 'Nenhum projeto salvo ainda. Use "Salvar projeto" em qualquer módulo.';
   $('projLista').hidden = !ps.length;
   $('projLista').innerHTML = `<table><thead><tr><th>Projeto</th><th>Módulo</th><th>Atualizado</th><th></th></tr></thead><tbody>${ps.map(p => `<tr>
-    <td>${esc(p.nome)}</td><td>${{ viga: 'Viga', laje: 'Laje maciça', trelicada: 'Laje treliçada', pilar: 'Pilar', sapata: 'Sapata', bloco: 'Bloco', divisa: 'Sapata de divisa', associada: 'Sapata associada', escada: 'Escada', muro: 'Muro de arrimo' }[p.modulo] || p.modulo}</td><td>${new Date(p.atualizado_em).toLocaleDateString('pt-BR')}</td>
+    <td>${esc(p.nome)}</td><td>${{ viga: 'Viga', laje: 'Laje maciça', trelicada: 'Laje treliçada', pilar: 'Pilar', sapata: 'Sapata', bloco: 'Bloco', divisa: 'Sapata de divisa', associada: 'Sapata associada', escada: 'Escada', muro: 'Muro de arrimo', portico: 'Pórtico 2D', solar: 'Telhado solar' }[p.modulo] || p.modulo}</td><td>${new Date(p.atualizado_em).toLocaleDateString('pt-BR')}</td>
     <td class="acoes"><a href="${p.modulo}.html?p=${p.id}">Abrir</a><button type="button" data-apagar="${p.id}" data-nome="${esc(p.nome)}">Apagar</button></td></tr>`).join('')}</tbody></table>`;
 }
 $('projLista').addEventListener('click', ev => {
