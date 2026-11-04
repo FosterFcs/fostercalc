@@ -8,6 +8,7 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | Arquivo | Função |
 |---|---|
 | `index.html` | Página inicial, meus projetos e planos |
+| `portico.html` | Módulo Pórtico 2D (beta): vigas, pórticos e treliças planas por rigidez direta, diagramas N, V, M, deformada e reações; link **Calcular pilar** por barra |
 | `viga.html` | Módulo de vigas (1 a 5 vãos, balanços, cargas concentradas, parede/baldrame) |
 | `laje.html` | Módulo de lajes maciças |
 | `pilar.html` | Módulo de pilares (flexão composta oblíqua, 2ª ordem) |
@@ -96,7 +97,7 @@ A função `asaas-webhook` (Supabase, Edge Functions) recebe os avisos do Asaas 
 ## Banco de dados
 
 - `perfis`: nome, CREA/CAU, empresa, telefone, e-mail, cidade, logo, plano e validade. O usuário edita só os dados cadastrais; o plano só muda pelo painel/SQL.
-- `projetos`: entradas de cada cálculo salvo (`modulo` = viga, laje, trelicada, pilar, sapata, divisa, associada, bloco, escada, muro ou solar). Cada usuário vê apenas os seus.
+- `projetos`: entradas de cada cálculo salvo (`modulo` = portico, viga, laje, trelicada, pilar, sapata, divisa, associada, bloco, escada, muro ou solar). Cada usuário vê apenas os seus.
 - `exportacoes`: registro de cada PDF/DXF baixado (só aceita inserção de quem é Pro).
 
 - `leads_calc`: contatos deixados nas calculadoras gratuitas (nome, WhatsApp, e-mail, perfil e dados do cálculo). O público só consegue inserir; para ver os contatos, use o Table Editor ou o SQL Editor:
@@ -112,6 +113,7 @@ Todas as tabelas com RLS.
 
 - Laje maciça, laje treliçada e escada: botão **Usar na viga** em cada reação leva g e q (kN/m) para `viga.html?g=..&q=..&L=..&de=..`.
 - Viga: tabela **Reações nos pilares** com link **Calcular pilar** (`pilar.html?Nk=..&hx=..&fck=..`).
+- Pórtico 2D: em cada barra vertical comprimida, link **Calcular pilar** (`pilar.html?Nk=..&Mxtopo=..&Mxbase=..&L=..&lex=..&hx=..&hy=..`), com esforços característicos.
 - Pilar: links para sapata (`sapata.html?...`) e bloco sobre estacas (`bloco.html?...`) com seção, Nk, momento e fck preenchidos.
 
 ## Pagamento automático (Asaas)
