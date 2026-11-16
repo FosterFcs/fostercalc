@@ -483,38 +483,5 @@ $('f').addEventListener('input', e => { if (e.target.id !== 'desc') agendar(); }
 $('f').addEventListener('change', e => { if (e.target.id !== 'desc') agendar(); });
 render();
 </script>
-</body></html>`);
-  w.document.close();
-  FC.registrarExport(modulo, 'pdf');
-  msg(`Na janela de impressão, escolha “Salvar como PDF” e o papel ${sh.formato} (paisagem).`);
-});
-
-// ---------- projetos salvos ----------
-function nomeSugerido() {
-  const nq = +$('nq').value, p = $('proprietario').value.trim();
-  return `Planta · casa ${nq} quarto${nq > 1 ? 's' : ''}${p ? ' · ' + p : ''}`;
-}
-$('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
-$('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
-(async () => {
-  const id = new URLSearchParams(location.search).get('p'); if (!id) return;
-  await new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
-  const p = FC.sessao && await FC.lerProjeto(id);
-  if (p && p.modulo === modulo) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
-})();
-
-// carimbo: responsável técnico vem do perfil (Pro) quando o campo está vazio
-FC.aoMudar(() => {
-  const pf = FC.perfil; if (!pf || !FC.pro) return;
-  if (!$('resp').value && pf.nome) $('resp').value = pf.nome;
-  if (!$('registro').value && pf.registro_profissional) $('registro').value = pf.registro_profissional;
-  agendar();
-});
-
-$('data').value = new Date().toLocaleDateString('pt-BR');
-$('f').addEventListener('input', e => { if (e.target.id !== 'desc') agendar(); });
-$('f').addEventListener('change', e => { if (e.target.id !== 'desc') agendar(); });
-render();
-</script>
 </body>
 </html>
