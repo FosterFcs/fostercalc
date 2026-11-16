@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="description" content="Gere a prancha de uma casa térrea com planta baixa, cortes AA e BB, fachada, quadros e carimbo, em DXF para AutoCAD. Foster Calc · Planta IA.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Foster Calc">
+<meta property="og:title" content="Planta IA: planta, cortes e fachada em DXF">
+<meta property="og:description" content="Gere a prancha de uma casa térrea com planta baixa, cortes AA e BB, fachada, quadros e carimbo, em DXF para AutoCAD. Foster Calc · Planta IA.">
+<meta property="og:url" content="https://fostercalc.com.br/planta.html">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:image" content="https://fostercalc.com.br/og/planta.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<title>Planta IA: planta baixa, cortes e fachada em DXF | Foster Calc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#f0f0ee; --sheet:#ffffff; --ink:#141414; --muted:#5c5f63; --line:#d6d7d9;
+  --accent:#c4161c; --accent-soft:#f8e3e3;
+  --ok:#2f7a4d; --ok-soft:#e2f1e7; --warn:#9a6a00; --warn-soft:#f7edd2; --bad:#a3121a; --bad-soft:#f6e1df;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#121314; --sheet:#1b1c1e; --ink:#ececec; --muted:#a0a3a8; --line:#2e3033;
+  --accent:#ef4b4f; --accent-soft:#3a1a1b; --ok:#6cc08d; --ok-soft:#17291f; --warn:#e2b54a; --warn-soft:#2c2412; --bad:#ff7a73; --bad-soft:#3a1a19; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1400px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:20px}
+header.top h1{font:700 2rem/1 var(--f-display);letter-spacing:.01em;margin:0}
+header.top h1 span{color:var(--accent)}
+header.top p{margin:0;color:var(--muted);font-size:.85rem}
+header.top h1 span.beta,.beta{color:var(--sheet);font:600 .66rem var(--f-body);letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--accent);color:var(--sheet);vertical-align:6px}
+.grid{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+aside.inputs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 24px);overflow:auto}
+@media (max-width:900px){aside.inputs{position:static;max-height:none;order:2}}
+fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+legend{font:600 .78rem/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 0 8px;grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);min-width:0}
+label.full{grid-column:1/-1}
+label.chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+label.chk input{width:auto}
+input,select{font:500 .95rem var(--f-mono);color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.unit{position:relative}.unit input{padding-right:34px}
+.unit i{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:400 .75rem var(--f-mono);color:var(--muted);font-style:normal;pointer-events:none}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+h2{font:600 1.35rem/1.1 var(--f-display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 12px}
+.aviso{background:var(--warn-soft);color:var(--ink);border:2px solid var(--warn);border-radius:6px;padding:12px 16px;font-weight:600;font-size:1rem;line-height:1.4}
+.aviso b{color:var(--warn)}
+.info{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:.88rem;color:var(--muted);margin:0 0 10px}
+.info b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.info .bad{color:var(--bad);font-weight:600}
+#stage{position:relative;height:min(72vh,760px);border:1px solid var(--line);border-radius:4px;background:#e7e5e1;overflow:hidden}
+#prev{position:absolute;inset:0;touch-action:none;cursor:grab}
+#prev:active{cursor:grabbing}
+#prev svg{width:100%;height:100%;display:block}
+@media (max-width:900px){#stage{height:62vh}}
+.zoom{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:38px;height:38px;border-radius:6px;border:1px solid var(--line);background:#fff;color:#141414;font:700 1.05rem var(--f-body);cursor:pointer}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.pri{font:600 .9rem var(--f-body);border-radius:4px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--sheet)}
+button.pri.ghost{background:transparent;color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted)}
+.disclaimer{font-size:.8rem;color:var(--muted);border-left:3px solid var(--line);padding:4px 0 4px 12px;max-width:72ch}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+td.v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
+.tbl{overflow-x:auto}
+</style>
+</head>
+<body data-pagina="planta">
+<div class="wrap">
+<div id="fc-bar"></div>
+<header class="top">
+  <h1>Planta IA <span>· prancha em DXF</span> <span class="beta">beta</span></h1>
+  <p>Casa térrea: planta baixa, cortes AA e BB, fachada, quadros e carimbo</p>
+</header>
+
+<div class="grid">
+<aside class="inputs" aria-label="Dados da casa">
+  <form id="f" class="sheet" style="display:flex;flex-direction:column;gap:18px" autocomplete="off">
+    <fieldset>
+      <legend>Programa</legend>
+      <label>Quartos<select id="nq"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></label>
+      <label>Profundidade quartos<span class="unit"><input id="db" type="number" step="0.05" min="2.4" max="5" value="3.00"><i>m</i></span></label>
+      <label data-q="0">Largura quarto 1<span class="unit"><input id="qw0" type="number" step="0.05" min="2.2" max="5" value="3.00"><i>m</i></span></label>
+      <label data-q="1">Largura quarto 2<span class="unit"><input id="qw1" type="number" step="0.05" min="2.2" max="5" value="2.80"><i>m</i></span></label>
+      <label data-q="2">Largura quarto 3<span class="unit"><input id="qw2" type="number" step="0.05" min="2.2" max="5" value="2.80"><i>m</i></span></label>
+      <label>Largura banheiro<span class="unit"><input id="bw" type="number" step="0.05" min="1.2" max="3" value="1.60"><i>m</i></span></label>
+      <label>Profund. sala/cozinha<span class="unit"><input id="ds" type="number" step="0.05" min="2.8" max="6" value="3.80"><i>m</i></span></label>
+      <label class="chk full"><input id="serv" type="checkbox"> Área de serviço interna</label>
+      <label id="swRow" hidden>Largura serviço<span class="unit"><input id="sw" type="number" step="0.05" min="1.2" max="3" value="1.60"><i>m</i></span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Construção</legend>
+      <label>Pé-direito<span class="unit"><input id="H" type="number" step="0.05" min="2.4" max="4" value="2.80"><i>m</i></span></label>
+      <label>Laje<span class="unit"><input id="laje" type="number" step="0.01" min="0.08" max="0.2" value="0.10"><i>m</i></span></label>
+      <label>Paredes<select id="t"><option value="0.15">0,15 m</option><option value="0.2">0,20 m</option></select></label>
+      <label>Beiral<span class="unit"><input id="beiral" type="number" step="0.05" min="0.3" max="1.2" value="0.60"><i>m</i></span></label>
+      <label class="full">Telha<select id="telha"><option value="ceramica">Cerâmica (30%)</option><option value="concreto">Concreto (30%)</option><option value="fibrocimento">Fibrocimento (15%)</option></select></label>
+    </fieldset>
+    <fieldset>
+      <legend>Prancha e carimbo</legend>
+      <label class="full">Formato / escala<select id="formato">
+        <option value="auto">Automático (menor que couber)</option>
+        <option value="A3@50">A3 · 1:50</option><option value="A2@50">A2 · 1:50</option><option value="A1@50">A1 · 1:50</option>
+        <option value="A2@75">A2 · 1:75</option><option value="A3@100">A3 · 1:100</option></select></label>
+      <label class="full">Título do projeto<input id="titulo" maxlength="60" placeholder="Automático: CASA TÉRREA - 2 QUARTOS"></label>
+      <label class="full">Proprietário<input id="proprietario" maxlength="80"></label>
+      <label class="full">Endereço da obra<input id="endereco" maxlength="100"></label>
+      <label class="full">Responsável técnico<input id="resp" maxlength="80" placeholder="Vem do seu perfil"></label>
+      <label class="full">Título / registro<input id="registro" maxlength="80" placeholder="Engenheiro Civil · CREA-SP nº"></label>
+      <label>Data<input id="data" maxlength="12"></label>
+      <label>Folha<input id="folha" maxlength="8" value="01/01"></label>
+    </fieldset>
+  </form>
+</aside>
+
+<main>
+  <div class="aviso"><b>⚠ Estudo preliminar gerado automaticamente.</b> Confira medidas, normas e o código de obras do município antes de usar. A responsabilidade técnica é de quem assina.</div>
+
+  <section class="sheet">
+    <h2>Prancha</h2>
+    <div class="info" id="info"></div>
+    <div id="stage"><div id="prev"></div>
+      <div class="zoom"><button type="button" id="zin" aria-label="Aproximar">+</button><button type="button" id="zout" aria-label="Afastar">−</button><button type="button" id="zfit" aria-label="Ajustar à tela">⤢</button></div>
+    </div>
+    <p class="note" style="margin:8px 0 0">Arraste para mover, use a roda do mouse ou dois dedos para o zoom. Os cortes são calculados a partir da planta: mudou uma medida, tudo se refaz.</p>
+  </section>
+
+  <section class="sheet">
+    <h2>Conferência rápida</h2>
+    <div class="tbl"><table><thead><tr><th>Ambiente</th><th style="text-align:right">Área</th><th style="text-align:right">Menor lado</th><th style="text-align:right">Iluminação</th></tr></thead><tbody id="checks"></tbody></table></div>
+    <p class="note" style="margin:8px 0 0">Iluminação = área de janela ÷ área de piso. Compare com os mínimos do código de obras e do código sanitário do seu município.</p>
+  </section>
+
+  <section class="sheet">
+    <h2>Projeto e exportação</h2>
+    <div class="actions">
+      <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
+      <button type="button" class="pri ghost" id="btnAbrir">Meus projetos</button>
+      <button type="button" class="pri" id="btnPrancha">Baixar prancha (DXF)</button>
+      <button type="button" class="pri ghost" id="btnImprimir">PDF / imprimir</button>
+      <span class="note" id="expMsg" role="status"></span>
+    </div>
+    <p class="note" style="margin:10px 0 0">Ver a prancha é livre. O DXF faz parte dos planos Estudante (com a marca “uso acadêmico”) e Pro. No plano Grátis, o PDF sai com a marca “estudo”.</p>
+    <p class="note" style="margin:6px 0 0">O DXF abre no AutoCAD, ZWCAD, BricsCAD, DraftSight e LibreCAD, em metros e na escala real. Para DWG, abra o DXF e use “Salvar como”.</p>
+  </section>
+
+  <p class="disclaimer">Ferramenta de apoio ao estudo preliminar de arquitetura. Layout por tipologia (casa térrea, telhado de duas águas, laje plana). Os desenhos devem ser conferidos e completados por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT.</p>
+</main>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script src="planta-core.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const P = window.PlantaIA;
+const modulo = 'planta';
+const NUM = ['nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'H', 'laje', 't', 'beiral'];
+const TXT = ['telha', 'formato', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data', 'folha'];
+let sheet = null, projetoId = null;
+const view = { x: 0, y: 0, w: 1, h: 1, W: 1, H: 1, chave: '' };
+
+function lerEntrada() {
+  const e = {};
+  for (const k of NUM) e[k] = +$(k).value;
+  for (const k of TXT) e[k] = $(k).value;
+  e.serv = $('serv').checked;
+  return e;
+}
+function aplicarEntrada(e) {
+  for (const k of NUM.concat(TXT)) if (e[k] != null) $(k).value = String(e[k]);
+  if (e.serv != null) $('serv').checked = !!e.serv;
+  render();
+}
+function paraModelo(e) {
+  const S = P.defaults();
+  Object.assign(S, e, { qw: [e.qw0, e.qw1, e.qw2] });
+  return S;
+}
+function fmt(v, n = 2) { return P.fmt(v, n); }
+
+function conferencia(M) {
+  return M.rooms.map(r => {
+    const A = (r.x1 - r.x0) * (r.y1 - r.y0);
+    const jan = M.O.filter(o => o.type === 'J' && (
+      (o.orient === 'H' && o.p0 >= r.x0 - 1e-6 && o.p1 <= r.x1 + 1e-6 && (Math.abs(o.q0 - r.y1) < 1e-6 || Math.abs(o.q1 - r.y0) < 1e-6)) ||
+      (o.orient === 'V' && o.p0 >= r.y0 - 1e-6 && o.p1 <= r.y1 + 1e-6 && (Math.abs(o.q0 - r.x1) < 1e-6 || Math.abs(o.q1 - r.x0) < 1e-6))));
+    const Aj = jan.reduce((a, o) => a + o.w * o.hgt, 0);
+    return `<tr><td>${r.name}</td><td class="v">${fmt(A)} m²</td><td class="v">${fmt(Math.min(r.x1 - r.x0, r.y1 - r.y0))} m</td><td class="v">${Aj ? '1/' + fmt(A / Aj, 1) : '—'}</td></tr>`;
+  }).join('');
+}
+
+function render() {
+  for (let i = 0; i < 3; i++) document.querySelector(`[data-q="${i}"]`).hidden = i >= +$('nq').value;
+  $('swRow').hidden = !$('serv').checked;
+  sheet = P.buildSheet(paraModelo(lerEntrada()));
+  $('prev').innerHTML = P.toSVG(sheet);
+  view.W = sheet.SW; view.H = sheet.SH;
+  const chave = sheet.formato + sheet.esc;
+  if (view.chave !== chave) { ajustar(); view.chave = chave; }
+  aplicarVista();
+  const M = sheet.M;
+  $('info').innerHTML = `<span>Prancha <b>${sheet.formato} · 1:${sheet.esc}</b></span><span>Casa <b>${fmt(M.W)} × ${fmt(M.D)} m</b></span><span>Área construída <b>${fmt(M.W * M.D)} m²</b></span>${sheet.aviso ? `<span class="bad">${sheet.aviso}</span>` : ''}`;
+  $('checks').innerHTML = conferencia(M);
+}
+let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requestAnimationFrame(render); };
+
+// ---------- zoom e arraste ----------
+function ajustar() {
+  const r = $('prev').getBoundingClientRect(), ar = r.width / Math.max(1, r.height), sar = view.W / view.H;
+  if (ar > sar) { view.h = view.H * 1.02; view.w = view.h * ar; } else { view.w = view.W * 1.02; view.h = view.w / ar; }
+  view.x = (view.W - view.w) / 2; view.y = (view.H - view.h) / 2;
+}
+function aplicarVista() { const s = $('prev').querySelector('svg'); if (s) s.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`); }
+function zoom(f, cx, cy) {
+  const r = $('prev').getBoundingClientRect();
+  const px = view.x + ((cx - r.left) / r.width) * view.w, py = view.y + ((cy - r.top) / r.height) * view.h;
+  view.w *= f; view.h *= f; view.x = px - (px - view.x) * f; view.y = py - (py - view.y) * f; aplicarVista();
+}
+(function () {
+  const el = $('prev'), pts = new Map(); let ult = null, dist0 = 0;
+  el.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY > 0 ? 1.15 : 1 / 1.15, e.clientX, e.clientY); }, { passive: false });
+  el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); ult = [e.clientX, e.clientY]; });
+  el.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, [e.clientX, e.clientY]);
+    const r = el.getBoundingClientRect();
+    if (pts.size === 1) { view.x -= (e.clientX - ult[0]) / r.width * view.w; view.y -= (e.clientY - ult[1]) / r.height * view.h; ult = [e.clientX, e.clientY]; aplicarVista(); }
+    else if (pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (dist0) zoom(dist0 / d, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); dist0 = d; }
+  });
+  const fim = e => { pts.delete(e.pointerId); dist0 = 0; if (pts.size === 1) ult = [...pts.values()][0]; };
+  el.addEventListener('pointerup', fim); el.addEventListener('pointercancel', fim);
+  const meio = f => { const r = el.getBoundingClientRect(); zoom(f, r.left + r.width / 2, r.top + r.height / 2); };
+  $('zin').onclick = () => meio(1 / 1.3); $('zout').onclick = () => meio(1.3);
+  $('zfit').onclick = () => { ajustar(); aplicarVista(); };
+  let mexeu = false; el.addEventListener('pointerdown', () => { mexeu = true; }); el.addEventListener('wheel', () => { mexeu = true; });
+  if ('ResizeObserver' in window) new ResizeObserver(() => { if (!mexeu) { ajustar(); aplicarVista(); } }).observe(el);
+  addEventListener('resize', () => { ajustar(); aplicarVista(); });
+})();
+
+// ---------- exportação ----------
+const msg = t => { $('expMsg').textContent = t; };
+function nomeArquivo(ext) {
+  const nq = sheet.M.rooms.filter(r => r.kind === 'q').length;
+  const base = ($('titulo').value || `casa-terrea-${nq}-quartos`).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+  return `${base}-${sheet.formato.toLowerCase()}.${ext}`;
+}
+function marcaDoPlano() { return FC.pro ? null : FC.plano === 'estudante' ? 'academico' : 'estudo'; }
+
+$('btnPrancha').addEventListener('click', async () => {
+  if (!(await FC.exigirPro('baixar a prancha em DXF'))) return;
+  const sh = P.buildSheet(paraModelo(lerEntrada()), { marca: FC.pro ? null : 'academico' });
+  FC.registrarExport(modulo, 'dxf');
+  FC.baixar(nomeArquivo('dxf'), P.toDXF(sh), 'application/dxf');
+  msg('DXF baixado. Abra no seu CAD; para DWG, use “Salvar como”.');
+});
+$('btnImprimir').addEventListener('click', () => {
+  const sh = P.buildSheet(paraModelo(lerEntrada()), { marca: marcaDoPlano() });
+  const wmm = Math.round(sh.SW / sh.k), hmm = Math.round(sh.SH / sh.k);
+  const w = window.open('', '_blank');
+  if (!w) { FC.toast('Permita pop-ups para imprimir ou salvar em PDF.'); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${nomeArquivo('pdf')}</title><style>@page{size:${wmm}mm ${hmm}mm;margin:0}html,body{margin:0;padding:0}svg{display:block}</style></head><body>${P.toSVG(sh, { print: true })}<script>setTimeout(function(){print()},400)<\/script></body></html>`);
+  w.document.close();
+  FC.registrarExport(modulo, 'pdf');
+  msg(`Na janela de impressão, escolha “Salvar como PDF” e o papel ${sh.formato} (paisagem).`);
+});
+
+// ---------- projetos salvos ----------
+function nomeSugerido() {
+  const nq = +$('nq').value, p = $('proprietario').value.trim();
+  return `Planta · casa ${nq} quarto${nq > 1 ? 's' : ''}${p ? ' · ' + p : ''}`;
+}
+$('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
+$('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
+(async () => {
+  const id = new URLSearchParams(location.search).get('p'); if (!id) return;
+  await new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
+  const p = FC.sessao && await FC.lerProjeto(id);
+  if (p && p.modulo === modulo) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+})();
+
+// carimbo: responsável técnico vem do perfil (Pro) quando o campo está vazio
+FC.aoMudar(() => {
+  const pf = FC.perfil; if (!pf || !FC.pro) return;
+  if (!$('resp').value && pf.nome) $('resp').value = pf.nome;
+  if (!$('registro').value && pf.registro_profissional) $('registro').value = pf.registro_profissional;
+  agendar();
+});
+
+$('data').value = new Date().toLocaleDateString('pt-BR');
+$('f').addEventListener('input', agendar);
+$('f').addEventListener('change', agendar);
+render();
+</script>
+</body>
+</html>
