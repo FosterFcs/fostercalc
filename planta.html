@@ -84,6 +84,15 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 td.v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
 .tbl{overflow-x:auto}
+textarea{font:400 .95rem var(--f-body);color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:4px;padding:8px 9px;width:100%;resize:vertical;min-height:84px}
+textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ia-bts{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.ia-bts .pri{flex:1;min-width:120px}
+#btnFalar[aria-pressed="true"]{background:var(--accent);color:var(--sheet)}
+.ia-res{grid-column:1/-1;font-size:.84rem;line-height:1.45;background:var(--ok-soft);border-radius:6px;padding:9px 11px}
+.ia-res ul{margin:6px 0 0;padding-left:18px;color:var(--warn)}
+.avisos li.sem-marca{list-style:none;margin:6px 0 0 -16px}
+.ia-res .dica{display:block;margin-top:6px;color:var(--muted)}
 .abas{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 10px}
 .abas button{font:600 .85rem var(--f-body);border:1px solid var(--line);background:var(--sheet);color:var(--muted);border-radius:99px;padding:6px 14px;cursor:pointer}
 .abas button[aria-selected="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
@@ -102,6 +111,15 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 <div class="grid">
 <aside class="inputs" aria-label="Dados da casa">
   <form id="f" class="sheet" style="display:flex;flex-direction:column;gap:18px" autocomplete="off">
+    <fieldset class="ia">
+      <legend>Descreva a casa</legend>
+      <label class="full"><textarea id="desc" rows="4" maxlength="3000" placeholder="Ex.: casa de 3 quartos com suíte, cozinha americana, área de serviço e varanda. Terreno 10x25, recuo de 5 m, com vaga."></textarea></label>
+      <div class="ia-bts">
+        <button type="button" class="pri" id="btnMontar">✨ Montar a casa</button>
+        <button type="button" class="pri ghost" id="btnFalar" aria-pressed="false">🎤 Falar</button>
+      </div>
+      <div id="iaRes" class="ia-res" role="status" hidden></div>
+    </fieldset>
     <fieldset>
       <legend>Programa</legend>
       <label>Quartos<select id="nq"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></label>
@@ -229,7 +247,7 @@ const $ = id => document.getElementById(id);
 const P = window.PlantaIA;
 const modulo = 'planta';
 const NUM = ['nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
-const TXT = ['telha', 'formato', 'formato2', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
+const TXT = ['desc', 'telha', 'formato', 'formato2', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
   'afE', 'esquina', 'rua', 'ruaLat', 'quadra', 'lote', 'bairro', 'cidade', 'toMax', 'caMax', 'permMin', 'rfMin', 'rlMin', 'rfuMin'];
 const BOOL = ['serv', 'suite', 'cozSep', 'varanda', 'vaga'];
 let res = null, folha = 0, projetoId = null;
@@ -274,6 +292,10 @@ function render() {
   const M = res.M, I = M.idx;
   $('info').innerHTML = `<span>Casa <b>${fmt(M.W)} × ${fmt(M.D + M.dv)} m</b></span><span>Área construída <b>${fmt(I.Aconst)} m²</b></span><span>Terreno <b>${fmt(I.Alote)} m²</b></span><span>Ocupação <b>${fmt(I.TO * 100, 1)}%</b></span>`;
   const av = $('avisos'); av.hidden = !res.avisos.length; av.innerHTML = res.avisos.map(a => `<li>${escHtml(a)}</li>`).join('');
+  if (res.avisos.some(a => a.includes('largura do lote'))) {
+    av.insertAdjacentHTML('beforeend', '<li class="sem-marca"><button type="button" class="pri ghost" id="btnEncaixar">Ajustar larguras ao lote</button></li>');
+    $('btnEncaixar').onclick = () => { const m = encaixarNoLote(); if (m) FC.toast(m); };
+  }
   $('indices').innerHTML = P.indices(M).map(r => `<tr><td>${r.nome}</td><td class="v">${r.val}</td><td class="v">${r.lim || '—'}</td><td class="v ${r.st === 'NÃO ATENDE' ? 'nao' : r.st ? 'sim' : ''}">${r.st || '—'}</td></tr>`).join('');
   $('checks').innerHTML = conferencia(M);
 }
@@ -317,6 +339,92 @@ function zoom(f, cx, cy) {
   if ('ResizeObserver' in window) new ResizeObserver(() => { if (!mexeu) { ajustar(); aplicarVista(); } }).observe(el);
   addEventListener('resize', () => { ajustar(); aplicarVista(); });
 })();
+
+// ---------- descrição → campos (leitor rápido + IA no servidor) ----------
+const temIA = () => !!(FC.sessao && (FC.pro || FC.plano === 'estudante'));
+function aplicarCampos(c) {
+  for (const [k, v] of Object.entries(c || {})) {
+    const el = $(k); if (!el) continue;
+    if (BOOL.includes(k)) el.checked = !!v; else el.value = String(v);
+  }
+  render();
+}
+function mostrarIA(html) { const el = $('iaRes'); el.hidden = false; el.innerHTML = html; }
+async function chamarIA(acao, body) {
+  if (!FC.sb) throw new Error('sem conexão');
+  const { data, error } = await FC.sb.functions.invoke(`planta-ia?acao=${acao}`, { body });
+  if (error) { let st = 0; try { st = error.context?.status || 0; } catch (e) {} const er = new Error(error.message); er.status = st; throw er; }
+  return data;
+}
+function encaixarNoLote() {
+  const e = P.encaixar(paraModelo(lerEntrada()));
+  if (!e.mudou) return '';
+  if (!e.ok) return `Mesmo com os cômodos nas larguras mínimas a casa fica com ${fmt(e.largura)} m de frente e não cabe no lote. Tire a área de serviço ou um quarto, ou use um lote mais largo.`;
+  aplicarCampos(e.campos);
+  return e.divisa
+    ? `Para caber, reduzi as larguras dos cômodos e encostei a casa na divisa esquerda (${fmt(e.largura)} m de frente). Confira se a lei do município permite construir na divisa.`
+    : `Reduzi as larguras dos cômodos para a casa caber no lote com 1,50 m de cada lado (${fmt(e.largura)} m de frente).`;
+}
+// a cada descrição nova o programa da casa volta ao padrão; terreno, construção e carimbo continuam
+const PROGRAMA = ['nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'suite', 'bsw', 'cozSep', 'kw', 'serv', 'sw', 'varanda', 'dv'];
+function programaPadrao() {
+  const d = P.defaults(), c = {};
+  for (const k of PROGRAMA) c[k] = /^qw\d$/.test(k) ? d.qw[+k[2]] : d[k];
+  return c;
+}
+async function montar() {
+  const texto = $('desc').value.trim();
+  if (!texto) { mostrarIA('Escreva como é a casa: quartos, suíte, cozinha, varanda, terreno…'); $('desc').focus(); return; }
+  montar.ultimaIA = null;
+  const loc = P.interpretarTexto(texto);
+  aplicarCampos({ ...programaPadrao(), ...loc.campos });
+  let resumo = loc.entendido.length ? `Entendi: ${loc.entendido.join(', ')}.` : 'Não reconheci ambientes nem medidas nessa descrição.';
+  let obs = loc.observacoes, dica = '';
+  if (temIA()) {
+    const b = $('btnMontar'); b.disabled = true; b.textContent = 'A IA está montando…';
+    try {
+      const r = await chamarIA('interpretar', { texto });
+      aplicarCampos(r.campos); montar.ultimaIA = r.campos;
+      if (r.resumo) resumo = r.resumo;
+      obs = [...new Set([...(r.observacoes || []), ...loc.observacoes])];
+    } catch (e) {
+      dica = e.status === 402 ? 'A IA completa é dos planos Estudante e Pro. Usei o leitor rápido.' : 'A IA não respondeu agora; usei o leitor rápido. Tente de novo em instantes.';
+    } finally { b.disabled = false; b.textContent = '✨ Montar a casa'; }
+  } else {
+    dica = 'Nos planos Estudante e Pro, a IA entende descrições livres (até área total, como “casa de 60 m²”) e por voz.';
+  }
+  const lfDito = 'lf' in loc.campos || (montar.ultimaIA && 'lf' in montar.ultimaIA);
+  if (lfDito && res && res.avisos.some(a => a.includes('largura do lote'))) { const m = encaixarNoLote(); if (m) obs = [...obs, m]; }
+  mostrarIA(`${escHtml(resumo)} Confira e ajuste os campos abaixo.${obs.length ? `<ul>${obs.map(o => `<li>${escHtml(o)}</li>`).join('')}</ul>` : ''}${dica ? `<span class="dica">${escHtml(dica)}</span>` : ''}`);
+}
+$('btnMontar').addEventListener('click', montar);
+
+let gravador = null, pedacos = [];
+$('btnFalar').addEventListener('click', async () => {
+  const b = $('btnFalar');
+  if (gravador && gravador.state === 'recording') { gravador.stop(); return; }
+  if (!temIA()) { if (!(await FC.exigirPro('descrever a casa por voz com a IA'))) return; }
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { FC.toast('Este navegador não grava áudio. Escreva a descrição.'); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { FC.toast('Permita o uso do microfone para falar.'); return; }
+  const tipo = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported?.(t)) || '';
+  gravador = new MediaRecorder(stream, tipo ? { mimeType: tipo } : undefined); pedacos = [];
+  gravador.ondataavailable = e => e.data.size && pedacos.push(e.data);
+  gravador.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    b.setAttribute('aria-pressed', 'false'); b.textContent = 'Transcrevendo…'; b.disabled = true;
+    try {
+      const blob = new Blob(pedacos, { type: gravador.mimeType || 'audio/webm' });
+      const fd = new FormData(); fd.append('file', blob, 'descricao.' + ((gravador.mimeType || '').includes('mp4') ? 'm4a' : 'webm'));
+      const r = await chamarIA('transcrever', fd);
+      if (r.text) { $('desc').value = ($('desc').value ? $('desc').value + ' ' : '') + r.text.trim(); await montar(); }
+      else FC.toast('Não entendi o áudio. Tente de novo, mais perto do microfone.');
+    } catch (e) { FC.toast('Não foi possível transcrever agora. Escreva a descrição.'); }
+    finally { b.disabled = false; b.textContent = '🎤 Falar'; }
+  };
+  gravador.start(); b.setAttribute('aria-pressed', 'true'); b.textContent = '⏹ Parar e montar';
+  setTimeout(() => gravador && gravador.state === 'recording' && gravador.stop(), 120000);
+});
 
 // ---------- exportação ----------
 const msg = t => { $('expMsg').textContent = t; };
@@ -371,8 +479,8 @@ FC.aoMudar(() => {
 });
 
 $('data').value = new Date().toLocaleDateString('pt-BR');
-$('f').addEventListener('input', agendar);
-$('f').addEventListener('change', agendar);
+$('f').addEventListener('input', e => { if (e.target.id !== 'desc') agendar(); });
+$('f').addEventListener('change', e => { if (e.target.id !== 'desc') agendar(); });
 render();
 </script>
 </body></html>`);
@@ -404,8 +512,8 @@ FC.aoMudar(() => {
 });
 
 $('data').value = new Date().toLocaleDateString('pt-BR');
-$('f').addEventListener('input', agendar);
-$('f').addEventListener('change', agendar);
+$('f').addEventListener('input', e => { if (e.target.id !== 'desc') agendar(); });
+$('f').addEventListener('change', e => { if (e.target.id !== 'desc') agendar(); });
 render();
 </script>
 </body>

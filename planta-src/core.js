@@ -1162,3 +1162,85 @@ export function toSVG(sheet, opts = {}) {
   const size = opts.print ? ` width="${(SW / k).toFixed(0)}mm" height="${(SH / k).toFixed(0)}mm"` : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${X(SW)} ${X(SH)}"${size} font-family="Arial, Helvetica, sans-serif"><rect x="0" y="0" width="${X(SW)}" height="${X(SH)}" fill="#fff"/>${defs}${parts.join("")}</svg>`;
 }
+
+/* ------------------------------------------------------------------ */
+/* 10. Leitor rápido de descrição (roda no aparelho, sem IA)           */
+/* ------------------------------------------------------------------ */
+const NUMEROS = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, "três": 3, quatro: 4, cinco: 5 };
+const n2 = (s) => parseFloat(String(s).replace(",", "."));
+export function interpretarTexto(texto) {
+  const t = " " + String(texto || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ") + " ";
+  const c = {}, ok = [], nao = [];
+  const N = "(\\d+(?:[.,]\\d+)?)";
+  let m;
+  // quartos
+  if ((m = t.match(/(\d|um|uma|dois|duas|tres|quatro|cinco)\s+(?:quartos?|dormitorios?|dorms?)\b/))) {
+    const q = NUMEROS[m[1]] || +m[1];
+    c.nq = Math.min(3, Math.max(1, q)); ok.push(`${c.nq} quarto${c.nq > 1 ? "s" : ""}`);
+    if (q > 3) nao.push("O módulo faz até 3 quartos.");
+  }
+  if ((m = t.match(new RegExp(`(?:quartos?|dormitorios?)\\s+(?:de\\s+)?${N}\\s*(?:m\\s*)?(?:x|por)\\s*${N}`)))) {
+    c.qw0 = c.qw1 = c.qw2 = n2(m[1]); c.db = n2(m[2]); ok.push(`quartos de ${m[1]} x ${m[2]} m`);
+  }
+  // suíte
+  if (/\bsem suite\b/.test(t)) { c.suite = false; ok.push("sem suíte"); }
+  else if (/\bsuite\b/.test(t)) { c.suite = true; ok.push("quarto 1 com suíte"); }
+  // cozinha
+  if (/cozinha (?:americana|integrada|aberta)|sala e cozinha integrad|sala\/cozinha|sala cozinha/.test(t)) { c.cozSep = false; ok.push("cozinha integrada à sala"); }
+  else if (/cozinha (?:separada|fechada|independente)|sala e cozinha separad/.test(t)) { c.cozSep = true; ok.push("cozinha separada"); }
+  // serviço
+  if (/\bsem (?:area de servico|lavanderia)\b/.test(t)) c.serv = false;
+  else if (/area de servico|lavanderia|\bservico\b/.test(t)) { c.serv = true; ok.push("área de serviço"); }
+  // varanda
+  if (/\bsem (?:varanda|alpendre)\b/.test(t)) c.varanda = false;
+  else if (/varanda|alpendre|area frontal coberta/.test(t)) {
+    c.varanda = true; ok.push("varanda");
+    if ((m = t.match(new RegExp(`(?:varanda|alpendre)\\s+(?:de\\s+)?${N}\\s*m`)))) c.dv = n2(m[1]);
+  }
+  // vaga
+  if (/\bsem (?:vaga|garagem)\b/.test(t)) { c.vaga = false; ok.push("sem vaga"); }
+  else if (/\bvaga|garagem|estacionamento\b/.test(t)) { c.vaga = true; ok.push("vaga de carro"); if (/garagem coberta/.test(t)) nao.push("Garagem coberta ainda não: a vaga sai descoberta no terreno."); }
+  // terreno
+  if ((m = t.match(new RegExp(`(?:terreno|lote)\\s+(?:de\\s+)?${N}\\s*(?:m\\s*)?(?:x|por)\\s*${N}`)))) { c.lf = n2(m[1]); c.lp = n2(m[2]); ok.push(`terreno ${m[1]} x ${m[2]} m`); }
+  if ((m = t.match(new RegExp(`recuo(?: frontal)?\\s+(?:de\\s+)?${N}`)))) { c.rf = n2(m[1]); ok.push(`recuo frontal ${m[1]} m`); }
+  if ((m = t.match(new RegExp(`pe[- ]?direito\\s+(?:de\\s+)?${N}`)))) { c.H = n2(m[1]); ok.push(`pé-direito ${m[1]} m`); }
+  // telhado
+  if (/fibrocimento|eternit|brasilit/.test(t)) { c.telha = "fibrocimento"; ok.push("telha de fibrocimento"); }
+  else if (/telha de concreto/.test(t)) { c.telha = "concreto"; ok.push("telha de concreto"); }
+  else if (/ceramica|colonial|romana|portuguesa/.test(t)) { c.telha = "ceramica"; ok.push("telha cerâmica"); }
+  // paredes
+  if (/parede[s]? (?:de )?(?:20|0[.,]20)\b/.test(t)) c.t = 0.2;
+  // o que o módulo ainda não faz
+  const fora = [[/sobrado|dois andares|2 andares|pavimento superior/, "Sobrado ainda não: o módulo faz casa térrea."],
+    [/piscina/, "Piscina não entra no desenho."], [/churrasqueira|area gourmet|espaco gourmet/, "Churrasqueira/área gourmet ainda não."],
+    [/edicula/, "Edícula ainda não."], [/quatro aguas|4 aguas/, "Telhado de quatro águas ainda não: sai em duas águas."],
+    [/closet/, "Closet ainda não."], [/escritorio/, "Escritório ainda não."], [/lavabo|dois banheiros|2 banheiros/, "Só um banheiro social (mais o da suíte)."]];
+  for (const [re, s] of fora) if (re.test(t)) nao.push(s);
+  return { campos: c, entendido: ok, observacoes: nao };
+}
+
+/* ------------------------------------------------------------------ */
+/* 11. Encaixar a casa na frente do lote                               */
+/* ------------------------------------------------------------------ */
+// Reduz as larguras dos ambientes do fundo (até os mínimos) para a casa caber com o afastamento lateral dado.
+export function encaixar(S0) {
+  const S = { ...defaults(), ...S0 };
+  const M = buildModel(S);
+  const lf = M.lote.lf;
+  const MIN = { q: 2.5, b: 1.2, bs: 1.2, s: 1.2 };
+  const chave = (r) => r.kind === "q" ? "qw" + (r.first ? 0 : +r.name.slice(-1) - 1) : { b: "bw", bs: "bsw", s: "sw" }[r.kind];
+  const fundo = M.rooms.filter((r) => r.y0 === M.yi1).map((r) => ({ k: chave(r), w: r.x1 - r.x0, min: MIN[r.kind] }));
+  const folga = fundo.reduce((a, r) => a + Math.max(0, r.w - r.min), 0);
+  // 1º: 1,50 m de cada lado; 2º: encostada na divisa esquerda com 1,50 m do outro lado
+  for (const [afTotal, divisa] of [[3.0, false], [1.5, true]]) {
+    const disp = lf - afTotal;
+    if (M.W <= disp + 1e-6) return { ok: true, mudou: divisa, divisa, campos: divisa ? { afE: "0" } : {}, largura: M.W };
+    const falta = M.W - disp;
+    if (folga < falta - 1e-6) continue;
+    const campos = {};
+    for (const r of fundo) campos[r.k] = +(Math.floor((r.w - Math.max(0, r.w - r.min) * (falta / folga)) / 0.05 + 1e-6) * 0.05).toFixed(2);
+    if (divisa) campos.afE = "0";
+    return { ok: true, mudou: true, divisa, campos, largura: r2(M.W - falta) };
+  }
+  return { ok: false, mudou: true, campos: {}, largura: r2(M.W - folga) };
+}
