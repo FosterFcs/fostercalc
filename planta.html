@@ -84,6 +84,11 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 th{font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 td.v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
 .tbl{overflow-x:auto}
+.abas{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 10px}
+.abas button{font:600 .85rem var(--f-body);border:1px solid var(--line);background:var(--sheet);color:var(--muted);border-radius:99px;padding:6px 14px;cursor:pointer}
+.abas button[aria-selected="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.avisos{margin:0 0 10px;padding:8px 12px 8px 28px;background:var(--warn-soft);border-radius:6px;font-size:.85rem;color:var(--ink)}
+td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 </style>
 </head>
 <body data-pagina="planta">
@@ -91,7 +96,7 @@ td.v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
 <div id="fc-bar"></div>
 <header class="top">
   <h1>Planta IA <span>· prancha em DXF</span> <span class="beta">beta</span></h1>
-  <p>Casa térrea: planta baixa, cortes AA e BB, fachada, quadros e carimbo</p>
+  <p>Casa térrea · projeto legal em 2 folhas: planta, cortes, fachadas, cobertura, implantação, situação e índices</p>
 </header>
 
 <div class="grid">
@@ -106,8 +111,14 @@ td.v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
       <label data-q="2">Largura quarto 3<span class="unit"><input id="qw2" type="number" step="0.05" min="2.2" max="5" value="2.80"><i>m</i></span></label>
       <label>Largura banheiro<span class="unit"><input id="bw" type="number" step="0.05" min="1.2" max="3" value="1.60"><i>m</i></span></label>
       <label>Profund. sala/cozinha<span class="unit"><input id="ds" type="number" step="0.05" min="2.8" max="6" value="3.80"><i>m</i></span></label>
+      <label class="chk full"><input id="suite" type="checkbox"> Quarto 1 é suíte</label>
+      <label data-se="suite">Largura banho suíte<span class="unit"><input id="bsw" type="number" step="0.05" min="1.1" max="3" value="1.40"><i>m</i></span></label>
+      <label class="chk full"><input id="cozSep" type="checkbox"> Cozinha separada da sala</label>
+      <label data-se="cozSep">Largura cozinha<span class="unit"><input id="kw" type="number" step="0.05" min="2" max="5" value="2.80"><i>m</i></span></label>
       <label class="chk full"><input id="serv" type="checkbox"> Área de serviço interna</label>
-      <label id="swRow" hidden>Largura serviço<span class="unit"><input id="sw" type="number" step="0.05" min="1.2" max="3" value="1.60"><i>m</i></span></label>
+      <label data-se="serv">Largura serviço<span class="unit"><input id="sw" type="number" step="0.05" min="1.2" max="3" value="1.60"><i>m</i></span></label>
+      <label class="chk full"><input id="varanda" type="checkbox"> Varanda na frente</label>
+      <label data-se="varanda">Profund. varanda<span class="unit"><input id="dv" type="number" step="0.05" min="1" max="4" value="1.80"><i>m</i></span></label>
     </fieldset>
     <fieldset>
       <legend>Construção</legend>
@@ -118,18 +129,51 @@ td.v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
       <label class="full">Telha<select id="telha"><option value="ceramica">Cerâmica (30%)</option><option value="concreto">Concreto (30%)</option><option value="fibrocimento">Fibrocimento (15%)</option></select></label>
     </fieldset>
     <fieldset>
+      <legend>Terreno</legend>
+      <label>Frente do lote<span class="unit"><input id="lf" type="number" step="0.1" min="3" value="10.00"><i>m</i></span></label>
+      <label>Profundidade<span class="unit"><input id="lp" type="number" step="0.1" min="5" value="25.00"><i>m</i></span></label>
+      <label>Recuo frontal<span class="unit"><input id="rf" type="number" step="0.05" min="0" value="5.00"><i>m</i></span></label>
+      <label>Afast. esquerdo<span class="unit"><input id="afE" type="number" step="0.05" min="0" placeholder="centro"><i>m</i></span></label>
+      <label>Passeio<span class="unit"><input id="calc" type="number" step="0.1" min="0" value="2.00"><i>m</i></span></label>
+      <label>Norte<span class="unit"><input id="norte" type="number" step="5" value="0"><i>graus</i></span></label>
+      <label class="chk full"><input id="vaga" type="checkbox" checked> Vaga de carro (2,50 × 5,00)</label>
+    </fieldset>
+    <fieldset>
+      <legend>Endereço e situação</legend>
+      <label class="full">Rua<input id="rua" maxlength="60" placeholder="Rua das Flores"></label>
+      <label>Quadra<input id="quadra" maxlength="12"></label>
+      <label>Lote<input id="lote" maxlength="12"></label>
+      <label>Bairro<input id="bairro" maxlength="40"></label>
+      <label>Cidade<input id="cidade" maxlength="40"></label>
+      <label>Até a esquina<span class="unit"><input id="esquina" type="number" step="0.5" min="0" placeholder="—"><i>m</i></span></label>
+      <label>Rua da esquina<input id="ruaLat" maxlength="40"></label>
+    </fieldset>
+    <fieldset>
+      <legend>Limites da lei (opcional)</legend>
+      <p class="note" style="grid-column:1/-1;margin:0">Pegue na lei de uso e ocupação do solo do município. Em branco, o índice aparece sem conferência.</p>
+      <label>Taxa de ocupação<span class="unit"><input id="toMax" type="number" step="1" min="0" max="100" placeholder="máx."><i>%</i></span></label>
+      <label>Coef. aproveit.<span class="unit"><input id="caMax" type="number" step="0.1" min="0" placeholder="máx."><i>×</i></span></label>
+      <label>Área permeável<span class="unit"><input id="permMin" type="number" step="1" min="0" max="100" placeholder="mín."><i>%</i></span></label>
+      <label>Recuo frontal<span class="unit"><input id="rfMin" type="number" step="0.5" min="0" placeholder="mín."><i>m</i></span></label>
+      <label>Afast. laterais<span class="unit"><input id="rlMin" type="number" step="0.1" min="0" placeholder="mín."><i>m</i></span></label>
+      <label>Recuo fundos<span class="unit"><input id="rfuMin" type="number" step="0.5" min="0" placeholder="mín."><i>m</i></span></label>
+    </fieldset>
+    <fieldset>
       <legend>Prancha e carimbo</legend>
-      <label class="full">Formato / escala<select id="formato">
+      <label class="full">Folha 01 (planta e cortes)<select id="formato">
         <option value="auto">Automático (menor que couber)</option>
         <option value="A3@50">A3 · 1:50</option><option value="A2@50">A2 · 1:50</option><option value="A1@50">A1 · 1:50</option>
         <option value="A2@75">A2 · 1:75</option><option value="A3@100">A3 · 1:100</option></select></label>
-      <label class="full">Título do projeto<input id="titulo" maxlength="60" placeholder="Automático: CASA TÉRREA - 2 QUARTOS"></label>
-      <label class="full">Proprietário<input id="proprietario" maxlength="80"></label>
-      <label class="full">Endereço da obra<input id="endereco" maxlength="100"></label>
-      <label class="full">Responsável técnico<input id="resp" maxlength="80" placeholder="Vem do seu perfil"></label>
-      <label class="full">Título / registro<input id="registro" maxlength="80" placeholder="Engenheiro Civil · CREA-SP nº"></label>
+      <label class="full">Folha 02 (implantação e fachadas)<select id="formato2">
+        <option value="auto">Automático (menor que couber)</option>
+        <option value="A3@100">A3 · 1:100</option><option value="A2@100">A2 · 1:100</option><option value="A1@100">A1 · 1:100</option>
+        <option value="A2@125">A2 · 1:125</option><option value="A1@200">A1 · 1:200</option></select></label>
+      <label class="full">Título do projeto<input id="titulo" maxlength="44" placeholder="Automático: CASA TÉRREA - 2 QUARTOS"></label>
+      <label class="full">Proprietário<input id="proprietario" maxlength="70"></label>
+      <label class="full">Endereço da obra<input id="endereco" maxlength="78"></label>
+      <label class="full">Responsável técnico<input id="resp" maxlength="40" placeholder="Vem do seu perfil"></label>
+      <label class="full">Título / registro<input id="registro" maxlength="60" placeholder="Engenheiro Civil · CREA-SP nº"></label>
       <label>Data<input id="data" maxlength="12"></label>
-      <label>Folha<input id="folha" maxlength="8" value="01/01"></label>
     </fieldset>
   </form>
 </aside>
@@ -139,15 +183,22 @@ td.v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
 
   <section class="sheet">
     <h2>Prancha</h2>
+    <div class="abas" role="tablist" id="abas"></div>
     <div class="info" id="info"></div>
+    <ul class="avisos" id="avisos" hidden></ul>
     <div id="stage"><div id="prev"></div>
       <div class="zoom"><button type="button" id="zin" aria-label="Aproximar">+</button><button type="button" id="zout" aria-label="Afastar">−</button><button type="button" id="zfit" aria-label="Ajustar à tela">⤢</button></div>
     </div>
-    <p class="note" style="margin:8px 0 0">Arraste para mover, use a roda do mouse ou dois dedos para o zoom. Os cortes são calculados a partir da planta: mudou uma medida, tudo se refaz.</p>
+    <p class="note" style="margin:8px 0 0">Arraste para mover, use a roda do mouse ou dois dedos para o zoom. Tudo sai do mesmo modelo: mudou uma medida, as duas folhas se refazem.</p>
   </section>
 
   <section class="sheet">
-    <h2>Conferência rápida</h2>
+    <h2>Índices urbanísticos</h2>
+    <div class="tbl"><table><thead><tr><th>Índice</th><th style="text-align:right">Projeto</th><th style="text-align:right">Limite</th><th style="text-align:right">Situação</th></tr></thead><tbody id="indices"></tbody></table></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Conferência dos ambientes</h2>
     <div class="tbl"><table><thead><tr><th>Ambiente</th><th style="text-align:right">Área</th><th style="text-align:right">Menor lado</th><th style="text-align:right">Iluminação</th></tr></thead><tbody id="checks"></tbody></table></div>
     <p class="note" style="margin:8px 0 0">Iluminação = área de janela ÷ área de piso. Compare com os mínimos do código de obras e do código sanitário do seu município.</p>
   </section>
@@ -157,15 +208,15 @@ td.v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
     <div class="actions">
       <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
       <button type="button" class="pri ghost" id="btnAbrir">Meus projetos</button>
-      <button type="button" class="pri" id="btnPrancha">Baixar prancha (DXF)</button>
+      <button type="button" class="pri" id="btnPrancha">Baixar pranchas (DXF)</button>
       <button type="button" class="pri ghost" id="btnImprimir">PDF / imprimir</button>
       <span class="note" id="expMsg" role="status"></span>
     </div>
-    <p class="note" style="margin:10px 0 0">Ver a prancha é livre. O DXF faz parte dos planos Estudante (com a marca “uso acadêmico”) e Pro. No plano Grátis, o PDF sai com a marca “estudo”.</p>
-    <p class="note" style="margin:6px 0 0">O DXF abre no AutoCAD, ZWCAD, BricsCAD, DraftSight e LibreCAD, em metros e na escala real. Para DWG, abra o DXF e use “Salvar como”.</p>
+    <p class="note" style="margin:10px 0 0">Ver as pranchas é livre. O DXF (as duas folhas no mesmo arquivo) faz parte dos planos Estudante (com a marca “uso acadêmico”) e Pro. No plano Grátis, o PDF sai com a marca “estudo”.</p>
+    <p class="note" style="margin:6px 0 0">O DXF abre no AutoCAD, ZWCAD, BricsCAD, DraftSight e LibreCAD, em metros e na escala real (a situação vem reduzida, na escala indicada). Para DWG, abra o DXF e use “Salvar como”.</p>
   </section>
 
-  <p class="disclaimer">Ferramenta de apoio ao estudo preliminar de arquitetura. Layout por tipologia (casa térrea, telhado de duas águas, laje plana). Os desenhos devem ser conferidos e completados por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT.</p>
+  <p class="disclaimer">Ferramenta de apoio ao estudo preliminar e ao projeto legal de arquitetura. Layout por tipologia (casa térrea, telhado de duas águas, laje plana). Índices calculados com os limites informados pelo usuário. Os desenhos devem ser conferidos e completados por profissional habilitado, que assume a responsabilidade técnica e emite a ART/RRT.</p>
 </main>
 </div>
 </div>
@@ -177,29 +228,28 @@ td.v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
 const $ = id => document.getElementById(id);
 const P = window.PlantaIA;
 const modulo = 'planta';
-const NUM = ['nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'H', 'laje', 't', 'beiral'];
-const TXT = ['telha', 'formato', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data', 'folha'];
-let sheet = null, projetoId = null;
+const NUM = ['nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
+const TXT = ['telha', 'formato', 'formato2', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
+  'afE', 'esquina', 'rua', 'ruaLat', 'quadra', 'lote', 'bairro', 'cidade', 'toMax', 'caMax', 'permMin', 'rfMin', 'rlMin', 'rfuMin'];
+const BOOL = ['serv', 'suite', 'cozSep', 'varanda', 'vaga'];
+let res = null, folha = 0, projetoId = null;
 const view = { x: 0, y: 0, w: 1, h: 1, W: 1, H: 1, chave: '' };
 
 function lerEntrada() {
   const e = {};
   for (const k of NUM) e[k] = +$(k).value;
-  for (const k of TXT) e[k] = $(k).value;
-  e.serv = $('serv').checked;
+  for (const k of TXT) e[k] = $(k).value.trim();
+  for (const k of BOOL) e[k] = $(k).checked;
   return e;
 }
 function aplicarEntrada(e) {
   for (const k of NUM.concat(TXT)) if (e[k] != null) $(k).value = String(e[k]);
-  if (e.serv != null) $('serv').checked = !!e.serv;
+  for (const k of BOOL) if (e[k] != null) $(k).checked = !!e[k];
   render();
 }
-function paraModelo(e) {
-  const S = P.defaults();
-  Object.assign(S, e, { qw: [e.qw0, e.qw1, e.qw2] });
-  return S;
-}
-function fmt(v, n = 2) { return P.fmt(v, n); }
+function paraModelo(e) { return Object.assign(P.defaults(), e, { qw: [e.qw0, e.qw1, e.qw2] }); }
+const fmt = (v, n = 2) => P.fmt(v, n);
+const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function conferencia(M) {
   return M.rooms.map(r => {
@@ -214,16 +264,26 @@ function conferencia(M) {
 
 function render() {
   for (let i = 0; i < 3; i++) document.querySelector(`[data-q="${i}"]`).hidden = i >= +$('nq').value;
-  $('swRow').hidden = !$('serv').checked;
-  sheet = P.buildSheet(paraModelo(lerEntrada()));
-  $('prev').innerHTML = P.toSVG(sheet);
-  view.W = sheet.SW; view.H = sheet.SH;
-  const chave = sheet.formato + sheet.esc;
-  if (view.chave !== chave) { ajustar(); view.chave = chave; }
-  aplicarVista();
-  const M = sheet.M;
-  $('info').innerHTML = `<span>Prancha <b>${sheet.formato} · 1:${sheet.esc}</b></span><span>Casa <b>${fmt(M.W)} × ${fmt(M.D)} m</b></span><span>Área construída <b>${fmt(M.W * M.D)} m²</b></span>${sheet.aviso ? `<span class="bad">${sheet.aviso}</span>` : ''}`;
+  document.querySelectorAll('[data-se]').forEach(el => { el.hidden = !$(el.dataset.se).checked; });
+  try { res = P.buildSheets(paraModelo(lerEntrada())); }
+  catch (e) { $('info').innerHTML = `<span class="bad">${escHtml(e.message)}</span>`; return; }
+  folha = Math.min(folha, res.folhas.length - 1);
+  $('abas').innerHTML = res.folhas.map((f, i) => `<button type="button" role="tab" aria-selected="${i === folha}" data-i="${i}">${f.nome} · ${f.formato} 1:${f.esc}</button>`).join('');
+  $('abas').querySelectorAll('button').forEach(b => b.onclick = () => { folha = +b.dataset.i; mostrar(true); render(); });
+  mostrar(false);
+  const M = res.M, I = M.idx;
+  $('info').innerHTML = `<span>Casa <b>${fmt(M.W)} × ${fmt(M.D + M.dv)} m</b></span><span>Área construída <b>${fmt(I.Aconst)} m²</b></span><span>Terreno <b>${fmt(I.Alote)} m²</b></span><span>Ocupação <b>${fmt(I.TO * 100, 1)}%</b></span>`;
+  const av = $('avisos'); av.hidden = !res.avisos.length; av.innerHTML = res.avisos.map(a => `<li>${escHtml(a)}</li>`).join('');
+  $('indices').innerHTML = P.indices(M).map(r => `<tr><td>${r.nome}</td><td class="v">${r.val}</td><td class="v">${r.lim || '—'}</td><td class="v ${r.st === 'NÃO ATENDE' ? 'nao' : r.st ? 'sim' : ''}">${r.st || '—'}</td></tr>`).join('');
   $('checks').innerHTML = conferencia(M);
+}
+function mostrar(reajustar) {
+  const f = res.folhas[folha];
+  $('prev').innerHTML = P.toSVG(f);
+  view.W = f.SW; view.H = f.SH;
+  const chave = folha + f.formato + f.esc;
+  if (reajustar || view.chave !== chave) { ajustar(); view.chave = chave; }
+  aplicarVista();
 }
 let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requestAnimationFrame(render); };
 
@@ -240,9 +300,9 @@ function zoom(f, cx, cy) {
   view.w *= f; view.h *= f; view.x = px - (px - view.x) * f; view.y = py - (py - view.y) * f; aplicarVista();
 }
 (function () {
-  const el = $('prev'), pts = new Map(); let ult = null, dist0 = 0;
-  el.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY > 0 ? 1.15 : 1 / 1.15, e.clientX, e.clientY); }, { passive: false });
-  el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); ult = [e.clientX, e.clientY]; });
+  const el = $('prev'), pts = new Map(); let ult = null, dist0 = 0, mexeu = false;
+  el.addEventListener('wheel', e => { e.preventDefault(); mexeu = true; zoom(e.deltaY > 0 ? 1.15 : 1 / 1.15, e.clientX, e.clientY); }, { passive: false });
+  el.addEventListener('pointerdown', e => { mexeu = true; el.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); ult = [e.clientX, e.clientY]; });
   el.addEventListener('pointermove', e => {
     if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, [e.clientX, e.clientY]);
     const r = el.getBoundingClientRect();
@@ -254,7 +314,6 @@ function zoom(f, cx, cy) {
   const meio = f => { const r = el.getBoundingClientRect(); zoom(f, r.left + r.width / 2, r.top + r.height / 2); };
   $('zin').onclick = () => meio(1 / 1.3); $('zout').onclick = () => meio(1.3);
   $('zfit').onclick = () => { ajustar(); aplicarVista(); };
-  let mexeu = false; el.addEventListener('pointerdown', () => { mexeu = true; }); el.addEventListener('wheel', () => { mexeu = true; });
   if ('ResizeObserver' in window) new ResizeObserver(() => { if (!mexeu) { ajustar(); aplicarVista(); } }).observe(el);
   addEventListener('resize', () => { ajustar(); aplicarVista(); });
 })();
@@ -262,25 +321,61 @@ function zoom(f, cx, cy) {
 // ---------- exportação ----------
 const msg = t => { $('expMsg').textContent = t; };
 function nomeArquivo(ext) {
-  const nq = sheet.M.rooms.filter(r => r.kind === 'q').length;
+  const nq = res.M.rooms.filter(r => r.kind === 'q').length;
   const base = ($('titulo').value || `casa-terrea-${nq}-quartos`).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
-  return `${base}-${sheet.formato.toLowerCase()}.${ext}`;
+  return `${base}.${ext}`;
 }
 function marcaDoPlano() { return FC.pro ? null : FC.plano === 'estudante' ? 'academico' : 'estudo'; }
 
 $('btnPrancha').addEventListener('click', async () => {
-  if (!(await FC.exigirPro('baixar a prancha em DXF'))) return;
-  const sh = P.buildSheet(paraModelo(lerEntrada()), { marca: FC.pro ? null : 'academico' });
+  if (!(await FC.exigirPro('baixar as pranchas em DXF'))) return;
+  const r = P.buildSheets(paraModelo(lerEntrada()), { marca: FC.pro ? null : 'academico' });
   FC.registrarExport(modulo, 'dxf');
-  FC.baixar(nomeArquivo('dxf'), P.toDXF(sh), 'application/dxf');
-  msg('DXF baixado. Abra no seu CAD; para DWG, use “Salvar como”.');
+  FC.baixar(nomeArquivo('dxf'), P.toDXF(r), 'application/dxf');
+  msg('DXF baixado com as duas folhas lado a lado. Para DWG, abra no CAD e use “Salvar como”.');
 });
 $('btnImprimir').addEventListener('click', () => {
-  const sh = P.buildSheet(paraModelo(lerEntrada()), { marca: marcaDoPlano() });
-  const wmm = Math.round(sh.SW / sh.k), hmm = Math.round(sh.SH / sh.k);
+  const r = P.buildSheets(paraModelo(lerEntrada()), { marca: marcaDoPlano() });
   const w = window.open('', '_blank');
   if (!w) { FC.toast('Permita pop-ups para imprimir ou salvar em PDF.'); return; }
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${nomeArquivo('pdf')}</title><style>@page{size:${wmm}mm ${hmm}mm;margin:0}html,body{margin:0;padding:0}svg{display:block}</style></head><body>${P.toSVG(sh, { print: true })}<script>setTimeout(function(){print()},400)<\/script></body></html>`);
+  const paginas = r.folhas.map((f, i) => {
+    const wmm = Math.round(f.SW / f.k), hmm = Math.round(f.SH / f.k);
+    return { css: `@page f${i}{size:${wmm}mm ${hmm}mm;margin:0}.f${i}{page:f${i};width:${wmm}mm;height:${hmm}mm}`, html: `<div class="pg f${i}">${P.toSVG(f, { print: true })}</div>` };
+  });
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${nomeArquivo('pdf')}</title><style>@page{margin:0}html,body{margin:0;padding:0}.pg{break-after:page;overflow:hidden}.pg:last-child{break-after:auto}svg{display:block}${paginas.map(p => p.css).join('')}</style></head><body>${paginas.map(p => p.html).join('')}<script>setTimeout(function(){print()},500)<\/script></body></html>`);
+  w.document.close();
+  FC.registrarExport(modulo, 'pdf');
+  msg(`Na impressão, escolha “Salvar como PDF”. Folha 01 em ${r.folhas[0].formato} e folha 02 em ${r.folhas[1].formato}, paisagem.`);
+});
+
+// ---------- projetos salvos ----------
+function nomeSugerido() {
+  const nq = +$('nq').value, p = $('proprietario').value.trim();
+  return `Planta · casa ${nq} quarto${nq > 1 ? 's' : ''}${p ? ' · ' + p : ''}`;
+}
+$('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
+$('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
+(async () => {
+  const id = new URLSearchParams(location.search).get('p'); if (!id) return;
+  await new Promise(r => FC.sessao ? r() : FC.aoMudar(r));
+  const p = FC.sessao && await FC.lerProjeto(id);
+  if (p && p.modulo === modulo) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); }
+})();
+
+FC.aoMudar(() => {
+  const pf = FC.perfil; if (!pf || !FC.pro) return;
+  if (!$('resp').value && pf.nome) $('resp').value = pf.nome;
+  if (!$('registro').value && pf.registro_profissional) $('registro').value = pf.registro_profissional;
+  if (!$('cidade').value && pf.cidade) $('cidade').value = pf.cidade;
+  agendar();
+});
+
+$('data').value = new Date().toLocaleDateString('pt-BR');
+$('f').addEventListener('input', agendar);
+$('f').addEventListener('change', agendar);
+render();
+</script>
+</body></html>`);
   w.document.close();
   FC.registrarExport(modulo, 'pdf');
   msg(`Na janela de impressão, escolha “Salvar como PDF” e o papel ${sh.formato} (paisagem).`);

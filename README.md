@@ -8,7 +8,7 @@ PWA estático (GitHub Pages) com login, projetos salvos e plano Pro no Supabase.
 | Arquivo | Função |
 |---|---|
 | `index.html` | Página inicial, meus projetos e planos |
-| `planta.html` | Módulo Planta IA (beta): prancha de casa térrea (planta baixa, cortes AA e BB calculados da planta, fachada, quadros de áreas e esquadrias, carimbo) com formato e escala automáticos; exporta DXF (Estudante com marca acadêmica, Pro limpo) e PDF pela impressão (Grátis com marca “estudo”) |
+| `planta.html` | Módulo Planta IA (beta): projeto legal de casa térrea em 2 folhas. Folha 01 (1:50): planta baixa, cortes AA e BB calculados da planta, fachada frontal, quadros de áreas e esquadrias. Folha 02 (1:100): situação (1:500), implantação com recuos, vaga e área permeável, planta de cobertura, fachadas laterais e posterior, quadro de índices (TO, CA, permeabilidade e recuos conferidos com os limites que o usuário informar). Opções de suíte, cozinha separada, área de serviço e varanda. DXF com as duas folhas (Estudante com marca acadêmica, Pro limpo) e PDF de 2 páginas pela impressão (Grátis com marca “estudo”) |
 | `planta-core.js` | Núcleo do Planta IA (gerado; não editar à mão). Fonte em `planta-src/core.js`; para gerar de novo: `npm i @tarikjabiri/dxf esbuild` e `npx esbuild planta-src/entry.js --bundle --minify --format=iife --target=es2019 --outfile=planta-core.js` |
 | `portico.html` | Módulo Pórtico 2D (beta): vigas, pórticos e treliças planas por rigidez direta, diagramas N, V, M, deformada e reações; link **Calcular pilar** por barra |
 | `viga.html` | Módulo de vigas (1 a 5 vãos, balanços, cargas concentradas, parede/baldrame) |
