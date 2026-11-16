@@ -95,6 +95,10 @@ textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .est-t{font:600 .95rem var(--f-display);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
 a.dim{font:600 .8rem var(--f-body);color:var(--accent);text-decoration:none;white-space:nowrap}
 a.dim:hover{text-decoration:underline}
+.mem{display:block;font-size:.74rem;color:var(--muted)}
+details.memo{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+details.memo summary{cursor:pointer;font-weight:600;color:var(--accent)}
+#memorial h4{font:600 .9rem var(--f-body);margin:12px 0 4px}#memorial p{margin:0 0 6px;font-size:.88rem;line-height:1.5}
 .ia-res .dica{display:block;margin-top:6px;color:var(--muted)}
 .abas{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 10px}
 .abas button{font:600 .85rem var(--f-body);border:1px solid var(--line);background:var(--sheet);color:var(--muted);border-radius:99px;padding:6px 14px;cursor:pointer}
@@ -245,6 +249,18 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
   </section>
 
   <section class="sheet">
+    <h2>Quantitativos e memorial</h2>
+    <p class="note" style="margin:0 0 10px">Quantidades calculadas do mesmo modelo (arquitetura e pré-lançamento estrutural). Concreto, fôrma e aço da estrutura são estimativas; confirme pelos módulos e pelo projeto estrutural.</p>
+    <div class="actions" style="margin-bottom:6px">
+      <button type="button" class="pri" id="btnMemorial">Memorial descritivo (PDF)</button>
+      <button type="button" class="pri ghost" id="btnCSV">Baixar planilha (CSV)</button>
+      <span class="note" id="qMsg" role="status"></span>
+    </div>
+    <div id="quant"></div>
+    <details class="memo"><summary>Ver o texto do memorial</summary><div id="memorial"></div></details>
+  </section>
+
+  <section class="sheet">
     <h2>Projeto e exportação</h2>
     <div class="actions">
       <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
@@ -322,6 +338,7 @@ function render() {
   $('indices').innerHTML = P.indices(M).map(r => `<tr><td>${r.nome}</td><td class="v">${r.val}</td><td class="v">${r.lim || '—'}</td><td class="v ${r.st === 'NÃO ATENDE' ? 'nao' : r.st ? 'sim' : ''}">${r.st || '—'}</td></tr>`).join('');
   $('checks').innerHTML = conferencia(M);
   estruturaHtml();
+  quantHtml();
 }
 function mostrar(reajustar) {
   const f = res.folhas[folha];
@@ -345,6 +362,56 @@ function estruturaHtml() {
     tab('Pilares e sapatas', ['Pilar', 'Seção · Nk', 'Sapata (estimada)', ''], E.pilares.map(p => `<tr><td><b>${p.id}</b>${p.var ? ' · varanda' : ''}</td><td class="v">${p.b}×${p.h} · ${p.N} kN</td><td class="v">S${p.id.slice(1)} ${p.sap.A}×${p.sap.B} cm</td><td>${a(p.id, 'Pilar →')} ${a('S' + p.id.slice(1), 'Sapata →')}</td></tr>`)) +
     `<p class="note" style="margin:8px 0 0">Soma das cargas: <b>${E.pilares.reduce((s, p) => s + p.N, 0)} kN</b> (${fmt(E.pilares.reduce((s, p) => s + p.N, 0) / (M.W * M.D), 1)} kN/m² de área fechada). Os módulos refazem os cálculos com as normas; as reações das vigas contínuas substituem as estimativas.</p>`;
 }
+
+// ---------- quantitativos e memorial ----------
+function quantHtml() {
+  res.Q = P.quantitativos(res.M, res.E);
+  res.MD = P.memorial(res.M, res.E, res.Q);
+  $('quant').innerHTML = res.Q.map(e => `<h3 class="est-t">${e.etapa}</h3><div class="tbl"><table><tbody>${e.itens.map(i =>
+    `<tr><td>${escHtml(i.desc)}${i.memoria ? `<span class="mem">${escHtml(i.memoria)}</span>` : ''}</td><td class="v">${fmt(i.qtd)} ${i.un}</td></tr>`).join('')}</tbody></table></div>`).join('');
+  $('memorial').innerHTML = res.MD.map(s => `<h4>${escHtml(s.t)}</h4>${s.p.map(x => `<p>${escHtml(x)}</p>`).join('')}`).join('');
+}
+$('btnCSV').addEventListener('click', async () => {
+  if (!(await FC.exigirPro('baixar a planilha de quantitativos'))) return;
+  const c = v => `"${String(v).replace(/"/g, '""')}"`;
+  const linhas = [['Etapa', 'Item', 'Unidade', 'Quantidade', 'Memória de cálculo'].map(c).join(';')];
+  for (const e of res.Q) for (const i of e.itens) linhas.push([e.etapa, i.desc, i.un, fmt(i.qtd), i.memoria].map(c).join(';'));
+  linhas.push('', c('Gerado pelo Foster Calc · Planta IA a partir do estudo preliminar. Conferir com os projetos executivos.'));
+  FC.baixar(nomeArquivo('csv').replace('.csv', '-quantitativos.csv'), '\ufeff' + linhas.join('\r\n'), 'text/csv;charset=utf-8');
+  $('qMsg').textContent = 'Planilha baixada (abre no Excel e no Google Planilhas).';
+});
+$('btnMemorial').addEventListener('click', async () => {
+  if (!(await FC.exigirPro('gerar o memorial descritivo'))) return;
+  const S = lerEntrada(), M = res.M, academico = !FC.pro;
+  const nq = M.rooms.filter(r => r.kind === 'q').length;
+  const titulo = (S.titulo || `CASA TÉRREA - ${nq} QUARTO${nq > 1 ? 'S' : ''}`).toUpperCase();
+  const resp = academico ? 'USO ACADÊMICO' : (S.resp || '');
+  const reg = academico ? 'Não válido para ART/RRT · Foster Calc plano Estudante' : (S.registro || '');
+  const dado = (r, v) => v ? `<tr><th>${r}</th><td>${escHtml(v)}</td></tr>` : '';
+  const quant = res.Q.map(e => `<tr class="et"><td colspan="3">${escHtml(e.etapa)}</td></tr>` + e.itens.map(i => `<tr><td>${escHtml(i.desc)}</td><td class="n">${i.un}</td><td class="n">${fmt(i.qtd)}</td></tr>`).join('')).join('');
+  const w = window.open('', '_blank');
+  if (!w) { FC.toast('Permita pop-ups para gerar o PDF.'); return; }
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${nomeArquivo('pdf').replace('.pdf', '-memorial.pdf')}</title><style>
+@page{size:A4;margin:18mm 16mm 18mm 20mm}body{font:10.5pt/1.45 Arial,Helvetica,sans-serif;color:#111;margin:0}
+.cab{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:14px}
+.cab b{font-size:15pt;letter-spacing:.02em}.cab span{font-size:8.5pt;color:#555}h1{font-size:14pt;margin:0 0 2px}h2{font-size:10.5pt;margin:16px 0 4px;text-transform:uppercase}
+p{margin:0 0 6px;text-align:justify}table{border-collapse:collapse;width:100%;font-size:9.5pt}th,td{border:1px solid #bbb;padding:3px 6px;text-align:left;vertical-align:top}
+.dados th{width:26%;background:#f2f2f2}.et td{background:#eee;font-weight:700}.n{text-align:right;white-space:nowrap}
+.ass{margin-top:40px;text-align:center}.ass div{border-top:1px solid #111;width:60%;margin:0 auto;padding-top:4px}
+.marca{position:fixed;top:40%;left:0;right:0;text-align:center;font:700 54pt Arial;color:rgba(196,22,28,.12);transform:rotate(-25deg)}
+.rod{font-size:8pt;color:#666;margin-top:18px;border-top:1px solid #ccc;padding-top:4px}</style></head><body>
+${academico ? '<div class="marca">USO ACADÊMICO</div>' : ''}
+<div class="cab"><div><b>MEMORIAL DESCRITIVO</b><br><span>${escHtml(titulo)}</span></div><span>Foster Calc · Planta IA<br>${escHtml(S.data || '')}</span></div>
+<table class="dados">${dado('Proprietário', S.proprietario)}${dado('Endereço da obra', S.endereco)}${dado('Área construída', fmt(M.idx.Aconst) + ' m²')}${dado('Terreno', `${fmt(M.lote.lf)} × ${fmt(M.lote.lp)} m (${fmt(M.idx.Alote)} m²)`)}${dado('Responsável técnico', [resp, reg].filter(Boolean).join(' · '))}</table>
+${res.MD.map(s => `<h2>${escHtml(s.t)}</h2>${s.p.map(x => `<p>${escHtml(x)}</p>`).join('')}`).join('')}
+<h2>Anexo · Quantitativos estimados</h2><table><thead><tr><th>Serviço</th><th class="n">Un.</th><th class="n">Quant.</th></tr></thead><tbody>${quant}</tbody></table>
+<div class="ass"><div>${escHtml(resp || 'Responsável técnico')}${reg ? '<br>' + escHtml(reg) : ''}</div></div>
+<p class="rod">Gerado automaticamente pelo Foster Calc a partir do estudo preliminar. Conferir e completar conforme os projetos executivos e as exigências do município.</p>
+<script>setTimeout(function(){print()},400)<\/script></body></html>`);
+  w.document.close();
+  FC.registrarExport(modulo, 'pdf');
+  $('qMsg').textContent = 'Na janela de impressão, escolha “Salvar como PDF” (A4).';
+});
 
 // ---------- zoom e arraste ----------
 function ajustar() {

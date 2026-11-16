@@ -1512,3 +1512,181 @@ export function linksEstrutura(E, M) {
   }
   return out;
 }
+
+/* ------------------------------------------------------------------ */
+/* 13. Quantitativos (a partir do modelo e do pré-lançamento)          */
+/* ------------------------------------------------------------------ */
+const TAXA_ACO = { sapata: 50, baldrame: 80, pilar: 110, viga: 100, laje: 80 }; // kg/m³ (estimativa)
+export function quantitativos(M, E) {
+  const t = M.t, H = M.H, hL = M.laje;
+  const area = (r) => (r.x1 - r.x0) * (r.y1 - r.y0);
+  const perim = (r) => 2 * ((r.x1 - r.x0) + (r.y1 - r.y0));
+  // paredes: comprimento de eixo pela área das células de parede e vãos
+  const G = grid(M); let aPar = 0, aVao = 0;
+  for (let i = 0; i < G.C.length; i++) for (let j = 0; j < G.C[0].length; j++) {
+    const a = (G.X[i + 1] - G.X[i]) * (G.Y[j + 1] - G.Y[j]);
+    if (G.C[i][j].c === 1) aPar += a; else if (G.C[i][j].c === 2) aVao += a;
+  }
+  const Lparede = (aPar + aVao) / t;
+  const Lext = 2 * (M.W - t) + 2 * (M.D - t), Lint = Math.max(0, Lparede - Lext);
+  const ext = (o) => (o.orient === "H" ? o.q0 < EPS || o.q1 > M.D - EPS : o.q0 < EPS || o.q1 > M.W - EPS);
+  const vaosExt = M.O.filter(ext), vaosInt = M.O.filter((o) => !ext(o));
+  const aV = (l) => l.reduce((s, o) => s + o.w * o.hgt, 0);
+  // oitões (parede acima da laje nas duas laterais, até o telhado)
+  let aOitao = 0; const n = 60;
+  for (let k = 0; k < n; k++) { const y = (M.D * (k + 0.5)) / n; aOitao += Math.max(0, M.roofZ(y) - M.zb) * (M.D / n); }
+  aOitao *= 2;
+  const alvenaria = Lparede * H - aV(M.O) + aOitao;
+  // revestimentos de parede
+  const pInt = 2 * (M.W - 2 * t) + 2 * (M.D - 2 * t);
+  const revInt = 2 * Lint * H + pInt * H - 2 * aV(vaosInt) - aV(vaosExt);
+  const molh = M.rooms.filter((r) => ["b", "bs", "s", "coz"].includes(r.kind));
+  let ceramParede = molh.reduce((s, r) => s + perim(r) * 1.5, 0)
+    - M.O.filter((o) => o.type !== "J").reduce((s, o) => s + (molh.some((r) => (o.room || "") === r.name) ? o.w * 1.5 : 0), 0);
+  if (!M.cozSep) ceramParede += (M.ds) * 1.5;                       // parede da pia na sala/cozinha
+  const zParede = M.zw;                                              // parede externa até o apoio do telhado
+  const revExt = 2 * (M.W + M.D) * zParede + aOitao - aV(vaosExt);
+  const pisoInt = M.rooms.reduce((s, r) => s + area(r), 0), pisoVar = M.varanda ? M.W * M.dv : 0;
+  const secos = M.rooms.filter((r) => ["q", "sala", "sc"].includes(r.kind));
+  const rodape = secos.reduce((s, r) => s + perim(r), 0) - M.O.filter((o) => o.type !== "J").reduce((s, o) => s + o.w, 0) * 0.8;
+  const tetos = pisoInt;
+  const telhado = (M.W + 2 * M.b) * (M.D - M.Y0 + 2 * M.b) * Math.sqrt(1 + M.i * M.i);
+  // estrutura (a partir do pré-lançamento)
+  const sap = E.pilares.map((p) => { const A = p.sap.A / 100, B = p.sap.B / 100, hs = Math.max(0.25, Math.max(A - p.bx, B - p.by) / 3); return { A, B, hs }; });
+  const vSap = sap.reduce((s, x) => s + x.A * x.B * x.hs, 0);
+  const Lbal = E.baldrames.reduce((s, v) => s + v.vaos.reduce((a, x) => a + x.L, 0), 0);
+  const vBal = E.baldrames.reduce((s, v) => s + (v.bw / 100) * (v.h / 100) * v.vaos.reduce((a, x) => a + x.L, 0), 0);
+  const vPil = E.pilares.reduce((s, p) => s + p.bx * p.by * p.L, 0);
+  const vVig = E.vigas.reduce((s, v) => s + (v.bw / 100) * Math.max(0, v.h / 100 - hL) * v.vaos.reduce((a, x) => a + x.L, 0), 0);
+  const aLaje = E.lajes.reduce((s, l) => s + (l.lx - t) * (l.ly - t), 0), vLaje = aLaje * hL;
+  const fSap = sap.reduce((s, x) => s + 2 * (x.A + x.B) * x.hs, 0);
+  const fBal = E.baldrames.reduce((s, v) => s + 2 * (v.h / 100) * v.vaos.reduce((a, x) => a + x.L, 0), 0);
+  const fPil = E.pilares.reduce((s, p) => s + 2 * (p.bx + p.by) * p.L, 0);
+  const fVig = E.vigas.reduce((s, v) => s + (2 * Math.max(0, v.h / 100 - hL) + v.bw / 100) * v.vaos.reduce((a, x) => a + x.L, 0), 0);
+  const escav = sap.reduce((s, x) => s + (x.A + 0.3) * (x.B + 0.3) * 1.5, 0) + E.baldrames.reduce((s, v) => s + (v.bw / 100 + 0.3) * 0.4 * v.vaos.reduce((a, x) => a + x.L, 0), 0);
+  const Ac = M.idx.Aconst;
+  const esq = {};
+  for (const o of M.O) (esq[o.code] ||= { o, n: 0 }).n++;
+  const I = (desc, un, qtd, memoria) => ({ desc, un, qtd: Math.round(qtd * 100) / 100, memoria });
+  const etapas = [
+    { etapa: "Serviços preliminares", itens: [
+      I("Limpeza do terreno", "m²", M.idx.Alote, "área do lote"),
+      I("Locação da obra (gabarito)", "m²", Ac, "área construída"),
+    ] },
+    { etapa: "Fundações", itens: [
+      I("Escavação manual (sapatas e baldrames)", "m³", escav, "sapatas (A+0,30)(B+0,30)×1,50 + baldrames (bw+0,30)×0,40×L"),
+      I("Lastro de concreto magro (5 cm)", "m³", sap.reduce((s, x) => s + x.A * x.B * 0.05, 0), "A×B×0,05 das sapatas"),
+      I("Concreto estrutural das sapatas", "m³", vSap, "A×B×h, h = maior balanço/3 (≥ 25 cm)"),
+      I("Concreto estrutural dos baldrames", "m³", vBal, `${fmt(Lbal)} m de baldrame`),
+      I("Fôrmas de sapatas e baldrames", "m²", fSap + fBal, "faces laterais"),
+      I("Aço CA-50/60 (fundações)", "kg", vSap * TAXA_ACO.sapata + vBal * TAXA_ACO.baldrame, `taxas ${TAXA_ACO.sapata} e ${TAXA_ACO.baldrame} kg/m³`),
+      I("Impermeabilização dos baldrames", "m²", Lbal * (0.15 + 0.6), "topo + 30 cm nas faces"),
+    ] },
+    { etapa: "Estrutura", itens: [
+      I("Concreto dos pilares", "m³", vPil, `${E.pilares.length} pilares`),
+      I("Concreto das vigas de respaldo", "m³", vVig, "seção abaixo da laje"),
+      I(`Concreto da laje maciça (h=${Math.round(hL * 100)} cm)`, "m³", vLaje, `${fmt(aLaje)} m² de laje`),
+      I("Fôrmas (pilares, vigas e laje)", "m²", fPil + fVig + aLaje, "faces de pilares, laterais e fundo de vigas, fundo de laje"),
+      I("Aço CA-50/60 (estrutura)", "kg", vPil * TAXA_ACO.pilar + vVig * TAXA_ACO.viga + vLaje * TAXA_ACO.laje, `taxas ${TAXA_ACO.pilar}/${TAXA_ACO.viga}/${TAXA_ACO.laje} kg/m³`),
+    ] },
+    { etapa: "Alvenaria", itens: [
+      I(`Alvenaria de vedação ${Math.round(t * 100) - 1} cm (bloco cerâmico)`, "m²", alvenaria, `${fmt(Lparede)} m de parede × ${fmt(H)} m − vãos + oitões`),
+      I("Vergas e contravergas", "m", M.O.reduce((s, o) => s + (o.w + 0.6) * (o.type === "J" ? 2 : 1), 0), "vão + 30 cm de cada lado"),
+    ] },
+    { etapa: "Cobertura", itens: [
+      I(`Telhado (${M.tel.nome.toLowerCase()}) com madeiramento`, "m²", telhado, `projeção × √(1+i²), i = ${Math.round(M.i * 100)}%`),
+      I("Cumeeira", "m", M.W + 2 * M.b, "comprimento da cumeeira"),
+    ] },
+    { etapa: "Esquadrias", itens: Object.values(esq).sort((a, b) => a.o.code.localeCompare(b.o.code, "pt", { numeric: true }))
+        .map(({ o, n }) => I(`${o.code} · ${o.type === "J" ? "janela" : o.type === "P" ? "porta" : "vão"} ${o.desc.toLowerCase()} ${fmt(o.w)} × ${fmt(o.hgt)} m`, "un", n, o.type === "J" ? `peitoril ${fmt(o.sill)} m` : ""))
+        .filter((x) => !x.desc.includes("vão livre"))
+        .concat([I("Peitoris de granito", "m", M.O.filter((o) => o.type === "J").reduce((s, o) => s + o.w + 0.1, 0), "largura das janelas + 10 cm"),
+          I("Soleiras de granito (portas externas)", "m", vaosExt.filter((o) => o.type === "P").reduce((s, o) => s + o.w, 0), "")]) },
+    { etapa: "Revestimentos", itens: [
+      I("Chapisco interno e externo", "m²", revInt + revExt + tetos, "paredes + tetos"),
+      I("Emboço/reboco interno", "m²", Math.max(0, revInt - ceramParede), "paredes internas, sem as áreas com cerâmica"),
+      I("Reboco externo", "m²", revExt, "fachadas e oitões − vãos"),
+      I("Reboco do teto", "m²", tetos, "área dos ambientes"),
+      I("Revestimento cerâmico de parede (h = 1,50 m)", "m²", ceramParede, "banheiros, serviço e cozinha"),
+    ] },
+    { etapa: "Pisos", itens: [
+      I("Contrapiso", "m²", pisoInt + pisoVar, M.varanda ? "ambientes + varanda" : "ambientes"),
+      I("Piso cerâmico", "m²", pisoInt + pisoVar, ""),
+      I("Rodapé cerâmico", "m", Math.max(0, rodape), "quartos e sala − portas"),
+    ] },
+    { etapa: "Pintura", itens: [
+      I("Pintura látex PVA em tetos", "m²", tetos, ""),
+      I("Pintura látex acrílica interna", "m²", Math.max(0, revInt - ceramParede), ""),
+      I("Pintura látex acrílica externa (com selador)", "m²", revExt, ""),
+    ] },
+    { etapa: "Área externa", itens: [
+      ...(M.lote.vaga ? [I("Piso de concreto da vaga", "m²", 12.5, "2,50 × 5,00 m")] : []),
+      ...(M.lote.caminho ? [I("Caminho de acesso (concreto)", "m²", (M.lote.caminho.x1 - M.lote.caminho.x0) * (M.lote.caminho.y1 - M.lote.caminho.y0), "")] : []),
+      I("Limpeza final da obra", "m²", Ac, "área construída"),
+    ] },
+  ];
+  return etapas.map((e) => ({ ...e, itens: e.itens.filter((x) => x.qtd > 0) })).filter((e) => e.itens.length);
+}
+
+/* ------------------------------------------------------------------ */
+/* 14. Memorial descritivo                                             */
+/* ------------------------------------------------------------------ */
+export function memorial(M, E, Q) {
+  const S = M.S, I = M.idx, nq = M.rooms.filter((r) => r.kind === "q").length;
+  const q = (etapa, inicio) => (Q.find((e) => e.etapa === etapa)?.itens || []).find((i) => i.desc.startsWith(inicio));
+  const v = (it, un = true) => (it ? `${fmt(it.qtd)}${un ? " " + it.un : ""}` : "—");
+  const amb = M.rooms.map((r) => `${r.name.toLowerCase()} (${fmt((r.x1 - r.x0) * (r.y1 - r.y0))} m²)`).join(", ") + (M.varanda ? `, varanda (${fmt(I.Avar)} m²)` : "");
+  const end = [S.endereco, S.bairro, S.cidade].filter(Boolean).join(", ");
+  const lote = [S.lote && `lote ${S.lote}`, S.quadra && `quadra ${S.quadra}`].filter(Boolean).join(", ");
+  const esqd = (Q.find((e) => e.etapa === "Esquadrias")?.itens || []).filter((i) => i.un === "un").map((i) => `${i.desc} (${fmt(i.qtd, 0)} un)`);
+  return [
+    { t: "1. Objeto", p: [
+      `Este memorial descreve os materiais e serviços para a construção de uma residência unifamiliar térrea de ${nq} quarto${nq > 1 ? "s" : ""}${M.rooms.some((r) => r.kind === "bs") ? ", sendo uma suíte" : ""}, com área construída de ${fmt(I.Aconst)} m²${end ? `, situada em ${end}` : ""}${lote ? ` (${lote})` : ""}.`,
+      `Terreno de ${fmt(M.lote.lf)} × ${fmt(M.lote.lp)} m (${fmt(I.Alote)} m²). Taxa de ocupação ${fmt(I.TO * 100, 1)}%, coeficiente de aproveitamento ${fmt(I.CA, 2)} e área permeável de ${fmt(I.Aperm)} m² (${fmt(I.perm * 100, 1)}%).`,
+      `Ambientes: ${amb}.`,
+    ] },
+    { t: "2. Serviços preliminares", p: [
+      "O terreno será limpo, com retirada de vegetação e entulho. A obra será locada com gabarito de madeira, conferindo esquadro, alinhamentos e os recuos do projeto de implantação.",
+      "Serão providenciados ligação provisória de água e energia, barracão para materiais e placa da obra com os dados do responsável técnico.",
+    ] },
+    { t: "3. Fundações", p: [
+      `Fundação direta em sapatas isoladas de concreto armado sob os ${E.pilares.length} pilares, ligadas por vigas baldrame de ${E.baldrames[0]?.bw ?? 15} × ${E.baldrames[0]?.h ?? 30} cm sob todas as paredes. Tensão admissível do solo adotada no pré-dimensionamento: ${fmt(E.op.sadm, 0)} kPa, a confirmar com sondagem (NBR 6122).`,
+      `As cavas receberão lastro de concreto magro de 5 cm. Os baldrames serão impermeabilizados no topo e nas faces laterais antes do início da alvenaria. Quantidades estimadas: escavação ${v(q("Fundações", "Escavação"))}, concreto ${fmt((q("Fundações", "Concreto estrutural das sapatas")?.qtd || 0) + (q("Fundações", "Concreto estrutural dos baldrames")?.qtd || 0))} m³.`,
+    ] },
+    { t: "4. Estrutura", p: [
+      `Estrutura em concreto armado C${E.op.fck} (NBR 6118): pilares de ${Math.round(M.t * 100)} × ${Math.round(E.op.hp * 100)} cm, vigas de respaldo sobre as paredes e laje maciça de ${Math.round(M.laje * 100)} cm sobre todos os ambientes, com o forro em ${fmt(M.H)} m de pé-direito.`,
+      `Aço CA-50 e CA-60. As armaduras, cobrimentos e detalhes seguirão o projeto estrutural, que deverá ser elaborado e assinado por profissional habilitado. Concreto estimado: ${fmt((q("Estrutura", "Concreto dos pilares")?.qtd || 0) + (q("Estrutura", "Concreto das vigas")?.qtd || 0) + (q("Estrutura", "Concreto da laje")?.qtd || 0))} m³.`,
+    ] },
+    { t: "5. Alvenaria", p: [
+      `Paredes em blocos cerâmicos de vedação de ${Math.round(M.t * 100) - 1} cm (NBR 15270), assentados com argamassa de cimento, cal e areia, em fiadas niveladas e aprumadas, amarradas aos pilares com tela ou ferro-cabelo. Área estimada: ${v(q("Alvenaria", "Alvenaria"))}.`,
+      "Todas as aberturas terão vergas e contravergas de concreto armado, passando 30 cm de cada lado do vão. Os oitões laterais serão em alvenaria até a linha do telhado.",
+    ] },
+    { t: "6. Cobertura", p: [
+      `Telhado de duas águas em ${M.tel.nome.toLowerCase()}, inclinação de ${Math.round(M.i * 100)}%, sobre estrutura de madeira tratada apoiada na laje e nos oitões, com beiral de ${fmt(M.b)} m. Área de telhado estimada: ${v(q("Cobertura", "Telhado"))}, cumeeira de ${v(q("Cobertura", "Cumeeira"))}.`,
+      M.varanda ? `A varanda frontal de ${fmt(M.dv)} m terá a cobertura contínua com o telhado principal, apoiada em pilares de 15 × 15 cm.` : "As águas pluviais escoarão pelo beiral livre; calhas e condutores, se previstos, seguirão o projeto de instalações.",
+    ] },
+    { t: "7. Esquadrias", p: [
+      `Janelas em alumínio com vidro liso de 4 mm e portas internas em madeira semi-oca com batente e guarnições; porta de entrada em madeira maciça. Relação: ${esqd.join("; ")}.`,
+      `Peitoris e soleiras externas em granito. Ferragens cromadas com fechaduras de cilindro nas portas externas.`,
+    ] },
+    { t: "8. Revestimentos", p: [
+      `Paredes internas e externas com chapisco e reboco (massa única) desempenado e feltrado. Tetos com chapisco e reboco. Áreas molhadas (banheiros${M.rooms.some((r) => r.kind === "s") ? ", área de serviço" : ""} e cozinha) com revestimento cerâmico até 1,50 m de altura, assentado com argamassa colante e rejuntado.`,
+      `Quantidades estimadas: reboco interno ${v(q("Revestimentos", "Emboço"))}, reboco externo ${v(q("Revestimentos", "Reboco externo"))}, cerâmica de parede ${v(q("Revestimentos", "Revestimento cerâmico"))}.`,
+    ] },
+    { t: "9. Pisos", p: [
+      `Contrapiso de concreto com 5 cm sobre o aterro compactado, nivelado (caimento para os ralos nas áreas molhadas), e piso cerâmico em todos os ambientes${M.varanda ? " e na varanda" : ""}, com rodapé cerâmico nos ambientes secos. Área de piso: ${v(q("Pisos", "Piso cerâmico"))}.`,
+    ] },
+    { t: "10. Pintura", p: [
+      "Tetos em látex PVA branco; paredes internas em látex acrílico sobre massa corrida nas áreas secas; fachadas em látex acrílico sobre selador. Mínimo de duas demãos, sobre superfícies limpas e secas.",
+    ] },
+    { t: "11. Instalações", p: [
+      "Instalações elétricas conforme NBR 5410, com quadro de distribuição, disjuntores, DR e aterramento. Instalações de água fria conforme NBR 5626, com caixa d'água sobre a laje, e de esgoto conforme NBR 8160, com caixas de inspeção e de gordura. Os projetos de instalações serão elaborados à parte.",
+    ] },
+    { t: "12. Serviços complementares e limpeza", p: [
+      `${M.lote.vaga ? "Vaga de carro e " : ""}caminho de acesso em piso de concreto. A obra será entregue limpa, com remoção de entulho, e com todas as instalações testadas.`,
+    ] },
+    { t: "Observação", p: [
+      "Memorial e quantidades gerados automaticamente pelo Foster Calc a partir do estudo preliminar. Devem ser revistos e completados pelo responsável técnico, conforme os projetos executivos e as exigências do município.",
+    ] },
+  ];
+}
