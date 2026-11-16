@@ -549,6 +549,13 @@ const LADOS = ['esq', 'dir', 'inf', 'sup'];
 const lnkViga = (g, q, L, de) => `<a ${'style=\"display:inline-block;margin-top:6px;font:600 .78rem var(--f-body);color:var(--accent)\"'} href="viga.html?${new URLSearchParams({ g: g.toFixed(2), q: q.toFixed(2), ...(L ? { L: L.toFixed(2) } : {}), de }).toString()}">Usar na viga →</a>`;
 
 
+// dados vindos do Planta IA: lx, ly, h, apoio, g, q, fck e bordas (A = apoiada, E = engastada)
+(() => {
+  const q = new URLSearchParams(location.search); if (q.get('p')) return; let n = 0;
+  for (const k of ['lx', 'ly', 'h', 'apoio', 'g', 'q', 'fck']) if (q.has(k) && $(k)) { $(k).value = q.get(k); n++; }
+  for (const k of ['b_esq', 'b_dir', 'b_inf', 'b_sup']) if (['A', 'E'].includes(q.get(k)) && $(k)) { $(k).value = q.get(k); n++; }
+  if (n) setTimeout(() => FC.toast(`${q.get('nome') || 'Laje'} do Planta IA aplicada. Confira as cargas e as bordas.`), 600);
+})();
 function lerEntrada() {
   return { lx: +$('lx').value, ly: +$('ly').value, h: +$('h').value, apoio: +$('apoio').value,
     g: +$('g').value, q: +$('q').value, psi2: +$('psi2').value, fck: +$('fck').value, caa: $('caa').value,

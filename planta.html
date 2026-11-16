@@ -92,6 +92,9 @@ textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ia-res{grid-column:1/-1;font-size:.84rem;line-height:1.45;background:var(--ok-soft);border-radius:6px;padding:9px 11px}
 .ia-res ul{margin:6px 0 0;padding-left:18px;color:var(--warn)}
 .avisos li.sem-marca{list-style:none;margin:6px 0 0 -16px}
+.est-t{font:600 .95rem var(--f-display);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
+a.dim{font:600 .8rem var(--f-body);color:var(--accent);text-decoration:none;white-space:nowrap}
+a.dim:hover{text-decoration:underline}
 .ia-res .dica{display:block;margin-top:6px;color:var(--muted)}
 .abas{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 10px}
 .abas button{font:600 .85rem var(--f-body);border:1px solid var(--line);background:var(--sheet);color:var(--muted);border-radius:99px;padding:6px 14px;cursor:pointer}
@@ -105,7 +108,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 <div id="fc-bar"></div>
 <header class="top">
   <h1>Planta IA <span>· prancha em DXF</span> <span class="beta">beta</span></h1>
-  <p>Casa térrea · projeto legal em 2 folhas: planta, cortes, fachadas, cobertura, implantação, situação e índices</p>
+  <p>Casa térrea · projeto legal em 3 folhas: arquitetura, implantação e índices, e o pré-lançamento estrutural ligado aos módulos do Calc</p>
 </header>
 
 <div class="grid">
@@ -177,6 +180,16 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
       <label>Recuo fundos<span class="unit"><input id="rfuMin" type="number" step="0.5" min="0" placeholder="mín."><i>m</i></span></label>
     </fieldset>
     <fieldset>
+      <legend>Estrutura (pré-lançamento)</legend>
+      <label>Seção do pilar<select id="secao"><option value="30">15 × 30</option><option value="40">15 × 40</option><option value="25">15 × 25</option></select></label>
+      <label>Concreto<select id="fck"><option value="20">C20</option><option value="25" selected>C25</option><option value="30">C30</option></select></label>
+      <label>Laje: revest.+forro<span class="unit"><input id="gAdd" type="number" step="0.1" min="0" value="1.0"><i>kN/m²</i></span></label>
+      <label>Laje: acidental<span class="unit"><input id="qLaje" type="number" step="0.1" min="0" value="0.5"><i>kN/m²</i></span></label>
+      <label>Peso das paredes<span class="unit"><input id="pPar" type="number" step="0.1" min="0" value="1.9"><i>kN/m²</i></span></label>
+      <label>σadm do solo<span class="unit"><input id="sadm" type="number" step="10" min="50" value="150"><i>kPa</i></span></label>
+      <p class="note" style="grid-column:1/-1;margin:0">A tensão do solo vem da sondagem. As cargas seguem a NBR 6120; confira para o seu caso.</p>
+    </fieldset>
+    <fieldset>
       <legend>Prancha e carimbo</legend>
       <label class="full">Folha 01 (planta e cortes)<select id="formato">
         <option value="auto">Automático (menor que couber)</option>
@@ -186,6 +199,10 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
         <option value="auto">Automático (menor que couber)</option>
         <option value="A3@100">A3 · 1:100</option><option value="A2@100">A2 · 1:100</option><option value="A1@100">A1 · 1:100</option>
         <option value="A2@125">A2 · 1:125</option><option value="A1@200">A1 · 1:200</option></select></label>
+      <label class="full">Folha 03 (estrutura)<select id="formato3">
+        <option value="auto">Automático (menor que couber)</option>
+        <option value="A3@50">A3 · 1:50</option><option value="A2@50">A2 · 1:50</option><option value="A1@50">A1 · 1:50</option>
+        <option value="A2@75">A2 · 1:75</option><option value="A3@100">A3 · 1:100</option></select></label>
       <label class="full">Título do projeto<input id="titulo" maxlength="44" placeholder="Automático: CASA TÉRREA - 2 QUARTOS"></label>
       <label class="full">Proprietário<input id="proprietario" maxlength="70"></label>
       <label class="full">Endereço da obra<input id="endereco" maxlength="78"></label>
@@ -207,7 +224,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
     <div id="stage"><div id="prev"></div>
       <div class="zoom"><button type="button" id="zin" aria-label="Aproximar">+</button><button type="button" id="zout" aria-label="Afastar">−</button><button type="button" id="zfit" aria-label="Ajustar à tela">⤢</button></div>
     </div>
-    <p class="note" style="margin:8px 0 0">Arraste para mover, use a roda do mouse ou dois dedos para o zoom. Tudo sai do mesmo modelo: mudou uma medida, as duas folhas se refazem.</p>
+    <p class="note" style="margin:8px 0 0">Arraste para mover, use a roda do mouse ou dois dedos para o zoom. Tudo sai do mesmo modelo: mudou uma medida, as três folhas se refazem.</p>
   </section>
 
   <section class="sheet">
@@ -222,6 +239,12 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
   </section>
 
   <section class="sheet">
+    <h2>Estrutura · dimensionar no Foster Calc</h2>
+    <p class="note" style="margin:0 0 10px">Lançamento automático: pilares nos encontros de paredes (e a cada 4,5 m no máximo), vigas de respaldo e baldrames sobre as paredes, uma laje por ambiente. Cargas preliminares por áreas de influência. Toque em <b>Dimensionar →</b> para abrir a peça no módulo com os dados preenchidos.</p>
+    <div id="estrutura"></div>
+  </section>
+
+  <section class="sheet">
     <h2>Projeto e exportação</h2>
     <div class="actions">
       <button type="button" class="pri ghost" id="btnSalvar">Salvar projeto</button>
@@ -230,7 +253,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
       <button type="button" class="pri ghost" id="btnImprimir">PDF / imprimir</button>
       <span class="note" id="expMsg" role="status"></span>
     </div>
-    <p class="note" style="margin:10px 0 0">Ver as pranchas é livre. O DXF (as duas folhas no mesmo arquivo) faz parte dos planos Estudante (com a marca “uso acadêmico”) e Pro. No plano Grátis, o PDF sai com a marca “estudo”.</p>
+    <p class="note" style="margin:10px 0 0">Ver as pranchas é livre. O DXF (as três folhas no mesmo arquivo) faz parte dos planos Estudante (com a marca “uso acadêmico”) e Pro. No plano Grátis, o PDF sai com a marca “estudo”.</p>
     <p class="note" style="margin:6px 0 0">O DXF abre no AutoCAD, ZWCAD, BricsCAD, DraftSight e LibreCAD, em metros e na escala real (a situação vem reduzida, na escala indicada). Para DWG, abra o DXF e use “Salvar como”.</p>
   </section>
 
@@ -246,8 +269,8 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 const $ = id => document.getElementById(id);
 const P = window.PlantaIA;
 const modulo = 'planta';
-const NUM = ['nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
-const TXT = ['desc', 'telha', 'formato', 'formato2', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
+const NUM = ['sadm', 'gAdd', 'qLaje', 'pPar', 'fck', 'secao', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
+const TXT = ['desc', 'telha', 'formato', 'formato2', 'formato3', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
   'afE', 'esquina', 'rua', 'ruaLat', 'quadra', 'lote', 'bairro', 'cidade', 'toMax', 'caMax', 'permMin', 'rfMin', 'rlMin', 'rfuMin'];
 const BOOL = ['serv', 'suite', 'cozSep', 'varanda', 'vaga'];
 let res = null, folha = 0, projetoId = null;
@@ -298,6 +321,7 @@ function render() {
   }
   $('indices').innerHTML = P.indices(M).map(r => `<tr><td>${r.nome}</td><td class="v">${r.val}</td><td class="v">${r.lim || '—'}</td><td class="v ${r.st === 'NÃO ATENDE' ? 'nao' : r.st ? 'sim' : ''}">${r.st || '—'}</td></tr>`).join('');
   $('checks').innerHTML = conferencia(M);
+  estruturaHtml();
 }
 function mostrar(reajustar) {
   const f = res.folhas[folha];
@@ -308,6 +332,19 @@ function mostrar(reajustar) {
   aplicarVista();
 }
 let _pend = 0; const agendar = () => { cancelAnimationFrame(_pend); _pend = requestAnimationFrame(render); };
+
+// ---------- estrutura: tabelas com links para os módulos ----------
+function estruturaHtml() {
+  const E = res.E, M = res.M, L = P.linksEstrutura(E, M);
+  const a = (id, txt = 'Dimensionar →') => `<a class="dim" href="${L[id]}" target="_blank" rel="noopener">${txt}</a>`;
+  const tab = (tit, cab, linhas) => `<h3 class="est-t">${tit}</h3><div class="tbl"><table><thead><tr>${cab.map((c, i) => `<th${i && i < cab.length - 1 ? ' style="text-align:right"' : ''}>${c}</th>`).join('')}</tr></thead><tbody>${linhas.join('')}</tbody></table></div>`;
+  $('estrutura').innerHTML =
+    tab('Lajes', ['Laje', 'Vãos', 'g / q (kN/m²)', ''], E.lajes.map(l => `<tr><td><b>${l.id}</b> · ${l.nome.toLowerCase()}</td><td class="v">${fmt(l.lx)} × ${fmt(l.ly)} m</td><td class="v">${fmt(l.g)} / ${fmt(l.q)}</td><td>${a(l.id)}</td></tr>`)) +
+    tab('Vigas do respaldo', ['Viga', 'Seção · vãos (m)', 'g+q máx (kN/m)', ''], E.vigas.map(v => `<tr><td><b>${v.id}</b></td><td class="v">${v.bw}×${v.h} · ${v.vaos.map(s => fmt(s.L)).join(' / ')}</td><td class="v">${fmt(Math.max(...v.vaos.map(s => s.g + s.q)), 1)}</td><td>${a(v.id)}</td></tr>`)) +
+    tab('Baldrames', ['Viga', 'Seção · vãos (m)', 'Parede', ''], E.baldrames.map(v => `<tr><td><b>${v.id}</b></td><td class="v">${v.bw}×${v.h} · ${v.vaos.map(s => fmt(s.L)).join(' / ')}</td><td class="v">${fmt(M.H)} m</td><td>${a(v.id)}</td></tr>`)) +
+    tab('Pilares e sapatas', ['Pilar', 'Seção · Nk', 'Sapata (estimada)', ''], E.pilares.map(p => `<tr><td><b>${p.id}</b>${p.var ? ' · varanda' : ''}</td><td class="v">${p.b}×${p.h} · ${p.N} kN</td><td class="v">S${p.id.slice(1)} ${p.sap.A}×${p.sap.B} cm</td><td>${a(p.id, 'Pilar →')} ${a('S' + p.id.slice(1), 'Sapata →')}</td></tr>`)) +
+    `<p class="note" style="margin:8px 0 0">Soma das cargas: <b>${E.pilares.reduce((s, p) => s + p.N, 0)} kN</b> (${fmt(E.pilares.reduce((s, p) => s + p.N, 0) / (M.W * M.D), 1)} kN/m² de área fechada). Os módulos refazem os cálculos com as normas; as reações das vigas contínuas substituem as estimativas.</p>`;
+}
 
 // ---------- zoom e arraste ----------
 function ajustar() {
@@ -440,7 +477,7 @@ $('btnPrancha').addEventListener('click', async () => {
   const r = P.buildSheets(paraModelo(lerEntrada()), { marca: FC.pro ? null : 'academico' });
   FC.registrarExport(modulo, 'dxf');
   FC.baixar(nomeArquivo('dxf'), P.toDXF(r), 'application/dxf');
-  msg('DXF baixado com as duas folhas lado a lado. Para DWG, abra no CAD e use “Salvar como”.');
+  msg('DXF baixado com as três folhas lado a lado. Para DWG, abra no CAD e use “Salvar como”.');
 });
 $('btnImprimir').addEventListener('click', () => {
   const r = P.buildSheets(paraModelo(lerEntrada()), { marca: marcaDoPlano() });
@@ -453,7 +490,7 @@ $('btnImprimir').addEventListener('click', () => {
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${nomeArquivo('pdf')}</title><style>@page{margin:0}html,body{margin:0;padding:0}.pg{break-after:page;overflow:hidden}.pg:last-child{break-after:auto}svg{display:block}${paginas.map(p => p.css).join('')}</style></head><body>${paginas.map(p => p.html).join('')}<script>setTimeout(function(){print()},500)<\/script></body></html>`);
   w.document.close();
   FC.registrarExport(modulo, 'pdf');
-  msg(`Na impressão, escolha “Salvar como PDF”. Folha 01 em ${r.folhas[0].formato} e folha 02 em ${r.folhas[1].formato}, paisagem.`);
+  msg(`Na impressão, escolha “Salvar como PDF”. Folhas em ${r.folhas.map(f => f.formato).join(', ')}, paisagem.`);
 });
 
 // ---------- projetos salvos ----------
