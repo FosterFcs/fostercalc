@@ -144,6 +144,11 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
       <label data-se="serv">Largura serviço<span class="unit"><input id="sw" type="number" step="0.05" min="1.2" max="3" value="1.60"><i>m</i></span></label>
       <label class="chk full"><input id="varanda" type="checkbox"> Varanda na frente</label>
       <label data-se="varanda">Profund. varanda<span class="unit"><input id="dv" type="number" step="0.05" min="1" max="4" value="1.80"><i>m</i></span></label>
+      <label class="chk full"><input id="lavabo" type="checkbox"> Lavabo</label>
+      <label data-se="lavabo">Largura lavabo<span class="unit"><input id="lvw" type="number" step="0.05" min="1" max="2" value="1.20"><i>m</i></span></label>
+      <label class="chk full"><input id="garagem" type="checkbox"> Garagem coberta (lateral esquerda)</label>
+      <label data-se="garagem">Largura garagem<span class="unit"><input id="gw" type="number" step="0.05" min="2.6" max="4.5" value="3.00"><i>m</i></span></label>
+      <label data-se="garagem">Comprimento<span class="unit"><input id="gl" type="number" step="0.05" min="4.5" max="7" value="5.50"><i>m</i></span></label>
     </fieldset>
     <fieldset>
       <legend>Construção</legend>
@@ -151,7 +156,8 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
       <label>Laje<span class="unit"><input id="laje" type="number" step="0.01" min="0.08" max="0.2" value="0.10"><i>m</i></span></label>
       <label>Paredes<select id="t"><option value="0.15">0,15 m</option><option value="0.2">0,20 m</option></select></label>
       <label>Beiral<span class="unit"><input id="beiral" type="number" step="0.05" min="0.3" max="1.2" value="0.60"><i>m</i></span></label>
-      <label class="full">Telha<select id="telha"><option value="ceramica">Cerâmica (30%)</option><option value="concreto">Concreto (30%)</option><option value="fibrocimento">Fibrocimento (15%)</option></select></label>
+      <label>Telhado<select id="aguas"><option value="2">2 águas</option><option value="4">4 águas</option></select></label>
+      <label>Telha<select id="telha"><option value="ceramica">Cerâmica (30%)</option><option value="concreto">Concreto (30%)</option><option value="fibrocimento">Fibrocimento (15%)</option></select></label>
     </fieldset>
     <fieldset>
       <legend>Terreno</legend>
@@ -298,10 +304,10 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 const $ = id => document.getElementById(id);
 const P = window.PlantaIA;
 const modulo = 'planta';
-const NUM = ['tensao', 'pChuveiro', 'sadm', 'gAdd', 'qLaje', 'pPar', 'fck', 'secao', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
+const NUM = ['tensao', 'pChuveiro', 'sadm', 'gAdd', 'qLaje', 'pPar', 'fck', 'secao', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'lvw', 'gw', 'gl', 'aguas', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
 const TXT = ['desc', 'telha', 'formato', 'formato2', 'formato3', 'formato4', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
   'afE', 'esquina', 'rua', 'ruaLat', 'quadra', 'lote', 'bairro', 'cidade', 'toMax', 'caMax', 'permMin', 'rfMin', 'rlMin', 'rfuMin'];
-const BOOL = ['serv', 'suite', 'cozSep', 'varanda', 'vaga'];
+const BOOL = ['serv', 'suite', 'cozSep', 'varanda', 'vaga', 'lavabo', 'garagem'];
 let res = null, folha = 0, projetoId = null;
 const view = { x: 0, y: 0, w: 1, h: 1, W: 1, H: 1, chave: '' };
 
@@ -528,7 +534,7 @@ function encaixarNoLote() {
     : `Reduzi as larguras dos cômodos para a casa caber no lote com 1,50 m de cada lado (${fmt(e.largura)} m de frente).`;
 }
 // a cada descrição nova o programa da casa volta ao padrão; terreno, construção e carimbo continuam
-const PROGRAMA = ['nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'suite', 'bsw', 'cozSep', 'kw', 'serv', 'sw', 'varanda', 'dv'];
+const PROGRAMA = ['nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'suite', 'bsw', 'cozSep', 'kw', 'serv', 'sw', 'varanda', 'dv', 'lavabo', 'lvw', 'garagem', 'gw', 'gl'];
 function programaPadrao() {
   const d = P.defaults(), c = {};
   for (const k of PROGRAMA) c[k] = /^qw\d$/.test(k) ? d.qw[+k[2]] : d[k];

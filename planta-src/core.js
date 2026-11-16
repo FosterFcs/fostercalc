@@ -14,8 +14,9 @@ export function defaults() {
     // programa
     nq: 2, qw: [3.0, 2.8, 2.8], bw: 1.6, serv: false, sw: 1.6, ds: 3.8, db: 3.0,
     varanda: false, dv: 1.8, suite: false, bsw: 1.4, cozSep: false, kw: 2.8,
+    lavabo: false, lvw: 1.2, garagem: false, gw: 3.0, gl: 5.5,
     // construção
-    t: 0.15, H: 2.8, laje: 0.10, telha: "ceramica", beiral: 0.6,
+    t: 0.15, H: 2.8, laje: 0.10, telha: "ceramica", beiral: 0.6, aguas: 2,
     // terreno
     lf: 10, lp: 25, rf: 5, afE: "", vaga: true, calc: 2.0, norte: 0,
     rua: "", ruaLat: "", esquina: "", quadra: "", lote: "", bairro: "", cidade: "",
@@ -161,6 +162,7 @@ export function buildModel(S0) {
   if (S.cozSep && nq > 1) back.splice(back.findIndex((r) => r.kind === "q" && !r.first), 0, bwcR);
   else if (S.cozSep) back.unshift(bwcR);
   else back.push(bwcR);
+  if (S.lavabo) back.splice(back.indexOf(bwcR), 0, { name: "LAVABO", w: clamp(num(S.lvw, 1.2), 1.0, 2.0), kind: "lav" });
   if (serv) back.push({ name: "A. SERVIÇO", w: clamp(num(S.sw, 1.6), 1.2, 3.5), kind: "s" });
 
   const W = r2(t + back.reduce((a, r) => a + r.w, 0) + (back.length - 1) * t + t);
@@ -225,7 +227,7 @@ export function buildModel(S0) {
       add({ type: "J", orient: "H", p0: r2(cx - 0.3), p1: r2(cx + 0.3), q0: ytop, q1: r2(ytop + t), sill: 1.5, head: 2.1, desc: "Basculante" });
       continue;
     }
-    const dw = r.kind === "b" ? 0.7 : 0.8;
+    const dw = r.kind === "b" ? 0.7 : r.kind === "lav" ? Math.min(0.7, w - 0.3) : 0.8;
     const cand = {
       R: { p0: r2(r.x1 - 0.10 - dw), p1: r2(r.x1 - 0.10), swing: { h: [r2(r.x1 - 0.10), yi1], open: 90, closed: 180 } },
       L: { p0: r2(r.x0 + 0.10), p1: r2(r.x0 + 0.10 + dw), swing: { h: [r2(r.x0 + 0.10), yi1], open: 90, closed: 0 } },
@@ -240,7 +242,7 @@ export function buildModel(S0) {
     if (r.kind === "q") {
       const ww = Math.min(1.5, w - 0.6);
       add({ type: "J", orient: "H", p0: r2(cx - ww / 2), p1: r2(cx + ww / 2), q0: ytop, q1: r2(ytop + t), sill: 0.9, head: 2.1, desc: "Correr 2 folhas" });
-    } else if (r.kind === "b") {
+    } else if (r.kind === "b" || r.kind === "lav") {
       add({ type: "J", orient: "H", p0: r2(cx - 0.3), p1: r2(cx + 0.3), q0: ytop, q1: r2(ytop + t), sill: 1.5, head: 2.1, desc: "Basculante" });
     } else if (r.kind === "s") {
       const p1 = r2(r.x1 - 0.10), p0 = r2(p1 - 0.8);
@@ -268,8 +270,11 @@ export function buildModel(S0) {
   const dv = varanda ? clamp(num(S.dv, 1.8), 1.0, 4) : 0;
   const Y0 = -dv, Y1 = D, Yr = (Y0 + Y1) / 2;
   const zb = r2(H + laje), zw = r2(zb + 0.15);
-  const zr = r2(zw + i * (Y1 - Y0) / 2);
-  const roofZ = (y) => zw + i * Math.min(y - Y0, Y1 - y);
+  const quatro = num(S.aguas, 2) === 4;
+  // altura do telhado em (x, y): planos com a mesma inclinação partindo das paredes (o beiral é a extensão)
+  const roofAt = (x, y) => zw + i * (quatro ? Math.min(y - Y0, Y1 - y, x, W - x) : Math.min(y - Y0, Y1 - y));
+  const zr = r2(zw + i * (quatro ? Math.min(W, Y1 - Y0) : Y1 - Y0) / 2);
+  const roofZ = (y) => roofAt(W / 2, y);
   if (zw - i * b < 2.2) avisos.push("Beiral baixo (menos de 2,20 m na ponta). Reduza o beiral ou a varanda.");
   const pilares = [];
   if (varanda) {
@@ -278,19 +283,33 @@ export function buildModel(S0) {
     xs.forEach((x0) => pilares.push({ x0: r2(x0), x1: r2(x0 + pw), y0: r2(-dv), y1: r2(-dv + pw) }));
   }
 
+  // garagem coberta na lateral esquerda: meia-água de fibrocimento encostada na parede, pilares no lado de fora
+  let gar = null;
+  if (S.garagem) {
+    const gw = clamp(num(S.gw, 3.0), 2.6, 4.5), gy0 = Y0, gy1 = r2(Math.min(Y0 + clamp(num(S.gl, 5.5), 4.5, 7), D));
+    if (gy1 - gy0 < 4.5) avisos.push("Garagem com menos de 4,50 m de comprimento: a casa é rasa para um carro. Aumente a profundidade ou use a vaga descoberta.");
+    const ig = 0.10, ov = 0.2, zh = r2(H), zl = r2(H - ig * (gw + ov));
+    if (zl < 2.2) avisos.push("A cobertura da garagem fica abaixo de 2,20 m na ponta. Reduza a largura da garagem ou aumente o pé-direito.");
+    const pw = 0.15, ps = [];
+    const ys = [gy0, gy1 - pw]; if (gy1 - gy0 > 4.6) ys.splice(1, 0, r2((gy0 + gy1 - pw) / 2));
+    ys.forEach((y) => ps.push({ x0: r2(-gw), x1: r2(-gw + pw), y0: r2(y), y1: r2(y + pw) }));
+    gar = { w: gw, x0: r2(-gw), x1: 0, y0: gy0, y1: gy1, ig, ov, zh, zl, z: (x) => zh + ig * x, pilares: ps, A: gw * (gy1 - gy0) };
+  }
   // terreno e implantação (origem no canto frontal esquerdo do lote)
   const lf = Math.max(3, num(S.lf, 10)), lp = Math.max(5, num(S.lp, 25));
   const rf = Math.max(0, num(S.rf, 4));
-  const afEnum = opt(S.afE);
-  const afE = afEnum == null ? r2((lf - W) / 2) : afEnum;
+  const afEnum = opt(S.afE), gwid = gar ? gar.w : 0;
+  const afE = afEnum == null ? r2(gwid + (lf - W - gwid) / 2) : afEnum + gwid;
   const hx0 = afE, hy0 = r2(rf + dv);
-  const recuos = { frontal: rf, esq: r2(afE), dir: r2(lf - afE - W), fundos: r2(lp - hy0 - D) };
+  const recuos = { frontal: rf, esq: r2(afE - gwid), dir: r2(lf - afE - W), fundos: r2(lp - hy0 - D) };
   if (recuos.esq < -EPS || recuos.dir < -EPS) avisos.push("A casa não cabe na largura do lote.");
   if (recuos.fundos < -EPS) avisos.push("A casa não cabe na profundidade do lote.");
   const entrada = O.find((o) => o.entrada);
   const portaX = hx0 + (entrada.p0 + entrada.p1) / 2;
-  let vaga = null, caminho = null;
-  if (S.vaga) {
+  let vaga = null, caminho = null, rampa = null;
+  if (gar) {
+    if (rf + dv > 0.3) rampa = { x0: r2(hx0 - gar.w), x1: r2(hx0), y0: 0, y1: r2(hy0 + gar.y0) };
+  } else if (S.vaga) {
     const vw = 2.5, vl = 5.0;
     const ladoDir = portaX < lf / 2;
     if (rf >= vl) vaga = ladoDir ? { x0: lf - 0.2 - vw, x1: lf - 0.2, y0: 0, y1: vl } : { x0: 0.2, x1: 0.2 + vw, y0: 0, y1: vl };
@@ -301,20 +320,24 @@ export function buildModel(S0) {
   if (rf > 0.3) {
     caminho = { x0: r2(portaX - 0.6), x1: r2(portaX + 0.6), y0: 0, y1: rf };
     if (vaga && caminho.x1 > vaga.x0 && caminho.x0 < vaga.x1) caminho = null;
+    if (rampa && caminho && caminho.x0 < rampa.x1 + 0.3) caminho.x0 = Math.max(caminho.x0, rampa.x1);
+    if (caminho && caminho.x1 - caminho.x0 < 0.8) caminho = null;
   }
-  const Alote = lf * lp, Afech = W * D, Avar = W * dv, Aproj = W * (D + dv);
-  const Apav = (vaga ? (vaga.x1 - vaga.x0) * (vaga.y1 - vaga.y0) : 0) + (caminho ? (caminho.x1 - caminho.x0) * (caminho.y1 - caminho.y0) : 0);
+  const Agar = gar ? gar.A : 0;
+  const Alote = lf * lp, Afech = W * D, Avar = W * dv, Aproj = W * (D + dv) + Agar;
+  const ar = (v) => (v ? (v.x1 - v.x0) * (v.y1 - v.y0) : 0);
+  const Apav = ar(vaga) + ar(caminho) + ar(rampa);
   const Aperm = Math.max(0, Alote - Aproj - Apav);
-  const idx = { Alote, Afech, Avar, Aconst: Afech + Avar, Aproj, Apav, Aperm, TO: Aproj / Alote, CA: (Afech + Avar) / Alote, perm: Aperm / Alote };
+  const idx = { Alote, Afech, Avar, Agar, Aconst: Afech + Avar + Agar, Aproj, Apav, Aperm, TO: Aproj / Alote, CA: (Afech + Avar + Agar) / Alote, perm: Aperm / Alote };
 
   const bwc = rooms.find((r) => r.kind === "b");
   const xA = S.corteA === "auto" || S.corteA == null ? r2((bwc.x0 + bwc.x1) / 2 + 0.12) : num(S.corteA, (bwc.x0 + bwc.x1) / 2);
   const yB = S.corteB === "auto" || S.corteB == null ? r2(yi1 + db * 0.55) : num(S.corteB, yi1 + db / 2);
 
   return {
-    S, avisos, t, W, D, yi0, yi1, ytop, ds, db, rooms, O, H, laje, zb, zw, zr, i, b, tel, roofZ, xA, yB,
-    varanda, dv, Y0, Y1, Yr, pilares, sala, coz, cozSep,
-    lote: { lf, lp, hx0, hy0, recuos, vaga, caminho, calc: Math.max(0, num(S.calc, 2)), norte: num(S.norte, 0) }, idx,
+    S, avisos, t, W, D, yi0, yi1, ytop, ds, db, rooms, O, H, laje, zb, zw, zr, i, b, tel, roofZ, roofAt, quatro, xA, yB,
+    varanda, dv, Y0, Y1, Yr, pilares, sala, coz, cozSep, gar,
+    lote: { lf, lp, hx0, hy0, recuos, vaga, caminho, rampa, calc: Math.max(0, num(S.calc, 2)), norte: num(S.norte, 0) }, idx,
   };
 }
 
@@ -479,6 +502,18 @@ function drawPlan(M, k, esc) {
     d.text([M.W * 0.72, -M.dv / 2 + 0.6 * k], 2.5 * k, "VARANDA", { al: "c", va: "b", layer: "ARQ-TEXTO", bold: true });
     d.text([M.W * 0.72, -M.dv / 2 - 0.6 * k], 1.8 * k, `A = ${fmt(M.W * M.dv)} m²`, { al: "c", va: "t", layer: "ARQ-TEXTO" });
   }
+  // garagem coberta
+  const g = M.gar;
+  if (g) {
+    for (const p of g.pilares) d.hrect(p.x0, p.y0, p.x1, p.y1, "SOLID", "ARQ-PILAR", "ARQ-PILAR");
+    d.line([g.x0, g.y0], [0, g.y0], "ARQ-PISO"); d.line([g.x0, g.y1], [0, g.y1], "ARQ-PISO"); d.line([g.x0, g.y0], [g.x0, g.y1], "ARQ-PISO");
+    d.rect(g.x0 - g.ov, g.y0 - 0.1, 0, g.y1 + 0.1, "ARQ-COBERTURA-PROJ");
+    const cx = g.x0 / 2, cy = (g.y0 + g.y1) / 2;
+    d.rect(cx - 0.9, cy - 2.1, cx + 0.9, cy + 2.1, "ARQ-MOBILIARIO");
+    d.text([cx, cy + 0.6 * k], 2.5 * k, "GARAGEM", { al: "c", va: "b", layer: "ARQ-TEXTO", bold: true });
+    d.text([cx, cy - 0.6 * k], 1.8 * k, `A = ${fmt(g.A)} m²`, { al: "c", va: "t", layer: "ARQ-TEXTO" });
+    d.text([cx, g.y1 - 0.25], 1.6 * k, `COB. FIBROCIMENTO i=${Math.round(g.ig * 100)}%`, { al: "c", va: "t", layer: "ARQ-TEXTO" });
+  }
   // mobiliário
   const F = "ARQ-MOBILIARIO";
   for (const r of M.rooms) {
@@ -509,6 +544,12 @@ function drawPlan(M, k, esc) {
         d.rect(Math.min(xw, xw + sg * 0.45), r.y0 + 0.12, Math.max(xw, xw + sg * 0.45), r.y0 + 0.62, F);
         d.circle([xw + sg * 0.24, r.y0 + 0.37], 0.14, F);
       }
+    } else if (r.kind === "lav") {
+      const cx = (r.x0 + r.x1) / 2;
+      d.rect(cx - 0.19, r.y1 - 0.18, cx + 0.19, r.y1, F); d.circle([cx, r.y1 - 0.40], 0.21, F);
+      const ladoL = r.door !== "L", xw = ladoL ? r.x0 : r.x1, sg = ladoL ? 1 : -1, ly = r.y0 + Math.min(1.2, h - 1.3);
+      d.rect(Math.min(xw, xw + sg * 0.42), ly, Math.max(xw, xw + sg * 0.42), ly + 0.5, F);
+      d.circle([xw + sg * 0.22, ly + 0.25], 0.13, F);
     } else if (r.kind === "s") {
       d.rect(r.x0, r.y1 - 0.55, r.x0 + 0.55, r.y1, F);
       if (r.x0 + 1.25 <= r.x1 - 0.9) d.rect(r.x0 + 0.65, r.y1 - 0.6, r.x0 + 1.25, r.y1, F);
@@ -532,7 +573,7 @@ function drawPlan(M, k, esc) {
   // textos dos ambientes
   for (const r of M.rooms) {
     const w = r2(r.x1 - r.x0), h = r2(r.y1 - r.y0), A = w * h;
-    const banho = r.kind === "b" || r.kind === "bs";
+    const banho = r.kind === "b" || r.kind === "bs" || r.kind === "lav";
     const dx = banho ? (r.door === "L" ? -0.15 : 0.18) : 0;
     const cx = (r.x0 + r.x1) / 2 + dx, cy = (r.y0 + r.y1) / 2 + (r.kind === "q" ? -0.35 : banho ? -0.1 : 0);
     const hn = (w < 1.9 ? (w < 1.5 ? 1.6 : 2.0) : 2.5) * k;
@@ -542,21 +583,26 @@ function drawPlan(M, k, esc) {
   }
   // projeção da cobertura
   const b = M.b;
-  d.rect(-b, M.Y0 - b, M.W + b, M.D + b, "ARQ-COBERTURA-PROJ");
-  d.line([-b, M.Yr], [M.W + b, M.Yr], "ARQ-COBERTURA-PROJ");
+  const LC = linhasCobertura(M);
+  d.rect(LC.x0, LC.y0, LC.x1, LC.y1, "ARQ-COBERTURA-PROJ");
+  if (Math.hypot(LC.cumeeira[1][0] - LC.cumeeira[0][0], LC.cumeeira[1][1] - LC.cumeeira[0][1]) > 0.01) d.line(LC.cumeeira[0], LC.cumeeira[1], "ARQ-COBERTURA-PROJ");
+  for (const [p, q] of LC.espigoes) d.line(p, q, "ARQ-COBERTURA-PROJ");
   // cotas
   const o1 = b + 7 * k, o2 = o1 + 7 * k;
   const backPts = [0, M.W]; M.rooms.filter((r) => r.y0 === M.yi1).forEach((r) => backPts.push(r.x0, r.x1));
   dimChain(d, backPts, k, { dir: "h", at: M.D + o1, from: M.D });
   dimChain(d, [0, M.W], k, { dir: "h", at: M.D + o2, from: M.D });
   const frontPts = [0, M.W]; M.O.filter((o) => o.orient === "H" && o.q0 === 0).forEach((o) => frontPts.push(o.p0, o.p1));
+  if (g) frontPts.push(g.x0);
+  const gx = g ? g.w + g.ov : 0;
   const yF = M.Y0 - o1;
   dimChain(d, frontPts, k, { dir: "h", at: yF, from: M.Y0 });
   const ladoPts = [0, t, M.yi0, M.yi1, M.ytop, M.D]; if (M.varanda) ladoPts.push(M.Y0);
-  dimChain(d, ladoPts, k, { dir: "v", at: -o1, from: 0 });
-  dimChain(d, [M.Y0, M.D], k, { dir: "v", at: -o2, from: 0 });
+  if (g) ladoPts.push(g.y1);
+  dimChain(d, ladoPts, k, { dir: "v", at: -o1 - gx, from: -gx });
+  dimChain(d, [M.Y0, M.D], k, { dir: "v", at: -o2 - gx, from: -gx });
   // linhas de corte
-  const ext = o2 + 6 * k;
+  const ext = o2 + 6 * k + gx;
   d.line([M.xA, yF - 4 * k], [M.xA, M.D + ext], "ARQ-CORTE");
   d.line([-ext, M.yB], [M.W + b + 6 * k, M.yB], "ARQ-CORTE");
   marcaCorte(d, [M.xA, M.D + ext + 3.2 * k], k, "A", [-1, 0]);
@@ -570,6 +616,29 @@ function drawPlan(M, k, esc) {
 /* ------------------------------------------------------------------ */
 /* 3. Cortes                                                           */
 /* ------------------------------------------------------------------ */
+// perfil do telhado (com beirais) ao longo de um eixo: axis "x" = varia y com x fixo; "y" = varia x com y fixo
+function perfilTelhado(M, axis, fixo, a, c) {
+  const b = M.b, f = axis === "x" ? (s) => M.roofAt(fixo, s) : (s) => M.roofAt(s, fixo);
+  const cand = [a, c];
+  if (axis === "x") { const m = M.quatro ? Math.min(fixo, M.W - fixo) : Infinity; cand.push(M.Yr, M.Y0 + m, M.Y1 - m); }
+  else { const m = Math.min(fixo - M.Y0, M.Y1 - fixo); cand.push(M.W / 2, m, M.W - m); }
+  const ss = [...new Set(cand.filter((v) => Number.isFinite(v) && v >= a - EPS && v <= c + EPS).map((v) => Math.round(v * 1e4) / 1e4))].sort((p, q) => p - q);
+  void b;
+  return ss.map((v) => [v, f(v)]);
+}
+// linhas da planta de cobertura: contorno, cumeeira e espigões
+function linhasCobertura(M) {
+  const b = M.b, x0 = -b, x1 = M.W + b, y0 = M.Y0 - b, y1 = M.D + b;
+  if (!M.quatro) return { x0, x1, y0, y1, cumeeira: [[x0, M.Yr], [x1, M.Yr]], espigoes: [] };
+  const w = x1 - x0, h = y1 - y0;
+  let A, B;
+  if (w >= h) { A = [x0 + h / 2, M.Yr]; B = [x1 - h / 2, M.Yr]; }
+  else { const xm = M.W / 2; A = [xm, y0 + w / 2]; B = [xm, y1 - w / 2]; }
+  const perto = (p) => (Math.hypot(p[0] - A[0], p[1] - A[1]) <= Math.hypot(p[0] - B[0], p[1] - B[1]) ? A : B);
+  const cantos = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  return { x0, x1, y0, y1, cumeeira: [A, B], espigoes: cantos.map((p) => [p, perto(p)]) };
+}
+
 function cutLine(M, axis, pos) {
   const G = grid(M), { X, Y, C } = G, out = [];
   const A = axis === "x" ? X : Y;
@@ -621,7 +690,7 @@ function drawSection(M, axis, k, esc) {
   for (const s of segs.filter((x) => x.room)) {
     const r = s.room, mid = (s.s0 + s.s1) / 2;
     d.text([mid, 1.35], (s.s1 - s.s0 < 1.6 ? 1.8 : 2.2) * k, r.name, { al: "c", va: "m", layer: "ARQ-TEXTO", bold: true });
-    if (r.kind === "b" || r.kind === "bs" || r.kind === "s") {
+    if (r.kind === "b" || r.kind === "bs" || r.kind === "lav" || r.kind === "s") {
       d.line([s.s0, 1.5], [s.s1, 1.5], "ARQ-VISTA");
       if (s.s1 - s.s0 > 1.3) d.text([mid, 1.5 + 0.8 * k], 1.6 * k, "REV. CERÂMICO h=1,50", { al: "c", va: "b", layer: "ARQ-TEXTO" });
     }
@@ -639,20 +708,36 @@ function drawSection(M, axis, k, esc) {
   }
   const i = M.i, zw = M.zw, th = 0.05, TL = "ARQ-COBERTURA";
   if (axis === "x") {
-    const pts = [[M.Y0 - b, zw - i * b], [M.Yr, M.zr], [M.D + b, zw - i * b]];
+    const pts = perfilTelhado(M, "x", M.xA, M.Y0 - b, M.D + b);
     const up = pts.map(([s, z]) => [s, z + th]);
     d.hatch([[...pts, ...up.slice().reverse()]], "SOLID", TL);
     d.poly([...pts, ...up.slice().reverse()], true, TL);
-    const oit = M.Yr > 0 ? [[0, M.zb], [0, M.roofZ(0)], [M.Yr, M.zr], [M.D, M.zw], [M.D, M.zb]] : [[0, M.zb], [0, M.roofZ(0)], [M.D, M.zw], [M.D, M.zb]];
-    d.poly(oit, false, "ARQ-VISTA");
+    if (!M.quatro) {
+      const oit = M.Yr > 0 ? [[0, M.zb], [0, M.roofZ(0)], [M.Yr, M.zr], [M.D, M.zw], [M.D, M.zb]] : [[0, M.zb], [0, M.roofZ(0)], [M.D, M.zw], [M.D, M.zb]];
+      d.poly(oit, false, "ARQ-VISTA");
+    } else {
+      const sil = perfilTelhado(M, "x", M.W / 2, M.Y0 - b, M.D + b);
+      if (sil.some(([s, z], n) => Math.abs(z - M.roofAt(M.xA, s)) > 0.01)) d.poly(sil.map(([s, z]) => [s, z + th]), false, "ARQ-VISTA");
+      d.poly([[0, M.zb], [0, M.zw], [M.D, M.zw], [M.D, M.zb]], false, "ARQ-VISTA");
+    }
     if (M.varanda) {
-      d.rect(M.Y0, 0, M.Y0 + 0.15, M.roofZ(M.Y0 + 0.15), "ARQ-VISTA");
+      d.rect(M.Y0, 0, M.Y0 + 0.15, M.roofAt(M.xA, M.Y0 + 0.15), "ARQ-VISTA");
       d.text([M.Y0 + M.dv / 2 + 0.1, 1.35], 2.0 * k, "VARANDA", { al: "c", va: "m", layer: "ARQ-TEXTO", bold: true });
     }
     const ty = M.Y0 + (M.Yr - M.Y0) * 0.45;
-    d.text([ty, M.roofZ(ty) + th + 3 * k], 1.8 * k, `${M.tel.nome} i=${Math.round(i * 100)}%`, { al: "c", va: "b", rot: Math.atan(i) * 180 / Math.PI, layer: "ARQ-TEXTO" });
+    d.text([ty, M.roofAt(M.xA, ty) + th + 3 * k], 1.8 * k, `${M.tel.nome} i=${Math.round(i * 100)}%`, { al: "c", va: "b", rot: Math.atan(i) * 180 / Math.PI, layer: "ARQ-TEXTO" });
   } else {
     const zc = M.roofZ(M.yB);
+    if (M.quatro) {
+      const pts = perfilTelhado(M, "y", M.yB, -b, M.W + b), up = pts.map(([s, z]) => [s, z + th]);
+      d.hatch([[...pts, ...up.slice().reverse()]], "SOLID", TL);
+      d.poly([...pts, ...up.slice().reverse()], true, TL);
+      const sil = perfilTelhado(M, "y", M.Yr, -b, M.W + b);
+      if (Math.abs(M.yB - M.Yr) > 0.01) d.poly(sil.map(([s, z]) => [s, z + th]), false, "ARQ-VISTA");
+      d.hrect(0, M.zb, M.t, M.zw, "ANSI31", AL, P, hs);
+      d.hrect(M.W - M.t, M.zb, M.W, M.zw, "ANSI31", AL, P, hs);
+      d.text([M.W / 2, M.zr + th + 1.0 * k], 1.8 * k, `${M.tel.nome} i=${Math.round(i * 100)}%`, { al: "c", va: "b", layer: "ARQ-TEXTO" });
+    } else {
     d.hrect(-b, zc, M.W + b, zc + th, "SOLID", TL, TL);
     d.hrect(0, M.zb, M.t, zc, "ANSI31", AL, P, hs);
     d.hrect(M.W - M.t, M.zb, M.W, zc, "ANSI31", AL, P, hs);
@@ -665,13 +750,26 @@ function drawSection(M, axis, k, esc) {
       d.line([-b, zc + th], [-b, M.zr], "ARQ-VISTA"); d.line([M.W + b, zc + th], [M.W + b, M.zr], "ARQ-VISTA");
     }
     d.text([M.W / 2, zc + th + 1.0 * k], 1.8 * k, `${M.tel.nome} i=${Math.round(i * 100)}%`, { al: "c", va: "b", layer: "ARQ-TEXTO" });
+    }
   }
-  const nx = s0 - b - 0.9;
+  const G = M.gar, gCorta = G && axis === "y" && M.yB > G.y0 && M.yB < G.y1;
+  if (G && axis === "y") {
+    d.line([G.x0 - G.ov - 1.0, -0.10], [-b - 1.0, -0.10], "ARQ-TERRENO");
+    d.hrect(G.x0, -0.10, 0, 0, "ANSI37", CO, null, hs * 1.6); d.line([G.x0, 0], [0, 0], "ARQ-PISO");
+    if (gCorta) {
+      const pts = [[0, G.zh], [G.x0 - G.ov, G.zl]], up = pts.map(([x, z]) => [x, z + 0.06]);
+      d.hatch([[...pts, ...up.slice().reverse()]], "SOLID", TL); d.poly([...pts, ...up.slice().reverse()], true, TL);
+      d.rect(G.x0, 0, G.x0 + 0.15, G.z(G.x0 + 0.075), "ARQ-VISTA");
+      d.text([G.x0 / 2, 1.35], 2.0 * k, "GARAGEM", { al: "c", va: "m", layer: "ARQ-TEXTO", bold: true });
+      d.text([G.x0 / 2, G.z(G.x0 / 2) + 0.06 + 1.5 * k], 1.6 * k, `FIBROCIMENTO i=${Math.round(G.ig * 100)}%`, { al: "c", va: "b", rot: -Math.atan(G.ig) * 180 / Math.PI, layer: "ARQ-TEXTO" });
+    }
+  }
+  const nx = (G && axis === "y" ? G.x0 - G.ov : s0 - b) - 0.9;
   nivel(d, nx, 0, k, "±0,00", -1);
   nivel(d, nx, H, k, fmtNivel(H) + " (forro)", -1);
-  d.text([s0 - b - 0.2, -0.10 - 1.0 * k], 1.8 * k, "TERRENO " + fmtNivel(-0.10), { al: "r", va: "t", layer: "ARQ-NIVEL" });
+  d.text([(G && axis === "y" ? G.x0 - G.ov : s0 - b) - 0.2, -0.10 - 1.0 * k], 1.8 * k, "TERRENO " + fmtNivel(-0.10), { al: "r", va: "t", layer: "ARQ-NIVEL" });
   const vx = L + b + 1.0 + 4 * k;
-  const zTop = axis === "x" ? M.zr : M.roofZ(M.yB);
+  const zTop = axis === "x" ? Math.max(...perfilTelhado(M, "x", M.xA, M.Y0, M.D).map((p) => p[1])) : M.quatro ? Math.max(...perfilTelhado(M, "y", M.yB, 0, M.W).map((p) => p[1])) : M.roofZ(M.yB);
   dimChain(d, [0, H, M.zb, zTop], k, { dir: "v", at: vx, from: L + b + 1.0 });
   const hp = []; struct.forEach((s) => hp.push(s.s0, s.s1));
   if (axis === "x" && M.varanda) hp.push(M.Y0);
@@ -694,9 +792,23 @@ function drawFacade(M, k, lado, esc) {
   }[lado];
   const S = cfg.s;
   const longa = lado === "frente" || lado === "fundos";
-  const r0 = longa ? -b : Math.min(S(M.Y0 - b), S(M.D + b)), r1 = longa ? M.W + b : Math.max(S(M.Y0 - b), S(M.D + b));
+  let r0 = longa ? -b : Math.min(S(M.Y0 - b), S(M.D + b)), r1 = longa ? M.W + b : Math.max(S(M.Y0 - b), S(M.D + b));
+  const G = M.gar;
+  if (G && longa) { r0 = Math.min(r0, S(G.x0 - G.ov)); r1 = Math.max(r1, S(G.x0 - G.ov)); }
   d.line([r0 - 1.0, -0.10], [r1 + 1.0, -0.10], "ARQ-TERRENO");
-  if (longa) {
+  if (M.quatro) {
+    const a = longa ? 0 : Math.min(S(0), S(M.D)), c = longa ? M.W : Math.max(S(0), S(M.D));
+    d.poly([[a, -0.10], [a, ze], [c, ze], [c, -0.10]], false, "ARQ-PAREDE");
+    const sil = longa ? perfilTelhado(M, "y", M.Yr, -b, M.W + b).map(([s, z]) => [s, z])
+      : perfilTelhado(M, "x", M.W / 2, M.Y0 - b, M.D + b).map(([s, z]) => [S(s), z]);
+    const pol = [...sil, [sil[sil.length - 1][0], ze], [sil[0][0], ze]];
+    d.hatch([pol], "ANSI31", TL, 0.9 * k * 1.6, 45);
+    d.poly(pol, true, TL);
+    // espigões vistos de frente: das pontas da cumeeira aos cantos do beiral
+    const meio = sil.filter(([, z]) => Math.abs(z - Math.max(...sil.map((q) => q[1]))) < 1e-6);
+    if (meio.length) { d.line([sil[0][0], ze], meio[0], TL); d.line([sil[sil.length - 1][0], ze], meio[meio.length - 1], TL); }
+    d.rect(r0, ze - 0.15, r1, ze, TL);
+  } else if (longa) {
     d.poly([[0, -0.10], [0, ze], [M.W, ze], [M.W, -0.10]], false, "ARQ-PAREDE");
     d.hrect(-b, ze, M.W + b, M.zr, "ANSI31", TL, TL, 0.9 * k * 1.6, 45);
     d.rect(-b, ze - 0.15, M.W + b, ze, TL);
@@ -734,14 +846,31 @@ function drawFacade(M, k, lado, esc) {
       d.line([0, 0], [M.W, 0], "ARQ-PISO");
     } else if (!longa) {
       const ps = lado === "direita" ? M.pilares.filter((p) => p.x1 > M.W - EPS) : M.pilares.filter((p) => p.x0 < EPS);
-      for (const p of ps) { const a = Math.min(S(p.y0), S(p.y1)), c = Math.max(S(p.y0), S(p.y1)); d.rect(a, 0, c, M.roofZ(p.y0 + 0.15), "ARQ-PILAR"); }
+      for (const p of ps) { const a = Math.min(S(p.y0), S(p.y1)), c = Math.max(S(p.y0), S(p.y1)); d.rect(a, 0, c, M.quatro ? ze : M.roofZ(p.y0 + 0.15), "ARQ-PILAR"); }
       d.line([S(M.Y0), 0], [S(0), 0], "ARQ-PISO");
     }
   }
+  if (G && lado !== "direita") {
+    const FB = "ARQ-COBERTURA";
+    if (longa) {
+      const xs = lado === "frente" ? G.pilares.filter((p) => p.y0 === G.y0) : G.pilares.filter((p) => p.y1 === G.y1);
+      for (const p of xs) d.rect(Math.min(S(p.x0), S(p.x1)), 0, Math.max(S(p.x0), S(p.x1)), G.z(p.x1), "ARQ-PILAR");
+      const a = [S(0), G.zh], c = [S(G.x0 - G.ov), G.zl];
+      d.poly([a, c, [c[0], c[1] - 0.12], [a[0], a[1] - 0.12]], true, FB);
+      d.line([S(0), 0], [S(G.x0), 0], "ARQ-PISO");
+    } else {
+      for (const p of G.pilares) d.rect(Math.min(S(p.y0), S(p.y1)), 0, Math.max(S(p.y0), S(p.y1)), G.z(p.x1), "ARQ-PILAR");
+      const ya = S(G.y0 - 0.1), yb = S(G.y1 + 0.1);
+      d.hrect(Math.min(ya, yb), G.zl - 0.12, Math.max(ya, yb), G.zl, "SOLID", FB, FB);
+      d.line([Math.min(ya, yb), G.zh], [Math.max(ya, yb), G.zh], FB);
+      d.line([Math.min(ya, yb), G.zl], [Math.min(ya, yb), G.zh], FB); d.line([Math.max(ya, yb), G.zl], [Math.max(ya, yb), G.zh], FB);
+    }
+  }
   const base = longa ? [0, M.W] : [S(0), S(M.D)];
+  if (G && longa && lado === "frente") base.push(S(G.x0));
   if (!longa && M.varanda) base.push(S(M.Y0));
   dimChain(d, base, k, { dir: "h", at: -0.10 - 6 * k, from: -0.10 });
-  dimChain(d, longa ? [-0.10, ze, M.zr] : [-0.10, M.zb, M.zr], k, { dir: "v", at: r1 + 6 * k, from: r1 });
+  dimChain(d, longa || M.quatro ? [-0.10, ze, M.zr] : [-0.10, M.zb, M.zr], k, { dir: "v", at: r1 + 6 * k, from: r1 });
   tituloAbaixo(d, k, cfg.nome, `ESC. 1:${esc}`, (Math.min(...base) + Math.max(...base)) / 2);
   return d.E;
 }
@@ -754,17 +883,37 @@ function drawCobertura(M, k, esc) {
   const x0 = -b, x1 = M.W + b, y0 = M.Y0 - b, y1 = M.D + b;
   d.hatch([[[x0, y0], [x1, y0], [x1, y1], [x0, y1]]], "ANSI31", TL, 0.9 * k * 1.6, 45);
   d.rect(x0, y0, x1, y1, TL);
-  d.line([x0, M.Yr], [x1, M.Yr], TL);
+  const LC = linhasCobertura(M);
+  const temCum = Math.hypot(LC.cumeeira[1][0] - LC.cumeeira[0][0], LC.cumeeira[1][1] - LC.cumeeira[0][1]) > 0.01;
+  if (temCum) d.line(LC.cumeeira[0], LC.cumeeira[1], TL);
+  for (const [p, q] of LC.espigoes) d.line(p, q, TL);
   d.rect(0, 0, M.W, M.D, "ARQ-PROJECAO");
   if (M.varanda) for (const p of M.pilares) d.rect(p.x0, p.y0, p.x1, p.y1, "ARQ-PROJECAO");
-  const lab = `i=${Math.round(M.i * 100)}%`;
-  for (const [ya, yb] of [[M.Yr - 0.4, (y0 + M.Yr) / 2 - 0.2], [M.Yr + 0.4, (y1 + M.Yr) / 2 + 0.2]]) {
-    seta(d, [M.W * 0.3, ya], [M.W * 0.3, yb], k, TL);
-    d.text([M.W * 0.3 + 1.5 * k, (ya + yb) / 2], 2.2 * k, lab, { al: "l", va: "m", layer: "ARQ-TEXTO", bold: true });
+  const G = M.gar;
+  if (G) {
+    const gx0 = G.x0 - G.ov, gp = [[gx0, G.y0 - 0.1], [0, G.y0 - 0.1], [0, G.y1 + 0.1], [gx0, G.y1 + 0.1]];
+    d.hatch([gp], "ANSI31", TL, 0.9 * k * 1.6, -45); d.poly(gp, true, TL);
+    for (const p of G.pilares) d.rect(p.x0, p.y0, p.x1, p.y1, "ARQ-PROJECAO");
+    const ym = (G.y0 + G.y1) / 2;
+    seta(d, [-0.3, ym], [gx0 + 0.4, ym], k, TL);
+    d.text([gx0 / 2, ym + 1.5 * k], 2.0 * k, `i=${Math.round(G.ig * 100)}%`, { al: "c", va: "b", layer: "ARQ-TEXTO", bold: true });
+    d.text([gx0 / 2, ym - 1.5 * k], 1.6 * k, "GARAGEM · FIBROCIMENTO", { al: "c", va: "t", layer: "ARQ-TEXTO" });
   }
-  d.text([M.W * 0.66, M.Yr + 1.5 * k], 2.0 * k, "CUMEEIRA", { al: "c", va: "b", layer: "ARQ-TEXTO" });
-  d.text([M.W / 2, y0 + 3 * k], 2.2 * k, `${M.tel.nome} · BEIRAL ${fmt(b)} m`, { al: "c", va: "b", layer: "ARQ-TEXTO", bold: true });
-  dimChain(d, [x0, 0, M.W, x1], k, { dir: "h", at: y1 + 7 * k, from: y1 });
+  const lab = `i=${Math.round(M.i * 100)}%`;
+  const xc = M.quatro ? M.W / 2 : M.W * 0.3;
+  for (const [ya, yb] of [[M.Yr - 0.4, (y0 + M.Yr) / 2 - 0.2], [M.Yr + 0.4, (y1 + M.Yr) / 2 + 0.2]]) {
+    seta(d, [xc, ya], [xc, yb], k, TL);
+    d.text([xc + 1.5 * k, (ya + yb) / 2], 2.2 * k, lab, { al: "l", va: "m", layer: "ARQ-TEXTO", bold: true });
+  }
+  if (M.quatro) {
+    const ym = (LC.y0 + LC.y1) / 2;
+    for (const [xa, xb] of [[x0 + 1.2, x0 + 0.2], [x1 - 1.2, x1 - 0.2]]) if (x1 - x0 > 3) seta(d, [xa, ym], [xb, ym], k, TL);
+    if (temCum) d.text([(LC.cumeeira[0][0] + LC.cumeeira[1][0]) / 2 + (LC.cumeeira[0][0] === LC.cumeeira[1][0] ? 1.5 * k : 0), (LC.cumeeira[0][1] + LC.cumeeira[1][1]) / 2 + 1.5 * k], 2.0 * k, "CUMEEIRA", { al: LC.cumeeira[0][0] === LC.cumeeira[1][0] ? "l" : "c", va: "b", layer: "ARQ-TEXTO" });
+    const [pe, qe] = LC.espigoes[2];
+    d.text([(pe[0] + qe[0]) / 2 + 1.0 * k, (pe[1] + qe[1]) / 2], 1.8 * k, "ESPIGÃO", { al: "l", va: "m", layer: "ARQ-TEXTO" });
+  } else d.text([M.W * 0.66, M.Yr + 1.5 * k], 2.0 * k, "CUMEEIRA", { al: "c", va: "b", layer: "ARQ-TEXTO" });
+  d.text([M.W / 2, y0 + 3 * k], 2.2 * k, `${M.tel.nome} · ${M.quatro ? "4 ÁGUAS" : "2 ÁGUAS"} · BEIRAL ${fmt(b)} m`, { al: "c", va: "b", layer: "ARQ-TEXTO", bold: true });
+  dimChain(d, [x0, 0, M.W, x1].concat(G ? [G.x0 - G.ov] : []), k, { dir: "h", at: y1 + 7 * k, from: y1 });
   dimChain(d, [y0, M.Y0, M.Yr, M.D, y1].filter((v, n, a) => a.indexOf(v) === n), k, { dir: "v", at: x1 + 7 * k, from: x1 });
   tituloAbaixo(d, k, "PLANTA DE COBERTURA", `ESC. 1:${esc}`, M.W / 2);
   return d.E;
@@ -794,7 +943,10 @@ function drawImplantacao(M, k, esc) {
   d.text([lf / 2, -cw - 4 * k], 3.0 * k, (M.S.rua || "RUA").toUpperCase(), { al: "c", va: "t", layer: "ARQ-TEXTO", bold: true });
   // área permeável = lote − edificação − pisos
   const lot = [[0, 0], [lf, 0], [lf, lp], [0, lp]];
-  const furos = [[H(0, M.Y0), H(M.W, M.Y0), H(M.W, M.D), H(0, M.D)]];
+  const G = M.gar, gx = G ? G.w : 0;
+  const furos = [[H(-gx, M.Y0), H(M.W, M.Y0), H(M.W, M.D), H(0, M.D), H(0, G ? G.y1 : M.D), H(-gx, G ? G.y1 : M.Y0)].filter((p, n, a) => n === 0 || p[0] !== a[n - 1][0] || p[1] !== a[n - 1][1])];
+  if (!G) furos[0] = [H(0, M.Y0), H(M.W, M.Y0), H(M.W, M.D), H(0, M.D)];
+  if (L.rampa) furos.push([[L.rampa.x0, L.rampa.y0], [L.rampa.x1, L.rampa.y0], [L.rampa.x1, L.rampa.y1 - 0.001], [L.rampa.x0, L.rampa.y1 - 0.001]]);
   if (L.vaga) furos.push([[L.vaga.x0, L.vaga.y0], [L.vaga.x1, L.vaga.y0], [L.vaga.x1, L.vaga.y1], [L.vaga.x0, L.vaga.y1]]);
   if (L.caminho) furos.push([[L.caminho.x0, L.caminho.y0], [L.caminho.x1, L.caminho.y0], [L.caminho.x1, L.caminho.y1 - 0.001], [L.caminho.x0, L.caminho.y1 - 0.001]]);
   const dentro = (f) => f.every(([x, y]) => x >= -EPS && y >= -EPS && x <= lf + EPS && y <= lp + EPS);
@@ -807,6 +959,13 @@ function drawImplantacao(M, k, esc) {
     for (const p of M.pilares) d.hrect(...H(p.x0, p.y0), ...H(p.x1, p.y1), "SOLID", "ARQ-PILAR", "ARQ-PILAR");
   }
   d.rect(...H(-M.b, M.Y0 - M.b), ...H(M.W + M.b, M.D + M.b), "ARQ-COBERTURA-PROJ");
+  if (G) {
+    d.poly([H(G.x0, G.y0), H(0, G.y0), H(0, G.y1), H(G.x0, G.y1)], true, "ARQ-PISO");
+    d.rect(...H(G.x0 - G.ov, G.y0 - 0.1), ...H(0, G.y1 + 0.1), "ARQ-COBERTURA-PROJ");
+    for (const p of G.pilares) d.hrect(...H(p.x0, p.y0), ...H(p.x1, p.y1), "SOLID", "ARQ-PILAR", "ARQ-PILAR");
+    d.text(H(G.x0 / 2, (G.y0 + G.y1) / 2), 1.8 * k, "GARAGEM", { al: "c", va: "m", rot: 90, layer: "ARQ-TEXTO", bold: true });
+  }
+  if (L.rampa) { const v = L.rampa; d.rect(v.x0, v.y0, v.x1, v.y1, "ARQ-PISO"); if (v.y1 > 2.5) d.text([(v.x0 + v.x1) / 2, v.y1 / 2], 1.6 * k, "ACESSO DE VEÍCULOS", { al: "c", va: "m", rot: 90, layer: "ARQ-TEXTO" }); }
   const cx = hx0 + M.W / 2, cy = hy0 + M.D / 2;
   const nq = M.rooms.filter((r) => r.kind === "q").length;
   d.text([cx, cy + 1.2 * k], 2.5 * k, `CASA TÉRREA · ${nq} QUARTO${nq > 1 ? "S" : ""}`, { al: "c", va: "b", layer: "ARQ-TEXTO", bold: true });
@@ -818,11 +977,11 @@ function drawImplantacao(M, k, esc) {
     d.text([(v.x0 + v.x1) / 2, v.y1 - 1.5 * k], 1.8 * k, "VAGA 2,50 x 5,00", { al: "c", va: "t", layer: "ARQ-TEXTO", bold: true });
   }
   if (L.caminho) { const c = L.caminho; d.rect(c.x0, c.y0, c.x1, c.y1, "ARQ-PISO"); }
-  const ax = L.caminho ? (L.caminho.x0 + L.caminho.x1) / 2 : L.vaga ? (L.vaga.x0 + L.vaga.x1) / 2 : lf / 2;
+  const ax = L.caminho ? (L.caminho.x0 + L.caminho.x1) / 2 : L.vaga ? (L.vaga.x0 + L.vaga.x1) / 2 : L.rampa ? (L.rampa.x0 + L.rampa.x1) / 2 : lf / 2;
   seta(d, [ax, -cw - 0.4], [ax, Math.min(0.9, hy0 + M.Y0 - 0.2)], k, "ARQ-TEXTO");
   d.text([ax + 1.5 * k, -cw / 2 + 0.1], 1.8 * k, "ACESSO", { al: "l", va: "b", layer: "ARQ-TEXTO" });
   const o1 = 7 * k, o2 = 14 * k;
-  dimChain(d, [0, hx0, hx0 + M.W, lf].filter((v) => v >= -EPS && v <= lf + EPS), k, { dir: "h", at: lp + o1, from: lp });
+  dimChain(d, [0, hx0 - gx, hx0, hx0 + M.W, lf].filter((v, n, a) => v >= -EPS && v <= lf + EPS && a.indexOf(v) === n), k, { dir: "h", at: lp + o1, from: lp });
   dimChain(d, [0, lf], k, { dir: "h", at: lp + o2, from: lp });
   const ladoPts = [0, hy0 + M.Y0, hy0, hy0 + M.D, lp].filter((v, n, a) => a.indexOf(v) === n && v >= -EPS && v <= lp + EPS);
   dimChain(d, ladoPts, k, { dir: "v", at: lf + o1, from: lf });
@@ -830,7 +989,7 @@ function drawImplantacao(M, k, esc) {
   const rt = (p, s, rot = 0) => d.text(p, 1.8 * k, s, { al: "c", va: "m", rot, layer: "ARQ-TEXTO" });
   if (recuos.frontal > 1.2) rt([hx0 + M.W / 2, (hy0 + M.Y0) / 2 + 2 * k], `RECUO FRONTAL ${fmt(recuos.frontal)}`);
   if (recuos.fundos > 1.2) rt([hx0 + M.W / 2, (hy0 + M.D + lp) / 2], `RECUO DE FUNDOS ${fmt(recuos.fundos)}`);
-  if (recuos.esq > 0.5) rt([hx0 / 2, cy], `AFAST. ${fmt(recuos.esq)}`, 90);
+  if (recuos.esq > 0.5) rt([(hx0 - gx) / 2, cy], `AFAST. ${fmt(recuos.esq)}`, 90);
   if (recuos.dir > 0.5) rt([(hx0 + M.W + lf) / 2, cy], `AFAST. ${fmt(recuos.dir)}`, 90);
   const ident = [M.S.lote && `LOTE ${M.S.lote}`, M.S.quadra && `QUADRA ${M.S.quadra}`].filter(Boolean).join(" · ");
   d.text([lf / 2, lp + o2 + 9 * k], 2.2 * k, `${ident ? ident + " · " : ""}TERRENO ${fmt(lf)} x ${fmt(lp)} = ${fmt(M.idx.Alote)} m²`, { al: "c", va: "b", layer: "ARQ-TEXTO", bold: true });
@@ -990,6 +1149,7 @@ function baseInstal(d, M, k) {
   for (const o of M.O) if (o.swing) { const la = o.swing.open * Math.PI / 180; d.line(o.swing.h, [o.swing.h[0] + o.w * Math.cos(la), o.swing.h[1] + o.w * Math.sin(la)], "EST-PAREDE"); }
   for (const r of M.rooms) d.text([(r.x0 + r.x1) / 2, r.y0 + 0.35], 1.7 * k, r.name, { al: "c", va: "b", layer: "EST-PAREDE" });
   if (M.varanda) { d.line([0, -M.dv], [M.W, -M.dv], "EST-PAREDE"); for (const p of M.pilares) d.rect(p.x0, p.y0, p.x1, p.y1, "EST-PAREDE"); }
+  if (M.gar) { const g = M.gar; d.poly([[0, g.y0], [g.x0, g.y0], [g.x0, g.y1], [0, g.y1]], false, "EST-PAREDE"); for (const p of g.pilares) d.rect(p.x0, p.y0, p.x1, p.y1, "EST-PAREDE"); d.text([g.x0 / 2, g.y0 + 0.35], 1.7 * k, "GARAGEM", { al: "c", va: "b", layer: "EST-PAREDE" }); }
 }
 function drawEletrica(M, I, k, esc) {
   const d = new Draw(), L = "ELE-PONTO", T = "ELE-TEXTO", s = 1.6 * k;
@@ -1103,7 +1263,8 @@ function drawQuadros(M, k) {
   const d = new Draw();
   const rows = M.rooms.map((r) => [r.name, fmt((r.x1 - r.x0) * (r.y1 - r.y0))]);
   if (M.varanda) rows.push(["VARANDA", fmt(M.idx.Avar)]);
-  const util = M.rooms.reduce((a, r) => a + (r.x1 - r.x0) * (r.y1 - r.y0), 0) + M.idx.Avar;
+  if (M.gar) rows.push(["GARAGEM (COBERTA)", fmt(M.idx.Agar)]);
+  const util = M.rooms.reduce((a, r) => a + (r.x1 - r.x0) * (r.y1 - r.y0), 0) + M.idx.Avar + M.idx.Agar;
   rows.push(["ÁREA ÚTIL", fmt(util)], ["ÁREA CONSTRUÍDA", fmt(M.idx.Aconst)]);
   const w1 = 70 * k;
   tabela(d, 0, w1, k, "QUADRO DE ÁREAS (m²)", [{ t: "AMBIENTE", w: 48 * k }, { t: "ÁREA", w: 22 * k }], rows, [rows.length - 2, rows.length - 1]);
@@ -1431,7 +1592,7 @@ export function interpretarTexto(texto) {
   }
   // vaga
   if (/\bsem (?:vaga|garagem)\b/.test(t)) { c.vaga = false; ok.push("sem vaga"); }
-  else if (/\bvaga|garagem|estacionamento\b/.test(t)) { c.vaga = true; ok.push("vaga de carro"); if (/garagem coberta/.test(t)) nao.push("Garagem coberta ainda não: a vaga sai descoberta no terreno."); }
+  else if (/\bvaga|garagem|estacionamento\b/.test(t)) { c.vaga = true; if (!/garagem|abrigo (?:de|para) carro|carro coberto|vaga coberta/.test(t)) ok.push("vaga de carro"); if (/garagem descoberta|vaga descoberta/.test(t)) c.garagem = false; }
   // terreno
   if ((m = t.match(new RegExp(`(?:terreno|lote)\\s+(?:de\\s+)?${N}\\s*(?:m\\s*)?(?:x|por)\\s*${N}`)))) { c.lf = n2(m[1]); c.lp = n2(m[2]); ok.push(`terreno ${m[1]} x ${m[2]} m`); }
   if ((m = t.match(new RegExp(`recuo(?: frontal)?\\s+(?:de\\s+)?${N}`)))) { c.rf = n2(m[1]); ok.push(`recuo frontal ${m[1]} m`); }
@@ -1442,11 +1603,15 @@ export function interpretarTexto(texto) {
   else if (/ceramica|colonial|romana|portuguesa/.test(t)) { c.telha = "ceramica"; ok.push("telha cerâmica"); }
   // paredes
   if (/parede[s]? (?:de )?(?:20|0[.,]20)\b/.test(t)) c.t = 0.2;
+  if (/quatro aguas|4 aguas/.test(t)) { c.aguas = 4; ok.push("telhado de quatro águas"); }
+  else if (/duas aguas|2 aguas/.test(t)) { c.aguas = 2; ok.push("telhado de duas águas"); }
+  if (/lavabo/.test(t)) { c.lavabo = true; ok.push("lavabo"); }
+  if (/garagem|abrigo (?:de|para) carro|carro coberto|vaga coberta/.test(t) && !/garagem descoberta|sem garagem/.test(t)) { c.garagem = true; ok.push("garagem coberta"); }
   // o que o módulo ainda não faz
   const fora = [[/sobrado|dois andares|2 andares|pavimento superior/, "Sobrado ainda não: o módulo faz casa térrea."],
     [/piscina/, "Piscina não entra no desenho."], [/churrasqueira|area gourmet|espaco gourmet/, "Churrasqueira/área gourmet ainda não."],
-    [/edicula/, "Edícula ainda não."], [/quatro aguas|4 aguas/, "Telhado de quatro águas ainda não: sai em duas águas."],
-    [/closet/, "Closet ainda não."], [/escritorio/, "Escritório ainda não."], [/lavabo|dois banheiros|2 banheiros/, "Só um banheiro social (mais o da suíte)."]];
+    [/edicula/, "Edícula ainda não."], [/casa em l\b|formato (?:de |em )?l\b/, "Casa em L ainda não: sai retangular."],
+    [/closet/, "Closet ainda não."], [/escritorio/, "Escritório ainda não."], [/dois banheiros sociais|2 banheiros sociais|tres banheiros|3 banheiros/, "Só um banheiro social (mais o da suíte e o lavabo)."]];
   for (const [re, s] of fora) if (re.test(t)) nao.push(s);
   return { campos: c, entendido: ok, observacoes: nao };
 }
@@ -1459,13 +1624,13 @@ export function encaixar(S0) {
   const S = { ...defaults(), ...S0 };
   const M = buildModel(S);
   const lf = M.lote.lf;
-  const MIN = { q: 2.5, b: 1.2, bs: 1.2, s: 1.2 };
-  const chave = (r) => r.kind === "q" ? "qw" + (r.first ? 0 : +r.name.slice(-1) - 1) : { b: "bw", bs: "bsw", s: "sw" }[r.kind];
+  const MIN = { q: 2.5, b: 1.2, bs: 1.2, s: 1.2, lav: 1.0 };
+  const chave = (r) => r.kind === "q" ? "qw" + (r.first ? 0 : +r.name.slice(-1) - 1) : { b: "bw", bs: "bsw", s: "sw", lav: "lvw" }[r.kind];
   const fundo = M.rooms.filter((r) => r.y0 === M.yi1).map((r) => ({ k: chave(r), w: r.x1 - r.x0, min: MIN[r.kind] }));
   const folga = fundo.reduce((a, r) => a + Math.max(0, r.w - r.min), 0);
   // 1º: 1,50 m de cada lado; 2º: encostada na divisa esquerda com 1,50 m do outro lado
   for (const [afTotal, divisa] of [[3.0, false], [1.5, true]]) {
-    const disp = lf - afTotal;
+    const disp = lf - afTotal - (M.gar ? M.gar.w : 0);
     if (M.W <= disp + 1e-6) return { ok: true, mudou: divisa, divisa, campos: divisa ? { afE: "0" } : {}, largura: M.W };
     const falta = M.W - disp;
     if (folga < falta - 1e-6) continue;
@@ -1641,14 +1806,14 @@ export function quantitativos(M, E, INS = instalacoes(M)) {
   const vaosExt = M.O.filter(ext), vaosInt = M.O.filter((o) => !ext(o));
   const aV = (l) => l.reduce((s, o) => s + o.w * o.hgt, 0);
   // oitões (parede acima da laje nas duas laterais, até o telhado)
-  let aOitao = 0; const n = 60;
+  let aOitao = 0; const n = M.quatro ? 0 : 60;
   for (let k = 0; k < n; k++) { const y = (M.D * (k + 0.5)) / n; aOitao += Math.max(0, M.roofZ(y) - M.zb) * (M.D / n); }
   aOitao *= 2;
   const alvenaria = Lparede * H - aV(M.O) + aOitao;
   // revestimentos de parede
   const pInt = 2 * (M.W - 2 * t) + 2 * (M.D - 2 * t);
   const revInt = 2 * Lint * H + pInt * H - 2 * aV(vaosInt) - aV(vaosExt);
-  const molh = M.rooms.filter((r) => ["b", "bs", "s", "coz"].includes(r.kind));
+  const molh = M.rooms.filter((r) => ["b", "bs", "lav", "s", "coz"].includes(r.kind));
   let ceramParede = molh.reduce((s, r) => s + perim(r) * 1.5, 0)
     - M.O.filter((o) => o.type !== "J").reduce((s, o) => s + (molh.some((r) => (o.room || "") === r.name) ? o.w * 1.5 : 0), 0);
   if (!M.cozSep) ceramParede += (M.ds) * 1.5;                       // parede da pia na sala/cozinha
@@ -1698,12 +1863,16 @@ export function quantitativos(M, E, INS = instalacoes(M)) {
       I_("Aço CA-50/60 (estrutura)", "kg", vPil * TAXA_ACO.pilar + vVig * TAXA_ACO.viga + vLaje * TAXA_ACO.laje, `taxas ${TAXA_ACO.pilar}/${TAXA_ACO.viga}/${TAXA_ACO.laje} kg/m³`),
     ] },
     { etapa: "Alvenaria", itens: [
-      I_(`Alvenaria de vedação ${Math.round(t * 100) - 1} cm (bloco cerâmico)`, "m²", alvenaria, `${fmt(Lparede)} m de parede × ${fmt(H)} m − vãos + oitões`),
+      I_(`Alvenaria de vedação ${Math.round(t * 100) - 1} cm (bloco cerâmico)`, "m²", alvenaria, `${fmt(Lparede)} m de parede × ${fmt(H)} m − vãos${M.quatro ? "" : " + oitões"}`),
       I_("Vergas e contravergas", "m", M.O.reduce((s, o) => s + (o.w + 0.6) * (o.type === "J" ? 2 : 1), 0), "vão + 30 cm de cada lado"),
     ] },
     { etapa: "Cobertura", itens: [
       I_(`Telhado (${M.tel.nome.toLowerCase()}) com madeiramento`, "m²", telhado, `projeção × √(1+i²), i = ${Math.round(M.i * 100)}%`),
-      I_("Cumeeira", "m", M.W + 2 * M.b, "comprimento da cumeeira"),
+      ...(() => {
+        const LC = linhasCobertura(M), cum = Math.hypot(LC.cumeeira[1][0] - LC.cumeeira[0][0], LC.cumeeira[1][1] - LC.cumeeira[0][1]);
+        const esp = LC.espigoes.reduce((s, [p, q]) => s + Math.hypot(q[0] - p[0], q[1] - p[1], M.roofAt(...q) - M.roofAt(...p)), 0);
+        return [I_("Cumeeira", "m", cum, "comprimento da cumeeira"), ...(M.quatro ? [I_("Espigão", "m", esp, "4 espigões, com a inclinação")] : [])];
+      })(),
     ] },
     { etapa: "Esquadrias", itens: Object.values(esq).sort((a, b) => a.o.code.localeCompare(b.o.code, "pt", { numeric: true }))
         .map(({ o, n }) => I_(`${o.code} · ${o.type === "J" ? "janela" : o.type === "P" ? "porta" : "vão"} ${o.desc.toLowerCase()} ${fmt(o.w)} × ${fmt(o.hgt)} m`, "un", n, o.type === "J" ? `peitoril ${fmt(o.sill)} m` : ""))
@@ -1729,7 +1898,7 @@ export function quantitativos(M, E, INS = instalacoes(M)) {
     { etapa: "Revestimentos", itens: [
       I_("Chapisco interno e externo", "m²", revInt + revExt + tetos, "paredes + tetos"),
       I_("Emboço/reboco interno", "m²", Math.max(0, revInt - ceramParede), "paredes internas, sem as áreas com cerâmica"),
-      I_("Reboco externo", "m²", revExt, "fachadas e oitões − vãos"),
+      I_("Reboco externo", "m²", revExt, M.quatro ? "fachadas − vãos" : "fachadas e oitões − vãos"),
       I_("Reboco do teto", "m²", tetos, "área dos ambientes"),
       I_("Revestimento cerâmico de parede (h = 1,50 m)", "m²", ceramParede, "banheiros, serviço e cozinha"),
     ] },
@@ -1743,8 +1912,17 @@ export function quantitativos(M, E, INS = instalacoes(M)) {
       I_("Pintura látex acrílica interna", "m²", Math.max(0, revInt - ceramParede), ""),
       I_("Pintura látex acrílica externa (com selador)", "m²", revExt, ""),
     ] },
+    ...(M.gar ? [{ etapa: "Garagem coberta", itens: [
+      I_("Piso de concreto da garagem (e = 8 cm)", "m²", M.gar.A, `${fmt(M.gar.w)} × ${fmt(M.gar.y1 - M.gar.y0)} m`),
+      I_("Pilar de concreto 15 × 15 cm", "un", M.gar.pilares.length, `h ≈ ${fmt(M.gar.zl, 2)} m`),
+      I_("Sapata isolada dos pilares da garagem", "un", M.gar.pilares.length, "60 × 60 cm (estimada)"),
+      I_("Cobertura em telha de fibrocimento com estrutura metálica", "m²", (M.gar.w + M.gar.ov) * (M.gar.y1 - M.gar.y0 + 0.2) * Math.sqrt(1 + M.gar.ig ** 2), `i = ${Math.round(M.gar.ig * 100)}%, com beiral de ${fmt(M.gar.ov)} m`),
+      I_("Rufo na parede da casa", "m", M.gar.y1 - M.gar.y0 + 0.2, ""),
+      I_("Calha e condutor", "m", M.gar.y1 - M.gar.y0 + 0.2 + M.gar.zl, ""),
+    ] }] : []),
     { etapa: "Área externa", itens: [
       ...(M.lote.vaga ? [I_("Piso de concreto da vaga", "m²", 12.5, "2,50 × 5,00 m")] : []),
+      ...(M.lote.rampa ? [I_("Piso de concreto do acesso de veículos", "m²", (M.lote.rampa.x1 - M.lote.rampa.x0) * (M.lote.rampa.y1 - M.lote.rampa.y0), "do portão à garagem")] : []),
       ...(M.lote.caminho ? [I_("Caminho de acesso (concreto)", "m²", (M.lote.caminho.x1 - M.lote.caminho.x0) * (M.lote.caminho.y1 - M.lote.caminho.y0), "")] : []),
       I_("Limpeza final da obra", "m²", Ac, "área construída"),
     ] },
@@ -1783,11 +1961,12 @@ export function memorial(M, E, Q, INS = instalacoes(M)) {
     ] },
     { t: "5. Alvenaria", p: [
       `Paredes em blocos cerâmicos de vedação de ${Math.round(M.t * 100) - 1} cm (NBR 15270), assentados com argamassa de cimento, cal e areia, em fiadas niveladas e aprumadas, amarradas aos pilares com tela ou ferro-cabelo. Área estimada: ${v(q("Alvenaria", "Alvenaria"))}.`,
-      "Todas as aberturas terão vergas e contravergas de concreto armado, passando 30 cm de cada lado do vão. Os oitões laterais serão em alvenaria até a linha do telhado.",
+      "Todas as aberturas terão vergas e contravergas de concreto armado, passando 30 cm de cada lado do vão. " + (M.quatro ? "Sem oitões: o telhado de quatro águas apoia na laje e nas paredes externas." : "Os oitões laterais serão em alvenaria até a linha do telhado."),
     ] },
     { t: "6. Cobertura", p: [
-      `Telhado de duas águas em ${M.tel.nome.toLowerCase()}, inclinação de ${Math.round(M.i * 100)}%, sobre estrutura de madeira tratada apoiada na laje e nos oitões, com beiral de ${fmt(M.b)} m. Área de telhado estimada: ${v(q("Cobertura", "Telhado"))}, cumeeira de ${v(q("Cobertura", "Cumeeira"))}.`,
+      `Telhado de ${M.quatro ? "quatro" : "duas"} águas em ${M.tel.nome.toLowerCase()}, inclinação de ${Math.round(M.i * 100)}%, sobre estrutura de madeira tratada apoiada na laje${M.quatro ? "" : " e nos oitões"}, com beiral de ${fmt(M.b)} m. Área de telhado estimada: ${v(q("Cobertura", "Telhado"))}, cumeeira de ${v(q("Cobertura", "Cumeeira"))}${M.quatro ? `, espigões de ${v(q("Cobertura", "Espigão"))}` : ""}.`,
       M.varanda ? `A varanda frontal de ${fmt(M.dv)} m terá a cobertura contínua com o telhado principal, apoiada em pilares de 15 × 15 cm.` : "As águas pluviais escoarão pelo beiral livre; calhas e condutores, se previstos, seguirão o projeto de instalações.",
+      ...(M.gar ? [`Garagem coberta de ${fmt(M.gar.w)} × ${fmt(M.gar.y1 - M.gar.y0)} m (${fmt(M.gar.A)} m²) na lateral esquerda, com cobertura em telha de fibrocimento de uma água (i = ${Math.round(M.gar.ig * 100)}%) sobre estrutura metálica, encostada na parede da casa com rufo e apoiada em ${M.gar.pilares.length} pilares de concreto de 15 × 15 cm; piso de concreto desempenado com caimento para fora, calha e condutor no beiral.`] : []),
     ] },
     { t: "7. Esquadrias", p: [
       `Janelas em alumínio com vidro liso de 4 mm e portas internas em madeira semi-oca com batente e guarnições; porta de entrada em madeira maciça. Relação: ${esqd.join("; ")}.`,
@@ -1876,6 +2055,9 @@ export function instalacoes(M, op = {}) {
       const box = r.y1 - Math.min(0.9, r.y1 - r.y0 - 1.4) / 2;
       ele.push({ tipo: "tue", x: (r.x0 + r.x1) / 2, y: r.y1, n: [0, -1], va: pChuv, circ: "CHUV", room: r.name, h: 2.2, rot: "CH" });
       void box;
+    } else if (r.kind === "lav") {
+      const ladoL = r.door !== "L";
+      ele.push({ tipo: "tugA", x: ladoL ? r.x0 : r.x1, y: r.y0 + Math.min(1.2, r.y1 - r.y0 - 1.3) + 0.25, n: [ladoL ? 1 : -1, 0], va: 600, circ: "TUG-BAN", room: r.name, h: 1.1 });
     } else if (molhado(r)) {
       let nT = Math.max(1, Math.ceil(P / 3.5 - 1e-9));
       const pts = [];
@@ -1904,6 +2086,11 @@ export function instalacoes(M, op = {}) {
   if (!M.rooms.some((r) => r.kind === "s")) {                           // sem área de serviço: máquina na cozinha
     const k = M.rooms.find((r) => r.kind === "coz" || r.kind === "sc");
     ele.push({ tipo: "tue", x: k.x1, y: Math.max(k.y0 + 0.4, (k.y0 + k.y1) / 2 - 1.3), n: [-1, 0], va: 1000, circ: "MLR", room: k.name, h: 0.9, rot: "MLR" });
+  }
+  if (M.gar) {
+    const g = M.gar, gy = (g.y0 + g.y1) / 2;
+    ele.push({ tipo: "luz", x: g.x0 / 2, y: gy, va: 100, circ: "ILUM", room: "GARAGEM" });
+    ele.push({ tipo: "tug", x: 0, y: Math.min(g.y1 - 0.5, gy + 1.0), n: [-1, 0], va: 100, circ: "TUG-SOC", room: "GARAGEM", h: 0.3 });
   }
   if (M.varanda) {
     ele.push({ tipo: "luz", x: M.W * 0.4, y: -M.dv / 2, va: 100, circ: "ILUM", room: "VARANDA" });
@@ -1942,9 +2129,10 @@ export function instalacoes(M, op = {}) {
   const ilum = grupo("ILUM"), vaIl = ilum.reduce((s, p) => s + p.va, 0);
   if (vaIl > 1200) { const fr = ilum.filter((p) => p.y < M.yi0), fu = ilum.filter((p) => p.y >= M.yi0); add("Iluminação social", fr, V, 1.5, false); add("Iluminação íntima", fu, V, 1.5, false); }
   else add("Iluminação", ilum, V, 1.5, false);
-  const soc = grupo("TUG-SOC"), ext = soc.some((p) => p.room === "VARANDA");   // tomada externa pede DR
-  if (soc.reduce((s, p) => s + p.va, 0) > 1800) { const h = Math.ceil(soc.length / 2); add("Tomadas sala/quartos (1)", soc.slice(0, h), V, 2.5, soc.slice(0, h).some((p) => p.room === "VARANDA")); add("Tomadas sala/quartos (2)", soc.slice(h), V, 2.5, soc.slice(h).some((p) => p.room === "VARANDA")); }
-  else add(ext ? "Tomadas sala, quartos e varanda" : "Tomadas sala e quartos", soc, V, 2.5, ext);
+  const fora = (p) => p.room === "VARANDA" || p.room === "GARAGEM";
+  const soc = grupo("TUG-SOC"), ext = soc.some(fora);   // tomada externa pede DR
+  if (soc.reduce((s, p) => s + p.va, 0) > 1800) { const h = Math.ceil(soc.length / 2); add("Tomadas sala/quartos (1)", soc.slice(0, h), V, 2.5, soc.slice(0, h).some(fora)); add("Tomadas sala/quartos (2)", soc.slice(h), V, 2.5, soc.slice(h).some(fora)); }
+  else add(ext ? "Tomadas sala, quartos e externas" : "Tomadas sala e quartos", soc, V, 2.5, ext);
   add("Tomadas cozinha", grupo("TUG-COZ"), V, 2.5, true);
   add("Tomadas área de serviço", grupo("TUG-SERV"), V, 2.5, true);
   add("Tomadas banheiros", grupo("TUG-BAN"), V, 2.5, true);
@@ -1963,6 +2151,11 @@ export function instalacoes(M, op = {}) {
       H("AF", (r.x0 + r.x1) / 2, r.y1, "Chuveiro", r.name);
       H("RS", (r.x0 + r.x1) / 2, r.y1 - boxD / 2, "Ralo sifonado (box)", r.name);
       H("RS", (r.x0 + r.x1) / 2 + sg * 0.2, r.y0 + 0.5, "Ralo sifonado", r.name);
+    } else if (r.kind === "lav") {
+      const cx = (r.x0 + r.x1) / 2, ladoL = r.door !== "L", xw = ladoL ? r.x0 : r.x1, sg = ladoL ? 1 : -1, ly = r.y0 + Math.min(1.2, r.y1 - r.y0 - 1.3);
+      H("AF", cx + 0.15, r.y1, "Vaso", r.name); H("ES", cx, r.y1 - 0.3, "Vaso (100)", r.name, { d: 100 });
+      H("AF", xw, ly + 0.25, "Lavatório", r.name); H("ES", xw + sg * 0.12, ly + 0.12, "Lavatório (40)", r.name, { d: 40 });
+      H("RS", cx - sg * 0.15, r.y0 + 0.6, "Ralo sifonado", r.name);
     } else if (r.kind === "coz" || r.kind === "sc") {
       const pc = (r.y0 + r.y1) / 2;
       H("AF", r.x1, pc - 0.1, "Pia", r.name); H("ES", r.x1 - 0.2, pc - 0.1, "Pia (50)", r.name, { d: 50 });
@@ -1977,7 +2170,7 @@ export function instalacoes(M, op = {}) {
     H("AF", k.x1, yk, "Máquina de lavar", k.name); H("ES", k.x1 - 0.2, yk, "Máquina (50)", k.name, { d: 50 });
   }
   // caixas externas: inspeção atrás das áreas molhadas do fundo, gordura ao lado da cozinha
-  const fundoMolh = M.rooms.filter((r) => ["b", "bs", "s"].includes(r.kind));
+  const fundoMolh = M.rooms.filter((r) => ["b", "bs", "lav", "s"].includes(r.kind));
   fundoMolh.forEach((r) => H("CI", (r.x0 + r.x1) / 2, M.D + 0.8, "Caixa de inspeção 60×60", r.name));
   const kz = M.rooms.find((r) => r.kind === "coz" || r.kind === "sc");
   H("CG", M.W + 0.8, (kz.y0 + kz.y1) / 2, "Caixa de gordura", kz.name);
