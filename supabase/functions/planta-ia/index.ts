@@ -29,9 +29,10 @@ const json = (body: unknown, status: number, headers: Record<string, string>) =>
 const NUM: Record<string, [number, number]> = {
   nq: [1, 3], qw0: [2.2, 5], qw1: [2.2, 5], qw2: [2.2, 5], db: [2.4, 5], bw: [1.2, 3], ds: [2.8, 6],
   bsw: [1.1, 3], kw: [2, 5], sw: [1.2, 3], dv: [1, 4], H: [2.4, 4], laje: [0.08, 0.2], beiral: [0.3, 1.2],
+  lvw: [1, 2], gw: [2.6, 4.5], gl: [4.5, 7],
   lf: [3, 100], lp: [5, 200], rf: [0, 30], afE: [0, 50], calc: [0, 6], norte: [-360, 360], esquina: [0, 1000],
 };
-const BOOL = ["suite", "cozSep", "serv", "varanda", "vaga"];
+const BOOL = ["suite", "cozSep", "serv", "varanda", "vaga", "lavabo", "garagem"];
 const TXT: Record<string, number> = { rua: 60, ruaLat: 40, quadra: 12, lote: 12, bairro: 40, cidade: 40, proprietario: 70, endereco: 78, titulo: 44 };
 
 function limpar(c: Record<string, unknown>) {
@@ -45,16 +46,18 @@ function limpar(c: Record<string, unknown>) {
   for (const k of BOOL) if (typeof c[k] === "boolean") out[k] = c[k];
   if (c.t === 0.15 || c.t === 0.2 || c.t === "0.15" || c.t === "0.2") out.t = Number(c.t);
   if (["ceramica", "concreto", "fibrocimento"].includes(String(c.telha))) out.telha = String(c.telha);
+  if (c.aguas === 2 || c.aguas === 4 || c.aguas === "2" || c.aguas === "4") out.aguas = Number(c.aguas);
   for (const [k, n] of Object.entries(TXT)) if (typeof c[k] === "string" && c[k]) out[k] = (c[k] as string).trim().slice(0, n);
   return out;
 }
 
-const SISTEMA = `Você é o assistente do módulo Planta IA do Foster Calc. Ele desenha o projeto legal de UMA CASA TÉRREA
+const SISTEMA = `Você é o assistente do módulo Foster Projeto do Foster Calc. Ele desenha o projeto legal de UMA CASA TÉRREA
 (planta, cortes, fachadas, implantação) a partir de campos fixos. Leia a descrição do usuário (português do Brasil, às vezes
 transcrita de áudio, com erros) e devolva SOMENTE JSON no formato:
 {"campos": {...}, "resumo": "uma frase do que foi entendido", "observacoes": ["..."]}
 
-Tipologia fixa: quartos e banheiros enfileirados no fundo; sala/cozinha na frente; telhado de duas águas; laje plana.
+Tipologia: casa retangular com quartos e banheiros enfileirados no fundo; sala/cozinha na frente; laje plana;
+telhado de duas ou quatro águas; garagem coberta opcional na lateral esquerda.
 Campos possíveis (use só os que a descrição pedir ou deixar claros; medidas em metros, números com ponto):
 - nq: quantidade de quartos (1 a 3), contando a suíte
 - qw0, qw1, qw2: largura de cada quarto (2,2 a 5). "quartos de 3x3" → largura 3 e db 3
@@ -65,22 +68,26 @@ Campos possíveis (use só os que a descrição pedir ou deixar claros; medidas 
 - cozSep: true para cozinha separada da sala; false se pedir cozinha americana ou integrada; kw: largura da cozinha (2 a 5)
 - serv: true se pedir área de serviço/lavanderia; sw: largura (1,2 a 3)
 - varanda: true se pedir varanda/alpendre na frente; dv: profundidade (1 a 4)
+- lavabo: true se pedir lavabo; lvw: largura (1 a 2)
+- garagem: true se pedir garagem coberta/abrigo para carro; gw: largura (2,6 a 4,5); gl: comprimento (4,5 a 7)
+- aguas: 2 ou 4 (telhado de duas ou quatro águas)
 - H: pé-direito (2,4 a 4); laje: espessura (0,08 a 0,2); t: parede 0.15 ou 0.2
 - telha: "ceramica", "concreto" ou "fibrocimento"; beiral (0,3 a 1,2)
 - lf: frente do terreno; lp: profundidade do terreno ("terreno 10x25" → lf 10, lp 25); rf: recuo frontal;
   afE: afastamento lateral esquerdo; calc: largura do passeio; norte: ângulo do norte em graus
-- vaga: true/false para vaga de carro descoberta no terreno
+- vaga: true/false para vaga de carro descoberta no terreno (com garagem coberta, não precisa)
 - rua, quadra, lote, bairro, cidade, esquina (distância até a esquina em m), ruaLat (rua da esquina), proprietario, endereco, titulo
 
 Regras:
 - Se pedir uma área total (ex. "casa de 60 m²"), ajuste larguras e profundidades para chegar perto.
   Área fechada ≈ (soma das larguras dos ambientes do fundo + 0,15 × (n.º de ambientes + 1)) × (ds + db + 0,45).
 - Se o terreno for informado, a casa precisa caber na frente dele com cerca de 1,50 m de cada lado:
-  largura da casa ≈ soma das larguras dos ambientes do fundo + 0,15 × (n.º de ambientes + 1) ≤ frente − 3.
+  largura da casa ≈ soma das larguras dos ambientes do fundo + 0,15 × (n.º de ambientes + 1) ≤ frente − 3
+  (com garagem coberta, desconte também a largura da garagem).
   Reduza as larguras (quartos até 2,5; banheiros e serviço até 1,2) e, se ainda assim não couber, diga em "observacoes".
 - Não invente nomes, endereços nem medidas que não foram ditos, exceto para atingir uma área pedida.
-- Em "observacoes", liste em frases curtas o que foi pedido e o módulo NÃO faz (sobrado, segundo banheiro social,
-  garagem coberta, piscina, churrasqueira, edícula, telhado de 4 águas, mais de 3 quartos, closet, escritório etc.)
+- Em "observacoes", liste em frases curtas o que foi pedido e o módulo NÃO faz (sobrado, casa em L, segundo banheiro social,
+  piscina, churrasqueira, edícula, mais de 3 quartos, closet, escritório etc.)
   e as dúvidas importantes. Se não houver, use [].
 - Responda só o JSON, sem texto fora dele.`;
 
