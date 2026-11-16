@@ -1191,7 +1191,14 @@ $('f').addEventListener('change', agendar);
 $('f').addEventListener('submit', ev => ev.preventDefault());
 // cargas vindas de outro módulo (laje, laje treliçada, escada)
 const _qs = new URLSearchParams(location.search);
-if (!_qs.get('p') && _qs.has('g')) {
+// viga contínua vinda do Planta IA: vaos=L:g:q,L:g:q… (m, kN/m) e seção/parede/concreto
+if (!_qs.get('p') && _qs.has('vaos')) {
+  const vs = _qs.get('vaos').split(',').map(t => t.split(':').map(Number)).filter(a => a[0] > 0 && a.every(Number.isFinite))
+    .map(([L, g, q]) => ({ L, g: Math.max(0, g || 0), q: Math.max(0, q || 0) }));
+  if (vs.length) trechos = { balEsq: { L: 0, g: 0, q: 0 }, vaos: vs.slice(0, 12), balDir: { L: 0, g: 0, q: 0 } };
+  for (const k of ['bw', 'h', 'apoio', 'hPar', 'pPar', 'fck']) if (_qs.has(k) && $(k)) $(k).value = _qs.get(k);
+  setTimeout(() => FC.toast(`${_qs.get('nome') || 'Viga'} do Planta IA: ${vs.length} vão(s) com as cargas das lajes. Confira as cargas e o lançamento.`), 600);
+} else if (!_qs.get('p') && _qs.has('g')) {
   const g = Math.max(0, +_qs.get('g') || 0), q = Math.max(0, +_qs.get('q') || 0), L = +_qs.get('L') || 0;
   if (L > 0) trechos = { balEsq: { L: 0, g, q }, vaos: [{ L, g, q }], balDir: { L: 0, g, q } };
   else trechos.vaos = trechos.vaos.map(v => ({ ...v, g, q }));

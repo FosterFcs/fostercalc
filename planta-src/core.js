@@ -23,7 +23,9 @@ export function defaults() {
     toMax: "", caMax: "", permMin: "", rfMin: "", rlMin: "", rfuMin: "",
     // prancha
     corteA: "auto", corteB: "auto", titulo: "", proprietario: "", endereco: "", resp: "", registro: "",
-    data: new Date().toLocaleDateString("pt-BR"), formato: "auto", formato2: "auto",
+    data: new Date().toLocaleDateString("pt-BR"), formato: "auto", formato2: "auto", formato3: "auto",
+    // estrutura (pré-lançamento)
+    sadm: 150, gAdd: 1.0, qLaje: 0.5, pPar: 1.9, fck: 25, secao: 30,
   };
 }
 
@@ -58,6 +60,12 @@ export const LAYERS = {
   "PRANCHA-CARIMBO":   { aci: 7, lt: "Continuous", svg: "#111", w: 0.25 },
   "PRANCHA-TEXTO":     { aci: 7, lt: "Continuous", svg: "#111", w: 0.18 },
   "MARCA":             { aci: 1, lt: "Continuous", svg: "#c4161c", w: 0.18 },
+  "EST-PAREDE":        { aci: 8, lt: "Continuous", svg: "#b9b9b9", w: 0.13 },
+  "EST-PILAR":         { aci: 5, lt: "Continuous", svg: "#1f4fa3", w: 0.35 },
+  "EST-VIGA":          { aci: 4, lt: "Continuous", svg: "#0a6f96", w: 0.30 },
+  "EST-BALDRAME":      { aci: 4, lt: "TRACEJADA", svg: "#0a6f96", w: 0.20 },
+  "EST-SAPATA":        { aci: 6, lt: "TRACEJADA", svg: "#8a2a8a", w: 0.25 },
+  "EST-TEXTO":         { aci: 2, lt: "Continuous", svg: "#111", w: 0.18 },
 };
 
 const FORMATOS = { A3: [420, 297, 7], A2: [594, 420, 10], A1: [841, 594, 10], A0: [1189, 841, 10] };
@@ -859,6 +867,116 @@ function drawSituacao(M, k, escFolha) {
 }
 
 /* ------------------------------------------------------------------ */
+/* 5b. Folha estrutural                                                */
+/* ------------------------------------------------------------------ */
+function contornoParedes(d, M, layer) {
+  // contorno das paredes (projeção), sem hachura
+  const G = grid(M), { X, Y, C } = G;
+  const isW = (i, j) => i >= 0 && j >= 0 && i < C.length && j < C[0].length && C[i][j].c !== 0;
+  const segs = [];
+  for (let i = 0; i <= C.length; i++) for (let j = 0; j < Y.length - 1; j++) if (isW(i - 1, j) !== isW(i, j)) segs.push({ v: true, k: X[i], a: Y[j], b: Y[j + 1] });
+  for (let j = 0; j <= Y.length - 1; j++) for (let i = 0; i < X.length - 1; i++) if (isW(i, j - 1) !== isW(i, j)) segs.push({ v: false, k: Y[j], a: X[i], b: X[i + 1] });
+  for (const s of mergeSegs(segs)) d.line(s.v ? [s.k, s.a] : [s.a, s.k], s.v ? [s.k, s.b] : [s.b, s.k], layer);
+}
+function pilaresDesenho(d, E, k, rotulo) {
+  for (const p of E.pilares) {
+    d.hrect(p.x - p.bx / 2, p.y - p.by / 2, p.x + p.bx / 2, p.y + p.by / 2, "SOLID", "EST-PILAR", "EST-PILAR");
+    if (rotulo) {
+      const dx = p.ori === "H" ? 0 : p.bx / 2 + 1.2 * k, dy = p.ori === "H" ? p.by / 2 + 1.2 * k : 0;
+      d.text([p.x + dx, p.y + dy], 1.9 * k, rotulo(p), { al: p.ori === "H" ? "c" : "l", va: p.ori === "H" ? "b" : "m", layer: "EST-TEXTO", bold: true });
+    }
+  }
+}
+function cotasEixos(d, E, M, k) {
+  const xs = [...new Set(E.pilares.filter((p) => !p.var).map((p) => r2(p.x)))], ys = [...new Set(E.pilares.map((p) => r2(p.y)))];
+  const topo = M.D + 6 * k, esq = Math.min(0, M.Y0) - 0;
+  dimChain(d, xs, k, { dir: "h", at: topo + 4 * k, from: M.D });
+  dimChain(d, ys, k, { dir: "v", at: -6 * k - 4 * k, from: 0 });
+  void esq;
+}
+function drawLocacao(M, E, k, esc) {
+  const d = new Draw();
+  contornoParedes(d, M, "EST-PAREDE");
+  for (const v of E.baldrames) {
+    const o = v.bw / 200;
+    if (v.d === "H") { d.line([v.a0, v.c - o], [v.a1, v.c - o], "EST-BALDRAME"); d.line([v.a0, v.c + o], [v.a1, v.c + o], "EST-BALDRAME"); }
+    else { d.line([v.c - o, v.a0], [v.c - o, v.a1], "EST-BALDRAME"); d.line([v.c + o, v.a0], [v.c + o, v.a1], "EST-BALDRAME"); }
+  }
+  for (const p of E.pilares) {
+    const A = p.sap.A / 100, B = p.sap.B / 100;
+    d.rect(p.x - A / 2, p.y - B / 2, p.x + A / 2, p.y + B / 2, "EST-SAPATA");
+  }
+  pilaresDesenho(d, E, k, null);
+  for (const p of E.pilares) {
+    const B = p.sap.B / 100, A = p.sap.A / 100;
+    d.text([p.x + A / 2 + 0.8 * k, p.y + B / 2 + 0.4 * k], 1.8 * k, `${p.id}/S${p.id.slice(1)}`, { al: "l", va: "b", layer: "EST-TEXTO", bold: true });
+  }
+  for (const v of E.baldrames) {
+    const mid = (v.a0 + v.a1) / 2;
+    const vao = v.vaos.reduce((a, s) => (s.L > a.L ? s : a), v.vaos[0]);
+    const m2 = v.d === "H" ? (pilaresMeio(E, vao) ?? mid) : (pilaresMeio(E, vao) ?? mid);
+    if (v.d === "H") d.text([m2, v.c - v.bw / 200 - 0.8 * k], 1.7 * k, `${v.id} ${v.bw}x${v.h}`, { al: "c", va: "t", layer: "EST-TEXTO" });
+    else d.text([v.c - v.bw / 200 - 0.8 * k, m2], 1.7 * k, `${v.id} ${v.bw}x${v.h}`, { al: "c", va: "b", rot: 90, layer: "EST-TEXTO" });
+  }
+  cotasEixos(d, E, M, k);
+  tituloAbaixo(d, k, "LOCAÇÃO DE PILARES E FUNDAÇÕES", `ESC. 1:${esc}`, M.W / 2);
+  return d.E;
+}
+function pilaresMeio(E, vao) {
+  const a = E.pilares.find((p) => p.id === vao.pi), b = E.pilares.find((p) => p.id === vao.pf);
+  if (!a || !b) return null;
+  return Math.abs(a.y - b.y) < 1e-3 ? (a.x + b.x) / 2 : (a.y + b.y) / 2;
+}
+function drawFormas(M, E, k, esc) {
+  const d = new Draw();
+  contornoParedes(d, M, "EST-PAREDE");
+  for (const v of E.vigas) {
+    const o = v.bw / 200;
+    if (v.d === "H") d.rect(v.a0, v.c - o, v.a1, v.c + o, "EST-VIGA"); else d.rect(v.c - o, v.a0, v.c + o, v.a1, "EST-VIGA");
+  }
+  pilaresDesenho(d, E, k, (p) => `${p.id} ${p.b}x${p.h}`);
+  for (const l of E.lajes) {
+    const cx = (l.x0 + l.x1) / 2, cy = (l.y0 + l.y1) / 2, hs = Math.min(l.lx, l.ly) < 2 ? 0.8 : 1;
+    d.circle([cx, cy], 3.2 * k * hs, "EST-TEXTO");
+    d.text([cx, cy], 2.0 * k * hs, l.id, { al: "c", va: "m", layer: "EST-TEXTO", bold: true });
+    d.text([cx, cy - 4.2 * k * hs], 1.7 * k * hs, `h=${l.h}`, { al: "c", va: "t", layer: "EST-TEXTO" });
+    d.text([cx, cy - 6.6 * k * hs], 1.6 * k * hs, `${fmt(l.lx)} x ${fmt(l.ly)}`, { al: "c", va: "t", layer: "EST-TEXTO" });
+  }
+  for (const v of E.vigas) {
+    const vao = v.vaos.reduce((a, s) => (s.L > a.L ? s : a), v.vaos[0]);
+    const m2 = pilaresMeio(E, vao) ?? (v.a0 + v.a1) / 2;
+    if (v.d === "H") d.text([m2, v.c + v.bw / 200 + 0.8 * k], 1.8 * k, `${v.id} (${v.bw}x${v.h})`, { al: "c", va: "b", layer: "EST-TEXTO", bold: true });
+    else d.text([v.c + v.bw / 200 + 0.8 * k, m2], 1.8 * k, `${v.id} (${v.bw}x${v.h})`, { al: "c", va: "t", rot: 90, layer: "EST-TEXTO", bold: true });
+  }
+  cotasEixos(d, E, M, k);
+  tituloAbaixo(d, k, "FORMAS DO RESPALDO", `ESC. 1:${esc} · LAJE +${fmt(M.H)}`, M.W / 2);
+  return d.E;
+}
+function drawQuadrosEst(M, E, k) {
+  const d = new Draw();
+  const qp = E.pilares.map((p) => [p.id, `${p.b}x${p.h}`, String(p.N), `S${p.id.slice(1)}`, `${p.sap.A}x${p.sap.B}`]);
+  const w1 = 86 * k;
+  const h1 = tabela(d, 0, w1, k, "PILARES E SAPATAS (PRELIMINAR)", [{ t: "PILAR", w: 14 * k }, { t: "SEÇÃO", w: 18 * k }, { t: "Nk (kN)", w: 18 * k }, { t: "SAP.", w: 14 * k }, { t: "A x B (cm)", w: 22 * k }], qp);
+  const d2 = new Draw();
+  const qv = [...E.vigas, ...E.baldrames].map((v) => [v.id, `${v.bw}x${v.h}`, v.vaos.map((s) => fmt(s.L)).join(" / ").slice(0, 34), v.id.startsWith("VB") ? `parede ${fmt(M.H)} m` : `${fmt(Math.max(...v.vaos.map((s) => s.g + s.q)), 1)}`]);
+  tabela(d2, 0, 92 * k, k, "VIGAS E BALDRAMES", [{ t: "VIGA", w: 14 * k }, { t: "SEÇÃO", w: 16 * k }, { t: "VÃOS (m)", w: 40 * k }, { t: "g+q máx", w: 22 * k }], qv);
+  d.E.push(...translate(d2.E, w1 + 6 * k, 0));
+  const d3 = new Draw();
+  const ql = E.lajes.map((l) => [l.id, l.nome.slice(0, 14), `${fmt(l.lx)} x ${fmt(l.ly)}`, String(l.h), `${fmt(l.g)} / ${fmt(l.q)}`]);
+  const h3 = tabela(d3, 0, 92 * k, k, "LAJES MACIÇAS", [{ t: "LAJE", w: 12 * k }, { t: "AMBIENTE", w: 28 * k }, { t: "lx x ly (m)", w: 22 * k }, { t: "h", w: 8 * k }, { t: "g / q", w: 22 * k }], ql);
+  const yl = -Math.max(h1, (E.vigas.length + E.baldrames.length + 2) * 4.5 * k) - 6 * k;
+  d.E.push(...translate(d3.E, w1 + 6 * k, yl));
+  const notas = [
+    `Cargas: laje g = 25·h + ${fmt(E.op.gAdd)} (revest./forro) + ${fmt(E.op.gTel)} (telhado) kN/m²; q = ${fmt(E.op.qL)} kN/m² (conferir NBR 6120).`,
+    `Paredes ${fmt(E.op.pPar)} kN/m² sobre os baldrames; σadm do solo = ${fmt(E.op.sadm, 0)} kPa (confirmar com sondagem).`,
+    "Nk por reações isostáticas das vigas + peso próprio. Lançamento PRELIMINAR: dimensionar cada peça",
+    "nos módulos do Foster Calc e conferir por profissional habilitado (projeto estrutural com ART).",
+  ];
+  notas.forEach((t, i) => d.text([0, yl - i * 3.2 * k - (h1 > -yl ? h1 - (-yl) : 0) - 2 * k], 1.7 * k, t, { al: "l", va: "t", layer: "PRANCHA-TEXTO" }));
+  return d.E;
+}
+
+/* ------------------------------------------------------------------ */
 /* 6. Quadros e carimbo                                                */
 /* ------------------------------------------------------------------ */
 function tabela(d, x0, w, k, head, cols, data, boldRows = []) {
@@ -1010,7 +1128,7 @@ function compor(lay, marca, nota) {
       const b = bb[key];
       let x = cx + (colW[ci] - b.w) / 2, ty = y - b.h;
       if (key === "C") { x = SW - m - b.w; ty = m; }
-      else if (ultima && ["Q", "QI"].includes(key)) x = SW - m - b.w;
+      else if (ultima && ["Q", "QI", "QE"].includes(key)) x = SW - m - b.w;
       out.E.push(...translate(blocos[key], x - b.x0, ty - b.y0));
       y = ty - gap;
     });
@@ -1041,13 +1159,18 @@ export function buildSheets(S0, op = {}) {
   const conteudo2 = "SITUAÇÃO, IMPLANTAÇÃO, COBERTURA, FACHADAS LATERAIS E POSTERIOR, ÍNDICES";
   const m1 = (k, f, esc) => ({ ordem: ["P", "F", "AA", "BB", "Q"], blocos: {
     P: drawPlan(M, k, esc), AA: drawSection(M, "x", k, esc), BB: drawSection(M, "y", k, esc), F: drawFacade(M, k, "frente", esc), Q: drawQuadros(M, k),
-    C: drawCarimbo(M, k, f, `1:${esc}`, "01/02", conteudo1) } });
+    C: drawCarimbo(M, k, f, `1:${esc}`, "01/03", conteudo1) } });
   const m2 = (k, f, esc) => ({ ordem: ["IMP", "SIT", "COB", "FP", "FD", "FE", "QI"], blocos: {
     IMP: drawImplantacao(M, k, esc), SIT: drawSituacao(M, k, esc), COB: drawCobertura(M, k, esc),
     FP: drawFacade(M, k, "fundos", esc), FD: drawFacade(M, k, "direita", esc), FE: drawFacade(M, k, "esquerda", esc), QI: drawIndices(M, k),
-    C: drawCarimbo(M, k, f, `INDICADAS`, "02/02", conteudo2) } });
+    C: drawCarimbo(M, k, f, `INDICADAS`, "02/03", conteudo2) } });
+  const E = estrutura(M, op.est || {});
+  const conteudo3 = "LOCAÇÃO DE PILARES E FUNDAÇÕES, FORMAS DO RESPALDO, QUADROS ESTRUTURAIS (PRELIMINAR)";
+  const m3 = (k, f, esc) => ({ ordem: ["LOC", "FOR", "QE"], blocos: {
+    LOC: drawLocacao(M, E, k, esc), FOR: drawFormas(M, E, k, esc), QE: drawQuadrosEst(M, E, k),
+    C: drawCarimbo(M, k, f, `1:${esc}`, "03/03", conteudo3) } });
   const folhas = [];
-  for (const [montar, cands, nome] of [[m1, escolha(S.formato, CAND1), "Folha 01"], [m2, escolha(S.formato2, CAND2), "Folha 02"]]) {
+  for (const [montar, cands, nome] of [[m1, escolha(S.formato, CAND1), "Folha 01"], [m2, escolha(S.formato2, CAND2), "Folha 02"], [m3, escolha(S.formato3, CAND1), "Folha 03"]]) {
     let lay = diagramar(cands, montar);
     if (!lay) {
       lay = diagramar([["A0", cands[cands.length - 1][1]], ["A0", 200], ["A0", 250]], montar);
@@ -1056,7 +1179,8 @@ export function buildSheets(S0, op = {}) {
     if (!lay) throw new Error("Não foi possível diagramar a prancha. Confira as medidas.");
     folhas.push({ nome, E: compor(lay, op.marca, NOTA), SW: lay.SW, SH: lay.SH, k: lay.k, esc: lay.esc, formato: lay.fmtNome });
   }
-  return { folhas, M, avisos };
+  avisos.push(...E.avisos);
+  return { folhas, M, E, avisos };
 }
 
 /* ------------------------------------------------------------------ */
@@ -1243,4 +1367,148 @@ export function encaixar(S0) {
     return { ok: true, mudou: true, divisa, campos, largura: r2(M.W - falta) };
   }
   return { ok: false, mudou: true, campos: {}, largura: r2(M.W - folga) };
+}
+
+/* ------------------------------------------------------------------ */
+/* 12. Pré-lançamento estrutural (térrea com laje de forro)            */
+/* ------------------------------------------------------------------ */
+// Pilares nos encontros de paredes e a cada ≤ 4,5 m; vigas de respaldo e baldrames sobre as paredes;
+// uma laje por ambiente; cargas por áreas de influência simplificadas (vãos isostáticos). Preliminar.
+const CARGA_TELHA = { ceramica: 1.0, concreto: 1.1, fibrocimento: 0.35 }; // kN/m² em projeção, com madeiramento
+export function estrutura(M, op = {}) {
+  const S = M.S, t = M.t, c = t / 2, W = M.W, D = M.D;
+  const Lmax = 4.5, hp = num(op.secao ?? S.secao, 30) / 100;          // lado maior do pilar (m)
+  const gAdd = num(op.gAdd ?? S.gAdd, 1.0), qL = num(op.qL ?? S.qLaje, 0.5), pPar = num(op.pPar ?? S.pPar, 1.9);
+  const sadm = num(op.sadm ?? S.sadm, 150), fck = num(op.fck ?? S.fck, 25);
+  const hL = M.laje, gTel = CARGA_TELHA[S.telha] ?? 1.0;
+  const avisos = [];
+  // linhas de parede (eixos)
+  const linhas = [];
+  linhas.push({ d: "H", c: c, a0: c, a1: W - c }, { d: "H", c: M.yi0 + c, a0: c, a1: W - c }, { d: "H", c: M.ytop + c, a0: c, a1: W - c });
+  linhas.push({ d: "V", c: c, a0: c, a1: D - c }, { d: "V", c: W - c, a0: c, a1: D - c });
+  const fundo = M.rooms.filter((r) => r.y0 === M.yi1).sort((a, b) => a.x0 - b.x0);
+  fundo.slice(0, -1).forEach((r) => linhas.push({ d: "V", c: r.x1 + c, a0: M.yi0 + c, a1: M.ytop + c }));
+  if (M.cozSep) linhas.push({ d: "V", c: M.coz.x0 - c, a0: c, a1: M.yi0 + c });
+  const k3 = (v) => Math.round(v * 1000) / 1000;
+  const nos = new Map();
+  const addNo = (x, y) => { const key = k3(x) + "|" + k3(y); if (!nos.has(key)) nos.set(key, { x: k3(x), y: k3(y) }); return nos.get(key); };
+  // nós: pontas das paredes e todos os cruzamentos (cantos, encontros em T e em cruz)
+  for (const L of linhas) { L.d === "H" ? (addNo(L.a0, L.c), addNo(L.a1, L.c)) : (addNo(L.c, L.a0), addNo(L.c, L.a1)); }
+  for (const h of linhas.filter((l) => l.d === "H")) for (const v of linhas.filter((l) => l.d === "V"))
+    if (v.c >= h.a0 - 1e-3 && v.c <= h.a1 + 1e-3 && h.c >= v.a0 - 1e-3 && h.c <= v.a1 + 1e-3) addNo(v.c, h.c);
+  const naLinha = (L, p) => (L.d === "H" ? Math.abs(p.y - L.c) < 1e-3 && p.x >= L.a0 - 1e-3 && p.x <= L.a1 + 1e-3 : Math.abs(p.x - L.c) < 1e-3 && p.y >= L.a0 - 1e-3 && p.y <= L.a1 + 1e-3);
+  const vaosDe = (L) => M.O.filter((o) => (L.d === "H" ? o.orient === "H" : o.orient === "V") && o.q0 <= L.c + 1e-6 && o.q1 >= L.c - 1e-6);
+  // pilares intermediários (evitando portas e janelas)
+  for (const L of linhas) {
+    const pos = [...nos.values()].filter((p) => naLinha(L, p)).map((p) => (L.d === "H" ? p.x : p.y)).sort((a, b) => a - b);
+    const abert = vaosDe(L);
+    const livre = (s) => abert.every((o) => s + hp / 2 + 0.05 <= o.p0 || s - hp / 2 - 0.05 >= o.p1);
+    for (let n = 0; n < pos.length - 1; n++) {
+      const a = pos[n], b = pos[n + 1], vao = b - a;
+      if (vao <= Lmax + 1e-6) continue;
+      const nd = Math.ceil(vao / Lmax);
+      for (let m = 1; m < nd; m++) {
+        let s = a + (vao * m) / nd, ok = livre(s);
+        for (let d = 0.05; !ok && d < vao / nd / 2; d += 0.05) { if (livre(s + d)) { s += d; ok = true; } else if (livre(s - d)) { s -= d; ok = true; } }
+        if (!ok) avisos.push(`Não achei trecho de parede sem abertura para um pilar intermediário (${L.d === "H" ? "parede horizontal" : "parede vertical"} em ${fmt(L.c)} m).`);
+        L.d === "H" ? addNo(s, L.c) : addNo(L.c, s);
+      }
+    }
+  }
+  // pilares
+  const emH = (p) => linhas.some((L) => L.d === "H" && naLinha(L, p));
+  const lista = [...nos.values()].sort((a, b) => b.y - a.y || a.x - b.x);
+  const pilares = lista.map((p, i) => {
+    const ori = emH(p) ? "H" : "V";
+    const bx = ori === "H" ? hp : t, by = ori === "H" ? t : hp;
+    return { id: `P${i + 1}`, x: p.x, y: p.y, bx, by, b: Math.round(t * 100), h: Math.round(hp * 100), ori, N: 0, var: false };
+  });
+  if (M.varanda) M.pilares.forEach((q) => pilares.push({ id: `P${pilares.length + 1}`, x: (q.x0 + q.x1) / 2, y: (q.y0 + q.y1) / 2, bx: 0.15, by: 0.15, b: 15, h: 15, ori: "H", N: 0, var: true }));
+  const pilarEm = (x, y) => pilares.find((p) => Math.abs(p.x - x) < 1e-3 && Math.abs(p.y - y) < 1e-3);
+  // lajes (eixo a eixo)
+  const ordem = M.rooms.slice().sort((a, b) => b.y0 - a.y0 || a.x0 - b.x0);
+  const lajes = ordem.map((r, i) => {
+    const x0 = r.x0 - c, x1 = r.x1 + c, y0 = r.y0 - c, y1 = r.y1 + c;
+    return { id: `L${i + 1}`, nome: r.name, x0, x1, y0, y1, lx: r2(x1 - x0), ly: r2(y1 - y0), h: Math.round(hL * 100), g: r2(gAdd + gTel), q: qL };
+  });
+  for (const l of lajes) {
+    const viz = (fn) => lajes.some((o) => o !== l && fn(o));
+    const sob = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0) > 0.3;
+    l.bordas = {
+      esq: viz((o) => Math.abs(o.x1 - l.x0) < 1e-3 && sob(o.y0, o.y1, l.y0, l.y1)) ? "E" : "A",
+      dir: viz((o) => Math.abs(o.x0 - l.x1) < 1e-3 && sob(o.y0, o.y1, l.y0, l.y1)) ? "E" : "A",
+      inf: viz((o) => Math.abs(o.y1 - l.y0) < 1e-3 && sob(o.x0, o.x1, l.x0, l.x1)) ? "E" : "A",
+      sup: viz((o) => Math.abs(o.y0 - l.y1) < 1e-3 && sob(o.x0, o.x1, l.x0, l.x1)) ? "E" : "A",
+    };
+    const lx = Math.min(l.lx, l.ly), ly = Math.max(l.lx, l.ly);
+    const pg = 25 * hL + l.g, pq = l.q;
+    const kLongo = lx / 4 * (2 - lx / ly), kCurto = lx / 4;
+    const kx = l.lx >= l.ly ? kLongo : kCurto, ky = l.ly > l.lx ? kLongo : kCurto; // kx: bordas horizontais (comprimento lx)
+    l.bordasCarga = [
+      { d: "H", c: l.y0, a0: l.x0, a1: l.x1, g: pg * kx, q: pq * kx }, { d: "H", c: l.y1, a0: l.x0, a1: l.x1, g: pg * kx, q: pq * kx },
+      { d: "V", c: l.x0, a0: l.y0, a1: l.y1, g: pg * ky, q: pq * ky }, { d: "V", c: l.x1, a0: l.y0, a1: l.y1, g: pg * ky, q: pq * ky },
+    ];
+    l.armacao = ly / lx > 2 ? "uma direção" : "duas direções";
+  }
+  // vigas de respaldo e baldrames (mesmas linhas)
+  const linhasOrd = [...linhas.filter((l) => l.d === "H").sort((a, b) => b.c - a.c), ...linhas.filter((l) => l.d === "V").sort((a, b) => a.c - b.c || b.a1 - a.a1)];
+  const vigas = [], baldrames = [];
+  const gVar = M.varanda ? (gTel + 0.3) * M.dv / 2 : 0, qVar = M.varanda ? 0.25 * M.dv / 2 : 0;
+  linhasOrd.forEach((L, i) => {
+    const ps = pilares.filter((p) => !p.var && naLinha(L, p)).sort((a, b) => (L.d === "H" ? a.x - b.x : a.y - b.y));
+    const pos = ps.map((p) => (L.d === "H" ? p.x : p.y));
+    const vaos = [];
+    for (let n = 0; n < pos.length - 1; n++) {
+      const s0 = pos[n], s1 = pos[n + 1], Lv = s1 - s0;
+      let g = 0, q = 0;
+      for (const l of lajes) for (const e of l.bordasCarga) {
+        if (e.d !== L.d || Math.abs(e.c - L.c) > 1e-3) continue;
+        const ov = Math.min(s1, e.a1) - Math.max(s0, e.a0);
+        if (ov > 1e-3) { g += e.g * ov / Lv; q += e.q * ov / Lv; }
+      }
+      if (L.d === "H" && Math.abs(L.c - c) < 1e-3) { g += gVar; q += qVar; }   // meia varanda na viga da frente
+      vaos.push({ L: r2(Lv), g: r2(g), q: r2(q), pi: ps[n].id, pf: ps[n + 1].id });
+    }
+    if (!vaos.length) return;
+    const hV = Math.max(30, Math.ceil(Math.max(...vaos.map((v) => v.L)) * 100 / 12 / 5) * 5);
+    const comum = { d: L.d, c: L.c, a0: pos[0], a1: pos[pos.length - 1], bw: Math.round(t * 100), pilares: ps.map((p) => p.id) };
+    vigas.push({ ...comum, id: `V${vigas.length + 1}`, h: hV, vaos });
+    baldrames.push({ ...comum, id: `VB${baldrames.length + 1}`, h: 30, vaos: vaos.map((v) => ({ ...v, g: r2(M.H * pPar), q: 0 })) });
+  });
+  // cargas nos pilares: reações isostáticas das vigas + peso próprio
+  const reag = (v) => v.vaos.forEach((s) => {
+    const pp = 25 * (v.bw / 100) * (v.h / 100);
+    const R = ((s.g + pp + s.q) * s.L) / 2;
+    pilares.find((p) => p.id === s.pi).N += R; pilares.find((p) => p.id === s.pf).N += R;
+  });
+  vigas.forEach(reag); baldrames.forEach(reag);
+  const nVar = pilares.filter((p) => p.var).length;
+  for (const p of pilares) {
+    if (p.var) p.N += ((gTel + 0.3 + 0.25) * M.W * M.dv / 2) / nVar;
+    p.N += 25 * (p.b / 100) * (p.h / 100) * (M.H + M.laje + 0.5);
+    p.N = Math.ceil(p.N);
+    p.L = r2(M.H + M.laje + 0.5);
+    // sapata (A em x, B em y) com balanços iguais
+    const ap = p.bx * 100, bp = p.by * 100, area = (p.N * 1.05) / sadm * 1e4;  // cm²
+    const dif = ap - bp;
+    let B = (-dif + Math.sqrt(dif * dif + 4 * area)) / 2, A = B + dif;
+    A = Math.max(60, Math.ceil(A / 5) * 5); B = Math.max(60, Math.ceil(B / 5) * 5);
+    p.sap = { A, B };
+  }
+  if (lajes.some((l) => Math.min(l.lx, l.ly) > 5)) avisos.push("Há laje com menor vão acima de 5 m: confira a espessura e considere uma viga intermediária.");
+  return { pilares, vigas, baldrames, lajes, avisos, op: { gAdd, qL, pPar, sadm, fck, gTel, hp } };
+}
+
+// links para dimensionar cada peça nos módulos do Foster Calc
+export function linksEstrutura(E, M) {
+  const fck = E.op.fck, q = (o) => new URLSearchParams(Object.entries(o).map(([k, v]) => [k, String(v)])).toString();
+  const out = {};
+  for (const l of E.lajes) out[l.id] = "laje.html?" + q({ lx: l.lx, ly: l.ly, h: l.h, apoio: Math.round(M.t * 100), g: l.g, q: l.q, fck, b_esq: l.bordas.esq, b_dir: l.bordas.dir, b_inf: l.bordas.inf, b_sup: l.bordas.sup, nome: `${l.id} (${l.nome.toLowerCase()})` });
+  for (const v of E.vigas) out[v.id] = "viga.html?" + q({ vaos: v.vaos.map((s) => `${s.L}:${s.g}:${s.q}`).join(","), bw: v.bw, h: v.h, apoio: Math.round(E.op.hp * 100), hPar: 0, fck, nome: v.id });
+  for (const v of E.baldrames) out[v.id] = "viga.html?" + q({ vaos: v.vaos.map((s) => `${s.L}:0:0`).join(","), bw: v.bw, h: v.h, apoio: Math.round(E.op.hp * 100), hPar: M.H, pPar: E.op.pPar, fck, nome: `Baldrame ${v.id}` });
+  for (const p of E.pilares) {
+    out[p.id] = "pilar.html?" + q({ hx: Math.round(p.bx * 100), hy: Math.round(p.by * 100), L: p.L, lex: p.L, ley: p.L, Nk: p.N, Mxtopo: 0, Mxbase: 0, Mytopo: 0, Mybase: 0, fck });
+    out["S" + p.id.slice(1)] = "sapata.html?" + q({ ap: Math.round(p.bx * 100), bp: Math.round(p.by * 100), Nk: p.N, Mxk: 0, Myk: 0, sadm: E.op.sadm, fck });
+  }
+  return out;
 }
