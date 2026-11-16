@@ -254,6 +254,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
     <div class="actions" style="margin-bottom:6px">
       <button type="button" class="pri" id="btnMemorial">Memorial descritivo (PDF)</button>
       <button type="button" class="pri ghost" id="btnCSV">Baixar planilha (CSV)</button>
+      <button type="button" class="pri ghost" id="btnOrca">Orçar no Foster Orça →</button>
       <span class="note" id="qMsg" role="status"></span>
     </div>
     <div id="quant"></div>
@@ -380,6 +381,40 @@ $('btnCSV').addEventListener('click', async () => {
   FC.baixar(nomeArquivo('csv').replace('.csv', '-quantitativos.csv'), '\ufeff' + linhas.join('\r\n'), 'text/csv;charset=utf-8');
   $('qMsg').textContent = 'Planilha baixada (abre no Excel e no Google Planilhas).';
 });
+// ---------- enviar ao Foster Orça (orçamento com preços) ----------
+const ORCA_URL = 'https://fosterfcs.github.io/foster-orca/';
+const MAPA_ORCA = [['Contrapiso', 'contrapiso'], ['Piso cerâmico', 'piso'], ['Rodapé', 'rodape'], ['Revestimento cerâmico de parede', 'azulejo'],
+  ['Chapisco', 'chapisco'], ['Emboço/reboco interno', 'reboco'], ['Reboco externo', 'reboco'], ['Reboco do teto', 'reboco'],
+  ['Alvenaria de vedação', 'alvenaria'], ['Pintura látex PVA em tetos', 'pint_teto'], ['Pintura látex acrílica interna', 'pint_parede'], ['Pintura látex acrílica externa', 'pint_parede']];
+async function empacotar(obj) {   // mesmo formato do Foster Orça: 'z' + deflate-raw em base64url
+  const s = JSON.stringify(obj);
+  const cs = new Blob([s]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  const buf = new Uint8Array(await new Response(cs).arrayBuffer()); let b = '';
+  buf.forEach(x => b += String.fromCharCode(x));
+  return 'z' + btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+$('btnOrca').addEventListener('click', async () => {
+  if (!window.CompressionStream) { FC.toast('Atualize o navegador para enviar ao Foster Orça.'); return; }
+  const S = lerEntrada(), M = res.M, nq = M.rooms.filter(r => r.kind === 'q').length;
+  const it = [];
+  for (const e of res.Q) for (const i of e.itens) {
+    if (e.etapa === 'Serviços preliminares' && i.desc.startsWith('Limpeza do terreno')) continue;
+    const m = MAPA_ORCA.find(([p]) => i.desc.startsWith(p));
+    const n = m ? `${i.desc}` : `${e.etapa} · ${i.desc}`;
+    it.push({ k: n, n, u: i.un, q: i.qtd, ...(m ? { sid: m[1] } : {}) });
+    if (i.desc.startsWith('Pintura látex acrílica interna')) it.push({ n: 'Massa corrida', u: 'm²', q: i.qtd, sid: 'massa' });
+  }
+  const pac = {
+    v: 1, t: S.titulo || `Casa térrea - ${nq} quarto${nq > 1 ? 's' : ''}`, pd: M.H,
+    cli: { nome: S.proprietario || '', end: S.endereco || '' },
+    com: M.rooms.map(r => ({ nome: r.name.charAt(0) + r.name.slice(1).toLowerCase(), l: +(r.x1 - r.x0).toFixed(2), c: +(r.y1 - r.y0).toFixed(2) })), it,
+  };
+  const url = ORCA_URL + '#calc=' + await empacotar(pac);
+  const w = window.open(url, '_blank');
+  if (w) { try { w.opener = null; } catch (e) {} } else location.href = url;
+  $('qMsg').textContent = `Abrindo o Foster Orça com ${it.length} serviços. Os de obra nova chegam com preço em branco para você preencher.`;
+});
+
 $('btnMemorial').addEventListener('click', async () => {
   if (!(await FC.exigirPro('gerar o memorial descritivo'))) return;
   const S = lerEntrada(), M = res.M, academico = !FC.pro;
