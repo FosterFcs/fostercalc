@@ -7,18 +7,18 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<meta name="description" content="Gere a prancha de uma casa térrea com planta baixa, cortes AA e BB, fachada, quadros e carimbo, em DXF para AutoCAD. Foster Calc · Planta IA.">
+<meta name="description" content="Gere a prancha de uma casa térrea com planta baixa, cortes AA e BB, fachada, quadros e carimbo, em DXF para AutoCAD. Foster Calc · Foster Projeto.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Foster Calc">
-<meta property="og:title" content="Planta IA: planta, cortes e fachada em DXF">
-<meta property="og:description" content="Gere a prancha de uma casa térrea com planta baixa, cortes AA e BB, fachada, quadros e carimbo, em DXF para AutoCAD. Foster Calc · Planta IA.">
+<meta property="og:title" content="Foster Projeto: planta, cortes e fachada em DXF">
+<meta property="og:description" content="Gere a prancha de uma casa térrea com planta baixa, cortes AA e BB, fachada, quadros e carimbo, em DXF para AutoCAD. Foster Calc · Foster Projeto.">
 <meta property="og:url" content="https://fostercalc.com.br/planta.html">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:image" content="https://fostercalc.com.br/og/planta.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<title>Planta IA: planta baixa, cortes e fachada em DXF | Foster Calc</title>
+<title>Foster Projeto: planta baixa, cortes e fachada em DXF | Foster Calc</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -111,7 +111,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 <div class="wrap">
 <div id="fc-bar"></div>
 <header class="top">
-  <h1>Planta IA <span>· prancha em DXF</span> <span class="beta">beta</span></h1>
+  <h1>Foster Projeto <span>· prancha em DXF</span> <span class="beta">beta</span></h1>
   <p>Casa térrea · projeto legal em 4 folhas: arquitetura, implantação e índices, pré-lançamento estrutural ligado aos módulos do Calc e pontos de elétrica e hidráulica</p>
 </header>
 
@@ -399,7 +399,7 @@ $('btnCSV').addEventListener('click', async () => {
   const c = v => `"${String(v).replace(/"/g, '""')}"`;
   const linhas = [['Etapa', 'Item', 'Unidade', 'Quantidade', 'Memória de cálculo'].map(c).join(';')];
   for (const e of res.Q) for (const i of e.itens) linhas.push([e.etapa, i.desc, i.un, fmt(i.qtd), i.memoria].map(c).join(';'));
-  linhas.push('', c('Gerado pelo Foster Calc · Planta IA a partir do estudo preliminar. Conferir com os projetos executivos.'));
+  linhas.push('', c('Gerado pelo Foster Calc · Foster Projeto a partir do estudo preliminar. Conferir com os projetos executivos.'));
   FC.baixar(nomeArquivo('csv').replace('.csv', '-quantitativos.csv'), '\ufeff' + linhas.join('\r\n'), 'text/csv;charset=utf-8');
   $('qMsg').textContent = 'Planilha baixada (abre no Excel e no Google Planilhas).';
 });
@@ -459,7 +459,7 @@ p{margin:0 0 6px;text-align:justify}table{border-collapse:collapse;width:100%;fo
 .marca{position:fixed;top:40%;left:0;right:0;text-align:center;font:700 54pt Arial;color:rgba(196,22,28,.12);transform:rotate(-25deg)}
 .rod{font-size:8pt;color:#666;margin-top:18px;border-top:1px solid #ccc;padding-top:4px}</style></head><body>
 ${academico ? '<div class="marca">USO ACADÊMICO</div>' : ''}
-<div class="cab"><div><b>MEMORIAL DESCRITIVO</b><br><span>${escHtml(titulo)}</span></div><span>Foster Calc · Planta IA<br>${escHtml(S.data || '')}</span></div>
+<div class="cab"><div><b>MEMORIAL DESCRITIVO</b><br><span>${escHtml(titulo)}</span></div><span>Foster Calc · Foster Projeto<br>${escHtml(S.data || '')}</span></div>
 <table class="dados">${dado('Proprietário', S.proprietario)}${dado('Endereço da obra', S.endereco)}${dado('Área construída', fmt(M.idx.Aconst) + ' m²')}${dado('Terreno', `${fmt(M.lote.lf)} × ${fmt(M.lote.lp)} m (${fmt(M.idx.Alote)} m²)`)}${dado('Responsável técnico', [resp, reg].filter(Boolean).join(' · '))}</table>
 ${res.MD.map(s => `<h2>${escHtml(s.t)}</h2>${s.p.map(x => `<p>${escHtml(x)}</p>`).join('')}`).join('')}
 <h2>Anexo · Quantitativos estimados</h2><table><thead><tr><th>Serviço</th><th class="n">Un.</th><th class="n">Quant.</th></tr></thead><tbody>${quant}</tbody></table>
