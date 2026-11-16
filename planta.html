@@ -112,7 +112,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 <div id="fc-bar"></div>
 <header class="top">
   <h1>Planta IA <span>· prancha em DXF</span> <span class="beta">beta</span></h1>
-  <p>Casa térrea · projeto legal em 3 folhas: arquitetura, implantação e índices, e o pré-lançamento estrutural ligado aos módulos do Calc</p>
+  <p>Casa térrea · projeto legal em 4 folhas: arquitetura, implantação e índices, pré-lançamento estrutural ligado aos módulos do Calc e pontos de elétrica e hidráulica</p>
 </header>
 
 <div class="grid">
@@ -207,6 +207,12 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
         <option value="auto">Automático (menor que couber)</option>
         <option value="A3@50">A3 · 1:50</option><option value="A2@50">A2 · 1:50</option><option value="A1@50">A1 · 1:50</option>
         <option value="A2@75">A2 · 1:75</option><option value="A3@100">A3 · 1:100</option></select></label>
+      <label class="full">Folha 04 (instalações)<select id="formato4">
+        <option value="auto">Automático (menor que couber)</option>
+        <option value="A3@50">A3 · 1:50</option><option value="A2@50">A2 · 1:50</option><option value="A1@50">A1 · 1:50</option>
+        <option value="A2@75">A2 · 1:75</option><option value="A3@100">A3 · 1:100</option></select></label>
+      <label>Tensão das tomadas<select id="tensao"><option value="127">127 V</option><option value="220">220 V</option></select></label>
+      <label>Chuveiro (W)<input id="pChuveiro" type="number" min="3000" max="8000" step="100"></label>
       <label class="full">Título do projeto<input id="titulo" maxlength="44" placeholder="Automático: CASA TÉRREA - 2 QUARTOS"></label>
       <label class="full">Proprietário<input id="proprietario" maxlength="70"></label>
       <label class="full">Endereço da obra<input id="endereco" maxlength="78"></label>
@@ -228,7 +234,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
     <div id="stage"><div id="prev"></div>
       <div class="zoom"><button type="button" id="zin" aria-label="Aproximar">+</button><button type="button" id="zout" aria-label="Afastar">−</button><button type="button" id="zfit" aria-label="Ajustar à tela">⤢</button></div>
     </div>
-    <p class="note" style="margin:8px 0 0">Arraste para mover, use a roda do mouse ou dois dedos para o zoom. Tudo sai do mesmo modelo: mudou uma medida, as três folhas se refazem.</p>
+    <p class="note" style="margin:8px 0 0">Arraste para mover, use a roda do mouse ou dois dedos para o zoom. Tudo sai do mesmo modelo: mudou uma medida, as quatro folhas se refazem.</p>
   </section>
 
   <section class="sheet">
@@ -246,6 +252,12 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
     <h2>Estrutura · dimensionar no Foster Calc</h2>
     <p class="note" style="margin:0 0 10px">Lançamento automático: pilares nos encontros de paredes (e a cada 4,5 m no máximo), vigas de respaldo e baldrames sobre as paredes, uma laje por ambiente. Cargas preliminares por áreas de influência. Toque em <b>Dimensionar →</b> para abrir a peça no módulo com os dados preenchidos.</p>
     <div id="estrutura"></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Instalações · elétrica e hidráulica</h2>
+    <p class="note" style="margin:0 0 10px">Pontos lançados pela NBR 5410 (luz por área, tomadas por perímetro, 2 na bancada da pia, chuveiro e máquina em circuito próprio) e pontos de água, esgoto, ralos e caixas. Desenho completo na folha 04.</p>
+    <div id="instal"></div>
   </section>
 
   <section class="sheet">
@@ -270,7 +282,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
       <button type="button" class="pri ghost" id="btnImprimir">PDF / imprimir</button>
       <span class="note" id="expMsg" role="status"></span>
     </div>
-    <p class="note" style="margin:10px 0 0">Ver as pranchas é livre. O DXF (as três folhas no mesmo arquivo) faz parte dos planos Estudante (com a marca “uso acadêmico”) e Pro. No plano Grátis, o PDF sai com a marca “estudo”.</p>
+    <p class="note" style="margin:10px 0 0">Ver as pranchas é livre. O DXF (as quatro folhas no mesmo arquivo) faz parte dos planos Estudante (com a marca “uso acadêmico”) e Pro. No plano Grátis, o PDF sai com a marca “estudo”.</p>
     <p class="note" style="margin:6px 0 0">O DXF abre no AutoCAD, ZWCAD, BricsCAD, DraftSight e LibreCAD, em metros e na escala real (a situação vem reduzida, na escala indicada). Para DWG, abra o DXF e use “Salvar como”.</p>
   </section>
 
@@ -286,8 +298,8 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 const $ = id => document.getElementById(id);
 const P = window.PlantaIA;
 const modulo = 'planta';
-const NUM = ['sadm', 'gAdd', 'qLaje', 'pPar', 'fck', 'secao', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
-const TXT = ['desc', 'telha', 'formato', 'formato2', 'formato3', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
+const NUM = ['tensao', 'pChuveiro', 'sadm', 'gAdd', 'qLaje', 'pPar', 'fck', 'secao', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
+const TXT = ['desc', 'telha', 'formato', 'formato2', 'formato3', 'formato4', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
   'afE', 'esquina', 'rua', 'ruaLat', 'quadra', 'lote', 'bairro', 'cidade', 'toMax', 'caMax', 'permMin', 'rfMin', 'rlMin', 'rfuMin'];
 const BOOL = ['serv', 'suite', 'cozSep', 'varanda', 'vaga'];
 let res = null, folha = 0, projetoId = null;
@@ -364,10 +376,20 @@ function estruturaHtml() {
     `<p class="note" style="margin:8px 0 0">Soma das cargas: <b>${E.pilares.reduce((s, p) => s + p.N, 0)} kN</b> (${fmt(E.pilares.reduce((s, p) => s + p.N, 0) / (M.W * M.D), 1)} kN/m² de área fechada). Os módulos refazem os cálculos com as normas; as reações das vigas contínuas substituem as estimativas.</p>`;
 }
 
+// ---------- instalações ----------
+function instHtml() {
+  const I = res.I, R = I.resumo;
+  $('instal').innerHTML = `<div class="info" style="margin:0 0 10px"><span>Pontos de luz <b>${R.luz}</b></span><span>Tomadas <b>${R.tug}</b></span><span>Chuveiros <b>${R.chuv}</b></span><span>Instalado <b>${fmt(I.total, 0)} VA</b></span><span>Água/esgoto <b>${R.af} / ${R.es}</b></span><span>Caixa d'água <b>${I.reserv.caixa} L</b></span></div>` +
+    `<h3 class="est-t">Quadro de circuitos</h3><div class="tbl"><table><thead><tr><th>Circ.</th><th>Descrição</th><th style="text-align:right">Pontos · VA</th><th style="text-align:right">Cabo · proteção</th></tr></thead><tbody>${I.circ.map(c =>
+      `<tr><td><b>${c.id}</b></td><td>${escHtml(c.nome)}</td><td class="v">${c.n} · ${fmt(c.va, 0)} VA (${c.tensao} V)</td><td class="v">${c.sec} mm² · ${c.In} A${c.dr ? ' + DR' : ''}</td></tr>`).join('')}</tbody></table></div>` +
+    `<p class="note" style="margin:8px 0 0">Número mínimo de pontos e previsão de cargas pela NBR 5410. Cabos e disjuntores são indicativos (método B1); o projeto elétrico confere queda de tensão, agrupamento e DR. Hidráulica e esgoto: pontos indicativos, traçado pela NBR 5626 e NBR 8160.</p>`;
+}
+
 // ---------- quantitativos e memorial ----------
 function quantHtml() {
-  res.Q = P.quantitativos(res.M, res.E);
-  res.MD = P.memorial(res.M, res.E, res.Q);
+  res.Q = P.quantitativos(res.M, res.E, res.I);
+  res.MD = P.memorial(res.M, res.E, res.Q, res.I);
+  instHtml();
   $('quant').innerHTML = res.Q.map(e => `<h3 class="est-t">${e.etapa}</h3><div class="tbl"><table><tbody>${e.itens.map(i =>
     `<tr><td>${escHtml(i.desc)}${i.memoria ? `<span class="mem">${escHtml(i.memoria)}</span>` : ''}</td><td class="v">${fmt(i.qtd)} ${i.un}</td></tr>`).join('')}</tbody></table></div>`).join('');
   $('memorial').innerHTML = res.MD.map(s => `<h4>${escHtml(s.t)}</h4>${s.p.map(x => `<p>${escHtml(x)}</p>`).join('')}`).join('');
@@ -385,6 +407,7 @@ $('btnCSV').addEventListener('click', async () => {
 const ORCA_URL = 'https://fosterfcs.github.io/foster-orca/';
 const MAPA_ORCA = [['Contrapiso', 'contrapiso'], ['Piso cerâmico', 'piso'], ['Rodapé', 'rodape'], ['Revestimento cerâmico de parede', 'azulejo'],
   ['Chapisco', 'chapisco'], ['Emboço/reboco interno', 'reboco'], ['Reboco externo', 'reboco'], ['Reboco do teto', 'reboco'],
+  ['Ponto de luz', 'luz'], ['Ponto de tomada', 'tomada'], ['Ponto de chuveiro', 'chuveiro'], ['Ponto de água', 'agua'], ['Ponto de esgoto', 'esgoto'], ['Instalação de vaso', 'vaso'],
   ['Alvenaria de vedação', 'alvenaria'], ['Pintura látex PVA em tetos', 'pint_teto'], ['Pintura látex acrílica interna', 'pint_parede'], ['Pintura látex acrílica externa', 'pint_parede']];
 async function empacotar(obj) {   // mesmo formato do Foster Orça: 'z' + deflate-raw em base64url
   const s = JSON.stringify(obj);
@@ -579,7 +602,7 @@ $('btnPrancha').addEventListener('click', async () => {
   const r = P.buildSheets(paraModelo(lerEntrada()), { marca: FC.pro ? null : 'academico' });
   FC.registrarExport(modulo, 'dxf');
   FC.baixar(nomeArquivo('dxf'), P.toDXF(r), 'application/dxf');
-  msg('DXF baixado com as três folhas lado a lado. Para DWG, abra no CAD e use “Salvar como”.');
+  msg('DXF baixado com as quatro folhas lado a lado. Para DWG, abra no CAD e use “Salvar como”.');
 });
 $('btnImprimir').addEventListener('click', () => {
   const r = P.buildSheets(paraModelo(lerEntrada()), { marca: marcaDoPlano() });

@@ -23,7 +23,8 @@ export function defaults() {
     toMax: "", caMax: "", permMin: "", rfMin: "", rlMin: "", rfuMin: "",
     // prancha
     corteA: "auto", corteB: "auto", titulo: "", proprietario: "", endereco: "", resp: "", registro: "",
-    data: new Date().toLocaleDateString("pt-BR"), formato: "auto", formato2: "auto", formato3: "auto",
+    data: new Date().toLocaleDateString("pt-BR"), formato: "auto", formato2: "auto", formato3: "auto", formato4: "auto",
+    tensao: 127, pChuveiro: 5500,
     // estrutura (pré-lançamento)
     sadm: 150, gAdd: 1.0, qLaje: 0.5, pPar: 1.9, fck: 25, secao: 30,
   };
@@ -66,6 +67,11 @@ export const LAYERS = {
   "EST-BALDRAME":      { aci: 4, lt: "TRACEJADA", svg: "#0a6f96", w: 0.20 },
   "EST-SAPATA":        { aci: 6, lt: "TRACEJADA", svg: "#8a2a8a", w: 0.25 },
   "EST-TEXTO":         { aci: 2, lt: "Continuous", svg: "#111", w: 0.18 },
+  "ELE-PONTO":         { aci: 1, lt: "Continuous", svg: "#c0161b", w: 0.25 },
+  "ELE-TEXTO":         { aci: 1, lt: "Continuous", svg: "#8f1015", w: 0.15 },
+  "HID-AGUA":          { aci: 5, lt: "Continuous", svg: "#1f4fa3", w: 0.25 },
+  "HID-ESGOTO":        { aci: 30, lt: "Continuous", svg: "#8a5a14", w: 0.25 },
+  "HID-TEXTO":         { aci: 5, lt: "Continuous", svg: "#1f3d7a", w: 0.15 },
 };
 
 const FORMATOS = { A3: [420, 297, 7], A2: [594, 420, 10], A1: [841, 594, 10], A0: [1189, 841, 10] };
@@ -977,6 +983,103 @@ function drawQuadrosEst(M, E, k) {
 }
 
 /* ------------------------------------------------------------------ */
+/* 5c. Folha de instalações                                            */
+/* ------------------------------------------------------------------ */
+function baseInstal(d, M, k) {
+  contornoParedes(d, M, "EST-PAREDE");
+  for (const o of M.O) if (o.swing) { const la = o.swing.open * Math.PI / 180; d.line(o.swing.h, [o.swing.h[0] + o.w * Math.cos(la), o.swing.h[1] + o.w * Math.sin(la)], "EST-PAREDE"); }
+  for (const r of M.rooms) d.text([(r.x0 + r.x1) / 2, r.y0 + 0.35], 1.7 * k, r.name, { al: "c", va: "b", layer: "EST-PAREDE" });
+  if (M.varanda) { d.line([0, -M.dv], [M.W, -M.dv], "EST-PAREDE"); for (const p of M.pilares) d.rect(p.x0, p.y0, p.x1, p.y1, "EST-PAREDE"); }
+}
+function drawEletrica(M, I, k, esc) {
+  const d = new Draw(), L = "ELE-PONTO", T = "ELE-TEXTO", s = 1.6 * k;
+  baseInstal(d, M, k);
+  for (const p of I.ele) {
+    const [nx, ny] = p.n || [0, 1], tx = -ny, ty = nx;
+    if (p.tipo === "luz") {
+      d.circle([p.x, p.y], 2.2 * k, L);
+      d.line([p.x - 1.5 * k, p.y - 1.5 * k], [p.x + 1.5 * k, p.y + 1.5 * k], L); d.line([p.x - 1.5 * k, p.y + 1.5 * k], [p.x + 1.5 * k, p.y - 1.5 * k], L);
+      d.text([p.x + 2.8 * k, p.y + 0.6 * k], 1.6 * k, `${p.cid} · ${p.va} VA`, { al: "l", va: "b", layer: T });
+    } else if (p.tipo === "tug" || p.tipo === "tugA") {
+      const b = [p.x + nx * 0.02, p.y + ny * 0.02], tip = [b[0] + nx * s * 1.4, b[1] + ny * s * 1.4];
+      const tri = [[b[0] + tx * s, b[1] + ty * s], tip, [b[0] - tx * s, b[1] - ty * s]];
+      if (p.tipo === "tug") d.hatch([tri], "SOLID", L); else { d.poly(tri, true, L); d.line([b[0] + tx * s * 0.5 + nx * s * 0.7, b[1] + ty * s * 0.5 + ny * s * 0.7], [b[0] - tx * s * 0.5 + nx * s * 0.7, b[1] - ty * s * 0.5 + ny * s * 0.7], L); }
+      d.text([tip[0] + nx * 1.2 * k, tip[1] + ny * 1.2 * k], 1.4 * k, `${p.cid}${p.va >= 600 ? " " + p.va : ""}`, { al: "c", va: "m", layer: T });
+    } else if (p.tipo === "tue") {
+      const c = [p.x + nx * s, p.y + ny * s];
+      d.hrect(c[0] - s, c[1] - s, c[0] + s, c[1] + s, "SOLID", L, L);
+      d.text([c[0] + nx * 2.6 * k, c[1] + ny * 2.6 * k], 1.5 * k, `${p.rot} ${p.cid} ${p.va} W`, { al: "c", va: "m", layer: T, bold: true });
+    } else if (p.tipo === "int") {
+      const c = [p.x + nx * s, p.y + ny * s];
+      d.circle(c, 1.3 * k, L);
+      d.text(c, 1.3 * k, p.rot === "S2" ? "S2" : "S", { al: "c", va: "m", layer: T, bold: true });
+    } else if (p.tipo === "qd") {
+      d.hrect(p.x - 0.25, p.y, p.x + 0.25, p.y + 0.12, "SOLID", L, L);
+      d.text([p.x, p.y + 0.12 + 1.2 * k], 1.8 * k, "QD", { al: "c", va: "b", layer: T, bold: true });
+    }
+  }
+  tituloAbaixo(d, k, "PONTOS ELÉTRICOS", `ESC. 1:${esc}`, M.W / 2);
+  return d.E;
+}
+function drawHidro(M, I, k, esc) {
+  const d = new Draw(), A = "HID-AGUA", E = "HID-ESGOTO", T = "HID-TEXTO", s = 1.4 * k;
+  baseInstal(d, M, k);
+  const rot = {};
+  for (const p of I.hid) {
+    if (p.tipo === "AF") { d.hatch([[[p.x, p.y + s], [p.x + s, p.y], [p.x, p.y - s], [p.x - s, p.y]]], "SOLID", A); }
+    else if (p.tipo === "ES") { d.hrect(p.x - s * 0.8, p.y - s * 0.8, p.x + s * 0.8, p.y + s * 0.8, "SOLID", E, E); }
+    else if (p.tipo === "RS") { d.circle([p.x, p.y], s, E); d.line([p.x - s, p.y], [p.x + s, p.y], E); d.line([p.x, p.y - s], [p.x, p.y + s], E); }
+    else if (p.tipo === "CI" || p.tipo === "CG") {
+      const h = p.tipo === "CG" ? 0.3 : 0.3;
+      d.rect(p.x - h, p.y - h, p.x + h, p.y + h, E); d.line([p.x - h, p.y - h], [p.x + h, p.y + h], E);
+      d.text([p.x, p.y - h - 1.0 * k], 1.6 * k, p.tipo, { al: "c", va: "t", layer: T, bold: true });
+    }
+    if (["AF", "ES"].includes(p.tipo)) { const key = p.room + p.ap.split(" ")[0]; if (!rot[key] && p.tipo === "AF") { rot[key] = 1; d.text([p.x + (p.x > (M.W / 2) ? -2.2 : 2.2) * k, p.y + 1.6 * k], 1.4 * k, p.ap.split(" (")[0], { al: p.x > M.W / 2 ? "r" : "l", va: "b", layer: T }); } }
+  }
+  // ligação esquemática do esgoto às caixas
+  const cis = I.hid.filter((p) => p.tipo === "CI" || p.tipo === "CG");
+  for (let i = 0; i < cis.length - 1; i++) { const a = cis[i], b = cis[cis.length - 1]; if (a !== b) d.line([a.x, a.y], a.y === b.y ? [b.x, b.y] : [a.x, b.y], E); }
+  const cg = cis.find((p) => p.tipo === "CG"), fim = cis[cis.length - 1];
+  if (cg && fim) d.line([cg.x, cg.y + 0.3], [fim.x, fim.y - 0.3], E);
+  d.text([M.W / 2, M.D + 1.4], 1.8 * k, `Caixa d'água ${I.reserv.caixa} L sobre a laje (${I.reserv.moradores} moradores × ${I.reserv.consumo} L/dia)`, { al: "c", va: "b", layer: T, bold: true });
+  tituloAbaixo(d, k, "PONTOS HIDROSSANITÁRIOS", `ESC. 1:${esc}`, M.W / 2);
+  return d.E;
+}
+function drawQuadrosInst(M, I, k) {
+  const d = new Draw();
+  const linhas = I.circ.map((c) => [c.id, c.nome.slice(0, 30), String(c.n), String(Math.round(c.va)), String(c.tensao), fmt(c.Ib, 1), `${c.sec}`, `${c.In} A${c.dr ? " + DR" : ""}`]);
+  linhas.push(["", "TOTAL INSTALADO", "", String(Math.round(I.total)), "", "", "", ""]);
+  const h1 = tabela(d, 0, 178 * k, k, "QUADRO DE CIRCUITOS (PRÉ-DIMENSIONAMENTO)", [{ t: "CIRC.", w: 12 * k }, { t: "DESCRIÇÃO", w: 56 * k }, { t: "PTS", w: 10 * k }, { t: "VA", w: 16 * k }, { t: "V", w: 12 * k }, { t: "Ib (A)", w: 16 * k }, { t: "mm²", w: 14 * k }, { t: "PROTEÇÃO", w: 42 * k }], linhas, [linhas.length - 1]);
+  const R = I.resumo;
+  const hid = [["Pontos de água fria", String(R.af)], ["Pontos de esgoto", String(R.es)], ["Ralos sifonados", String(R.rs)], ["Caixas de inspeção", String(R.ci)], ["Caixa de gordura", String(R.cg)], [`Caixa d'água (${I.reserv.litros} L/dia)`, `${I.reserv.caixa} L`]];
+  const d2 = new Draw(); tabela(d2, 0, 86 * k, k, "HIDROSSANITÁRIO", [{ t: "ITEM", w: 62 * k }, { t: "QTD", w: 24 * k }], hid);
+  d.E.push(...translate(d2.E, 0, -h1 - 6 * k));
+  // legenda
+  const lg = new Draw(), x0 = 92 * k, s = 1.6 * k, L = "ELE-PONTO";
+  let y = -h1 - 6 * k - 3 * k;
+  const item = (desenha, txt) => { desenha(x0 + 3 * k, y); lg.text([x0 + 8 * k, y], 1.7 * k, txt, { al: "l", va: "m", layer: "PRANCHA-TEXTO" }); y -= 4.6 * k; };
+  lg.text([x0, y + 3 * k], 2.0 * k, "LEGENDA", { al: "l", va: "b", layer: "PRANCHA-TEXTO", bold: true });
+  item((x, yy) => { lg.circle([x, yy], 2.0 * k, L); lg.line([x - 1.4 * k, yy - 1.4 * k], [x + 1.4 * k, yy + 1.4 * k], L); lg.line([x - 1.4 * k, yy + 1.4 * k], [x + 1.4 * k, yy - 1.4 * k], L); }, "Ponto de luz no teto (circuito · VA)");
+  item((x, yy) => lg.hatch([[[x - s, yy - s * 0.7], [x + s, yy - s * 0.7], [x, yy + s * 0.8]]], "SOLID", L), "Tomada baixa (0,30 m)");
+  item((x, yy) => lg.poly([[x - s, yy - s * 0.7], [x + s, yy - s * 0.7], [x, yy + s * 0.8]], true, L), "Tomada alta / bancada (1,10 m)");
+  item((x, yy) => lg.hrect(x - s, yy - s, x + s, yy + s, "SOLID", L, L), "Tomada de uso específico (CH chuveiro, MLR máquina)");
+  item((x, yy) => { lg.circle([x, yy], 1.3 * k, L); lg.text([x, yy], 1.2 * k, "S", { al: "c", va: "m", layer: "ELE-TEXTO", bold: true }); }, "Interruptor (1,10 m) · S2 = duas seções");
+  item((x, yy) => lg.hrect(x - 2.4 * k, yy - 0.8 * k, x + 2.4 * k, yy + 0.8 * k, "SOLID", L, L), "Quadro de distribuição (1,50 m)");
+  item((x, yy) => lg.hatch([[[x, yy + s], [x + s, yy], [x, yy - s], [x - s, yy]]], "SOLID", "HID-AGUA"), "Ponto de água fria");
+  item((x, yy) => lg.hrect(x - s * 0.8, yy - s * 0.8, x + s * 0.8, yy + s * 0.8, "SOLID", "HID-ESGOTO", "HID-ESGOTO"), "Ponto de esgoto (ø mm)");
+  item((x, yy) => { lg.circle([x, yy], s, "HID-ESGOTO"); lg.line([x - s, yy], [x + s, yy], "HID-ESGOTO"); lg.line([x, yy - s], [x, yy + s], "HID-ESGOTO"); }, "Ralo sifonado");
+  item((x, yy) => { lg.rect(x - s, yy - s, x + s, yy + s, "HID-ESGOTO"); lg.line([x - s, yy - s], [x + s, yy + s], "HID-ESGOTO"); }, "Caixa de inspeção (CI) / de gordura (CG)");
+  d.E.push(...lg.E);
+  const notas = [
+    `Previsão de cargas e número mínimo de pontos conforme NBR 5410 (9.5.2). Tensão ${I.V} V; chuveiros em 220 V.`,
+    "Condutores e disjuntores indicativos (método B1, sem fatores de correção). Dimensionar com queda de tensão, agrupamento e DR 30 mA.",
+    "Pontos hidrossanitários indicativos: traçado, diâmetros e ventilação no projeto conforme NBR 5626 e NBR 8160.",
+  ];
+  notas.forEach((t, i) => d.text([0, y - 2 * k - i * 3.2 * k], 1.6 * k, t, { al: "l", va: "t", layer: "PRANCHA-TEXTO" }));
+  return d.E;
+}
+
+/* ------------------------------------------------------------------ */
 /* 6. Quadros e carimbo                                                */
 /* ------------------------------------------------------------------ */
 function tabela(d, x0, w, k, head, cols, data, boldRows = []) {
@@ -1128,7 +1231,7 @@ function compor(lay, marca, nota) {
       const b = bb[key];
       let x = cx + (colW[ci] - b.w) / 2, ty = y - b.h;
       if (key === "C") { x = SW - m - b.w; ty = m; }
-      else if (ultima && ["Q", "QI", "QE"].includes(key)) x = SW - m - b.w;
+      else if (ultima && ["Q", "QI", "QE", "QI4"].includes(key)) x = SW - m - b.w;
       out.E.push(...translate(blocos[key], x - b.x0, ty - b.y0));
       y = ty - gap;
     });
@@ -1159,18 +1262,23 @@ export function buildSheets(S0, op = {}) {
   const conteudo2 = "SITUAÇÃO, IMPLANTAÇÃO, COBERTURA, FACHADAS LATERAIS E POSTERIOR, ÍNDICES";
   const m1 = (k, f, esc) => ({ ordem: ["P", "F", "AA", "BB", "Q"], blocos: {
     P: drawPlan(M, k, esc), AA: drawSection(M, "x", k, esc), BB: drawSection(M, "y", k, esc), F: drawFacade(M, k, "frente", esc), Q: drawQuadros(M, k),
-    C: drawCarimbo(M, k, f, `1:${esc}`, "01/03", conteudo1) } });
+    C: drawCarimbo(M, k, f, `1:${esc}`, "01/04", conteudo1) } });
   const m2 = (k, f, esc) => ({ ordem: ["IMP", "SIT", "COB", "FP", "FD", "FE", "QI"], blocos: {
     IMP: drawImplantacao(M, k, esc), SIT: drawSituacao(M, k, esc), COB: drawCobertura(M, k, esc),
     FP: drawFacade(M, k, "fundos", esc), FD: drawFacade(M, k, "direita", esc), FE: drawFacade(M, k, "esquerda", esc), QI: drawIndices(M, k),
-    C: drawCarimbo(M, k, f, `INDICADAS`, "02/03", conteudo2) } });
+    C: drawCarimbo(M, k, f, `INDICADAS`, "02/04", conteudo2) } });
   const E = estrutura(M, op.est || {});
   const conteudo3 = "LOCAÇÃO DE PILARES E FUNDAÇÕES, FORMAS DO RESPALDO, QUADROS ESTRUTURAIS (PRELIMINAR)";
   const m3 = (k, f, esc) => ({ ordem: ["LOC", "FOR", "QE"], blocos: {
     LOC: drawLocacao(M, E, k, esc), FOR: drawFormas(M, E, k, esc), QE: drawQuadrosEst(M, E, k),
-    C: drawCarimbo(M, k, f, `1:${esc}`, "03/03", conteudo3) } });
+    C: drawCarimbo(M, k, f, `1:${esc}`, "03/04", conteudo3) } });
+  const I4 = instalacoes(M, op.inst || {});
+  const conteudo4 = "PONTOS ELÉTRICOS E HIDROSSANITÁRIOS, QUADRO DE CIRCUITOS, LEGENDA (PRELIMINAR)";
+  const m4 = (k, f, esc) => ({ ordem: ["ELE", "HID", "QI4"], blocos: {
+    ELE: drawEletrica(M, I4, k, esc), HID: drawHidro(M, I4, k, esc), QI4: drawQuadrosInst(M, I4, k),
+    C: drawCarimbo(M, k, f, `1:${esc}`, "04/04", conteudo4) } });
   const folhas = [];
-  for (const [montar, cands, nome] of [[m1, escolha(S.formato, CAND1), "Folha 01"], [m2, escolha(S.formato2, CAND2), "Folha 02"], [m3, escolha(S.formato3, CAND1), "Folha 03"]]) {
+  for (const [montar, cands, nome] of [[m1, escolha(S.formato, CAND1), "Folha 01"], [m2, escolha(S.formato2, CAND2), "Folha 02"], [m3, escolha(S.formato3, CAND1), "Folha 03"], [m4, escolha(S.formato4, CAND1), "Folha 04"]]) {
     let lay = diagramar(cands, montar);
     if (!lay) {
       lay = diagramar([["A0", cands[cands.length - 1][1]], ["A0", 200], ["A0", 250]], montar);
@@ -1180,7 +1288,7 @@ export function buildSheets(S0, op = {}) {
     folhas.push({ nome, E: compor(lay, op.marca, NOTA), SW: lay.SW, SH: lay.SH, k: lay.k, esc: lay.esc, formato: lay.fmtNome });
   }
   avisos.push(...E.avisos);
-  return { folhas, M, E, avisos };
+  return { folhas, M, E, I: I4, avisos };
 }
 
 /* ------------------------------------------------------------------ */
@@ -1517,7 +1625,7 @@ export function linksEstrutura(E, M) {
 /* 13. Quantitativos (a partir do modelo e do pré-lançamento)          */
 /* ------------------------------------------------------------------ */
 const TAXA_ACO = { sapata: 50, baldrame: 80, pilar: 110, viga: 100, laje: 80 }; // kg/m³ (estimativa)
-export function quantitativos(M, E) {
+export function quantitativos(M, E, INS = instalacoes(M)) {
   const t = M.t, H = M.H, hL = M.laje;
   const area = (r) => (r.x1 - r.x0) * (r.y1 - r.y0);
   const perim = (r) => 2 * ((r.x1 - r.x0) + (r.y1 - r.y0));
@@ -1567,62 +1675,78 @@ export function quantitativos(M, E) {
   const Ac = M.idx.Aconst;
   const esq = {};
   for (const o of M.O) (esq[o.code] ||= { o, n: 0 }).n++;
-  const I = (desc, un, qtd, memoria) => ({ desc, un, qtd: Math.round(qtd * 100) / 100, memoria });
+  const I_ = (desc, un, qtd, memoria) => ({ desc, un, qtd: Math.round(qtd * 100) / 100, memoria });
   const etapas = [
     { etapa: "Serviços preliminares", itens: [
-      I("Limpeza do terreno", "m²", M.idx.Alote, "área do lote"),
-      I("Locação da obra (gabarito)", "m²", Ac, "área construída"),
+      I_("Limpeza do terreno", "m²", M.idx.Alote, "área do lote"),
+      I_("Locação da obra (gabarito)", "m²", Ac, "área construída"),
     ] },
     { etapa: "Fundações", itens: [
-      I("Escavação manual (sapatas e baldrames)", "m³", escav, "sapatas (A+0,30)(B+0,30)×1,50 + baldrames (bw+0,30)×0,40×L"),
-      I("Lastro de concreto magro (5 cm)", "m³", sap.reduce((s, x) => s + x.A * x.B * 0.05, 0), "A×B×0,05 das sapatas"),
-      I("Concreto estrutural das sapatas", "m³", vSap, "A×B×h, h = maior balanço/3 (≥ 25 cm)"),
-      I("Concreto estrutural dos baldrames", "m³", vBal, `${fmt(Lbal)} m de baldrame`),
-      I("Fôrmas de sapatas e baldrames", "m²", fSap + fBal, "faces laterais"),
-      I("Aço CA-50/60 (fundações)", "kg", vSap * TAXA_ACO.sapata + vBal * TAXA_ACO.baldrame, `taxas ${TAXA_ACO.sapata} e ${TAXA_ACO.baldrame} kg/m³`),
-      I("Impermeabilização dos baldrames", "m²", Lbal * (0.15 + 0.6), "topo + 30 cm nas faces"),
+      I_("Escavação manual (sapatas e baldrames)", "m³", escav, "sapatas (A+0,30)(B+0,30)×1,50 + baldrames (bw+0,30)×0,40×L"),
+      I_("Lastro de concreto magro (5 cm)", "m³", sap.reduce((s, x) => s + x.A * x.B * 0.05, 0), "A×B×0,05 das sapatas"),
+      I_("Concreto estrutural das sapatas", "m³", vSap, "A×B×h, h = maior balanço/3 (≥ 25 cm)"),
+      I_("Concreto estrutural dos baldrames", "m³", vBal, `${fmt(Lbal)} m de baldrame`),
+      I_("Fôrmas de sapatas e baldrames", "m²", fSap + fBal, "faces laterais"),
+      I_("Aço CA-50/60 (fundações)", "kg", vSap * TAXA_ACO.sapata + vBal * TAXA_ACO.baldrame, `taxas ${TAXA_ACO.sapata} e ${TAXA_ACO.baldrame} kg/m³`),
+      I_("Impermeabilização dos baldrames", "m²", Lbal * (0.15 + 0.6), "topo + 30 cm nas faces"),
     ] },
     { etapa: "Estrutura", itens: [
-      I("Concreto dos pilares", "m³", vPil, `${E.pilares.length} pilares`),
-      I("Concreto das vigas de respaldo", "m³", vVig, "seção abaixo da laje"),
-      I(`Concreto da laje maciça (h=${Math.round(hL * 100)} cm)`, "m³", vLaje, `${fmt(aLaje)} m² de laje`),
-      I("Fôrmas (pilares, vigas e laje)", "m²", fPil + fVig + aLaje, "faces de pilares, laterais e fundo de vigas, fundo de laje"),
-      I("Aço CA-50/60 (estrutura)", "kg", vPil * TAXA_ACO.pilar + vVig * TAXA_ACO.viga + vLaje * TAXA_ACO.laje, `taxas ${TAXA_ACO.pilar}/${TAXA_ACO.viga}/${TAXA_ACO.laje} kg/m³`),
+      I_("Concreto dos pilares", "m³", vPil, `${E.pilares.length} pilares`),
+      I_("Concreto das vigas de respaldo", "m³", vVig, "seção abaixo da laje"),
+      I_(`Concreto da laje maciça (h=${Math.round(hL * 100)} cm)`, "m³", vLaje, `${fmt(aLaje)} m² de laje`),
+      I_("Fôrmas (pilares, vigas e laje)", "m²", fPil + fVig + aLaje, "faces de pilares, laterais e fundo de vigas, fundo de laje"),
+      I_("Aço CA-50/60 (estrutura)", "kg", vPil * TAXA_ACO.pilar + vVig * TAXA_ACO.viga + vLaje * TAXA_ACO.laje, `taxas ${TAXA_ACO.pilar}/${TAXA_ACO.viga}/${TAXA_ACO.laje} kg/m³`),
     ] },
     { etapa: "Alvenaria", itens: [
-      I(`Alvenaria de vedação ${Math.round(t * 100) - 1} cm (bloco cerâmico)`, "m²", alvenaria, `${fmt(Lparede)} m de parede × ${fmt(H)} m − vãos + oitões`),
-      I("Vergas e contravergas", "m", M.O.reduce((s, o) => s + (o.w + 0.6) * (o.type === "J" ? 2 : 1), 0), "vão + 30 cm de cada lado"),
+      I_(`Alvenaria de vedação ${Math.round(t * 100) - 1} cm (bloco cerâmico)`, "m²", alvenaria, `${fmt(Lparede)} m de parede × ${fmt(H)} m − vãos + oitões`),
+      I_("Vergas e contravergas", "m", M.O.reduce((s, o) => s + (o.w + 0.6) * (o.type === "J" ? 2 : 1), 0), "vão + 30 cm de cada lado"),
     ] },
     { etapa: "Cobertura", itens: [
-      I(`Telhado (${M.tel.nome.toLowerCase()}) com madeiramento`, "m²", telhado, `projeção × √(1+i²), i = ${Math.round(M.i * 100)}%`),
-      I("Cumeeira", "m", M.W + 2 * M.b, "comprimento da cumeeira"),
+      I_(`Telhado (${M.tel.nome.toLowerCase()}) com madeiramento`, "m²", telhado, `projeção × √(1+i²), i = ${Math.round(M.i * 100)}%`),
+      I_("Cumeeira", "m", M.W + 2 * M.b, "comprimento da cumeeira"),
     ] },
     { etapa: "Esquadrias", itens: Object.values(esq).sort((a, b) => a.o.code.localeCompare(b.o.code, "pt", { numeric: true }))
-        .map(({ o, n }) => I(`${o.code} · ${o.type === "J" ? "janela" : o.type === "P" ? "porta" : "vão"} ${o.desc.toLowerCase()} ${fmt(o.w)} × ${fmt(o.hgt)} m`, "un", n, o.type === "J" ? `peitoril ${fmt(o.sill)} m` : ""))
+        .map(({ o, n }) => I_(`${o.code} · ${o.type === "J" ? "janela" : o.type === "P" ? "porta" : "vão"} ${o.desc.toLowerCase()} ${fmt(o.w)} × ${fmt(o.hgt)} m`, "un", n, o.type === "J" ? `peitoril ${fmt(o.sill)} m` : ""))
         .filter((x) => !x.desc.includes("vão livre"))
-        .concat([I("Peitoris de granito", "m", M.O.filter((o) => o.type === "J").reduce((s, o) => s + o.w + 0.1, 0), "largura das janelas + 10 cm"),
-          I("Soleiras de granito (portas externas)", "m", vaosExt.filter((o) => o.type === "P").reduce((s, o) => s + o.w, 0), "")]) },
+        .concat([I_("Peitoris de granito", "m", M.O.filter((o) => o.type === "J").reduce((s, o) => s + o.w + 0.1, 0), "largura das janelas + 10 cm"),
+          I_("Soleiras de granito (portas externas)", "m", vaosExt.filter((o) => o.type === "P").reduce((s, o) => s + o.w, 0), "")]) },
+    { etapa: "Instalações elétricas", itens: [
+      I_("Ponto de luz com interruptor", "un", INS.resumo.luz, "um por ambiente (NBR 5410)"),
+      I_("Ponto de tomada", "un", INS.resumo.tug, "mínimos da NBR 5410 por perímetro"),
+      I_("Ponto de chuveiro", "un", INS.resumo.chuv, `${fmt(INS.pChuv, 0)} W em 220 V`),
+      I_("Ponto de tomada de uso específico (máquina de lavar)", "un", INS.resumo.tue - INS.resumo.chuv, ""),
+      I_(`Quadro de distribuição com ${INS.circ.length} circuitos e DR`, "un", 1, `${fmt(INS.total, 0)} VA instalados`),
+    ] },
+    { etapa: "Instalações hidrossanitárias", itens: [
+      I_("Ponto de água", "un", INS.resumo.af, "água fria"),
+      I_("Ponto de esgoto", "un", INS.resumo.es, ""),
+      I_("Instalação de vaso sanitário", "un", INS.resumo.vaso, ""),
+      I_("Ralo sifonado", "un", INS.resumo.rs, ""),
+      I_("Caixa de inspeção 60×60", "un", INS.resumo.ci, ""),
+      I_("Caixa de gordura", "un", INS.resumo.cg, ""),
+      I_(`Caixa d'água ${INS.reserv.caixa} L instalada`, "un", 1, `${INS.reserv.moradores} moradores × ${INS.reserv.consumo} L/dia`),
+    ] },
     { etapa: "Revestimentos", itens: [
-      I("Chapisco interno e externo", "m²", revInt + revExt + tetos, "paredes + tetos"),
-      I("Emboço/reboco interno", "m²", Math.max(0, revInt - ceramParede), "paredes internas, sem as áreas com cerâmica"),
-      I("Reboco externo", "m²", revExt, "fachadas e oitões − vãos"),
-      I("Reboco do teto", "m²", tetos, "área dos ambientes"),
-      I("Revestimento cerâmico de parede (h = 1,50 m)", "m²", ceramParede, "banheiros, serviço e cozinha"),
+      I_("Chapisco interno e externo", "m²", revInt + revExt + tetos, "paredes + tetos"),
+      I_("Emboço/reboco interno", "m²", Math.max(0, revInt - ceramParede), "paredes internas, sem as áreas com cerâmica"),
+      I_("Reboco externo", "m²", revExt, "fachadas e oitões − vãos"),
+      I_("Reboco do teto", "m²", tetos, "área dos ambientes"),
+      I_("Revestimento cerâmico de parede (h = 1,50 m)", "m²", ceramParede, "banheiros, serviço e cozinha"),
     ] },
     { etapa: "Pisos", itens: [
-      I("Contrapiso", "m²", pisoInt + pisoVar, M.varanda ? "ambientes + varanda" : "ambientes"),
-      I("Piso cerâmico", "m²", pisoInt + pisoVar, ""),
-      I("Rodapé cerâmico", "m", Math.max(0, rodape), "quartos e sala − portas"),
+      I_("Contrapiso", "m²", pisoInt + pisoVar, M.varanda ? "ambientes + varanda" : "ambientes"),
+      I_("Piso cerâmico", "m²", pisoInt + pisoVar, ""),
+      I_("Rodapé cerâmico", "m", Math.max(0, rodape), "quartos e sala − portas"),
     ] },
     { etapa: "Pintura", itens: [
-      I("Pintura látex PVA em tetos", "m²", tetos, ""),
-      I("Pintura látex acrílica interna", "m²", Math.max(0, revInt - ceramParede), ""),
-      I("Pintura látex acrílica externa (com selador)", "m²", revExt, ""),
+      I_("Pintura látex PVA em tetos", "m²", tetos, ""),
+      I_("Pintura látex acrílica interna", "m²", Math.max(0, revInt - ceramParede), ""),
+      I_("Pintura látex acrílica externa (com selador)", "m²", revExt, ""),
     ] },
     { etapa: "Área externa", itens: [
-      ...(M.lote.vaga ? [I("Piso de concreto da vaga", "m²", 12.5, "2,50 × 5,00 m")] : []),
-      ...(M.lote.caminho ? [I("Caminho de acesso (concreto)", "m²", (M.lote.caminho.x1 - M.lote.caminho.x0) * (M.lote.caminho.y1 - M.lote.caminho.y0), "")] : []),
-      I("Limpeza final da obra", "m²", Ac, "área construída"),
+      ...(M.lote.vaga ? [I_("Piso de concreto da vaga", "m²", 12.5, "2,50 × 5,00 m")] : []),
+      ...(M.lote.caminho ? [I_("Caminho de acesso (concreto)", "m²", (M.lote.caminho.x1 - M.lote.caminho.x0) * (M.lote.caminho.y1 - M.lote.caminho.y0), "")] : []),
+      I_("Limpeza final da obra", "m²", Ac, "área construída"),
     ] },
   ];
   return etapas.map((e) => ({ ...e, itens: e.itens.filter((x) => x.qtd > 0) })).filter((e) => e.itens.length);
@@ -1631,7 +1755,7 @@ export function quantitativos(M, E) {
 /* ------------------------------------------------------------------ */
 /* 14. Memorial descritivo                                             */
 /* ------------------------------------------------------------------ */
-export function memorial(M, E, Q) {
+export function memorial(M, E, Q, INS = instalacoes(M)) {
   const S = M.S, I = M.idx, nq = M.rooms.filter((r) => r.kind === "q").length;
   const q = (etapa, inicio) => (Q.find((e) => e.etapa === etapa)?.itens || []).find((i) => i.desc.startsWith(inicio));
   const v = (it, un = true) => (it ? `${fmt(it.qtd)}${un ? " " + it.un : ""}` : "—");
@@ -1680,7 +1804,8 @@ export function memorial(M, E, Q) {
       "Tetos em látex PVA branco; paredes internas em látex acrílico sobre massa corrida nas áreas secas; fachadas em látex acrílico sobre selador. Mínimo de duas demãos, sobre superfícies limpas e secas.",
     ] },
     { t: "11. Instalações", p: [
-      "Instalações elétricas conforme NBR 5410, com quadro de distribuição, disjuntores, DR e aterramento. Instalações de água fria conforme NBR 5626, com caixa d'água sobre a laje, e de esgoto conforme NBR 8160, com caixas de inspeção e de gordura. Os projetos de instalações serão elaborados à parte.",
+      `Instalações elétricas conforme NBR 5410: ${INS.resumo.luz} pontos de luz, ${INS.resumo.tug} pontos de tomada de uso geral, ${INS.resumo.chuv} chuveiro(s) e ${Math.max(0, INS.resumo.tue - INS.resumo.chuv)} tomada(s) de uso específico, em ${INS.circ.length} circuitos (${fmt(INS.total, 0)} VA instalados), com quadro de distribuição, disjuntores, dispositivo DR 30 mA nos circuitos de áreas molhadas e externas, e aterramento.`,
+      `Água fria conforme NBR 5626, com ${INS.resumo.af} pontos e caixa d'água de ${INS.reserv.caixa} L sobre a laje. Esgoto conforme NBR 8160, com ${INS.resumo.es} pontos, ${INS.resumo.rs} ralos sifonados, ${INS.resumo.ci} caixas de inspeção e caixa de gordura. Os projetos executivos de instalações serão elaborados à parte.`,
     ] },
     { t: "12. Serviços complementares e limpeza", p: [
       `${M.lote.vaga ? "Vaga de carro e " : ""}caminho de acesso em piso de concreto. A obra será entregue limpa, com remoção de entulho, e com todas as instalações testadas.`,
@@ -1689,4 +1814,185 @@ export function memorial(M, E, Q) {
       "Memorial e quantidades gerados automaticamente pelo Foster Calc a partir do estudo preliminar. Devem ser revistos e completados pelo responsável técnico, conforme os projetos executivos e as exigências do município.",
     ] },
   ];
+}
+
+/* ------------------------------------------------------------------ */
+/* 15. Instalações: pontos elétricos (NBR 5410) e hidrossanitários     */
+/* ------------------------------------------------------------------ */
+const IZ_B1 = [[1.5, 17.5], [2.5, 24], [4, 32], [6, 41], [10, 57], [16, 76]]; // A, 2 condutores carregados, PVC, método B1
+const DISJ = [10, 16, 20, 25, 32, 40, 50, 63];
+function protecao(Ib, secMin) {
+  const In = DISJ.find((d) => d >= Ib) || 63;
+  const sec = (IZ_B1.find(([s, iz]) => s >= secMin && iz >= In) || IZ_B1[IZ_B1.length - 1])[0];
+  return { In, sec };
+}
+export function instalacoes(M, op = {}) {
+  const S = M.S, V = num(op.tensao ?? S.tensao, 127) === 220 ? 220 : 127, Vch = 220;
+  const pc = num(op.pChuveiro ?? S.pChuveiro, 5500), pChuv = pc >= 2000 && pc <= 9000 ? pc : 5500;
+  const ele = [], hid = [];
+  const area = (r) => (r.x1 - r.x0) * (r.y1 - r.y0), perim = (r) => 2 * ((r.x1 - r.x0) + (r.y1 - r.y0));
+  // portas e vãos que tocam cada face do ambiente
+  const aberturasDaFace = (r, face) => M.O.filter((o) => {
+    if (face === "inf") return o.orient === "H" && Math.abs(o.q1 - r.y0) < 1e-6 && o.p1 > r.x0 && o.p0 < r.x1;
+    if (face === "sup") return o.orient === "H" && Math.abs(o.q0 - r.y1) < 1e-6 && o.p1 > r.x0 && o.p0 < r.x1;
+    if (face === "esq") return o.orient === "V" && Math.abs(o.q1 - r.x0) < 1e-6 && o.p1 > r.y0 && o.p0 < r.y1;
+    return o.orient === "V" && Math.abs(o.q0 - r.x1) < 1e-6 && o.p1 > r.y0 && o.p0 < r.y1;
+  });
+  // ponto no perímetro interno (anti-horário a partir do canto inferior esquerdo)
+  const noPerimetro = (r, s) => {
+    const w = r.x1 - r.x0, h = r.y1 - r.y0, P = 2 * (w + h); s = ((s % P) + P) % P;
+    if (s < w) return { x: r.x0 + s, y: r.y0, face: "inf", n: [0, 1], u: s };
+    if (s < w + h) return { x: r.x1, y: r.y0 + (s - w), face: "dir", n: [-1, 0], u: s - w };
+    if (s < 2 * w + h) return { x: r.x1 - (s - w - h), y: r.y1, face: "sup", n: [0, -1], u: s - w - h };
+    return { x: r.x0, y: r.y1 - (s - 2 * w - h), face: "esq", n: [1, 0], u: s - 2 * w - h };
+  };
+  const livre = (r, p, folga = 0.3) => {
+    const w = r.x1 - r.x0, h = r.y1 - r.y0, comp = p.face === "inf" || p.face === "sup" ? w : h;
+    if (p.u < 0.25 || p.u > comp - 0.25) return false;                     // longe dos cantos
+    const c = p.face === "inf" || p.face === "sup" ? p.x : p.y;
+    return aberturasDaFace(r, p.face).filter((o) => o.type !== "J").every((o) => c < o.p0 - folga || c > o.p1 + folga);
+  };
+  const distribuir = (r, n, tipo, va, circ, ocupados = []) => {
+    const P = perim(r), out = [];
+    for (let k = 0; k < n; k++) {
+      let s = (P * (k + 0.5)) / n, p = noPerimetro(r, s), tent = 0;
+      while ((!livre(r, p) || ocupados.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 0.6)) && tent < 40) { tent++; s += (tent % 2 ? 1 : -1) * 0.15 * tent; p = noPerimetro(r, s); }
+      const pt = { tipo, x: p.x, y: p.y, n: p.n, va, circ, room: r.name, h: tipo === "tugA" ? 1.1 : 0.3 };
+      out.push(pt); ocupados.push(pt);
+    }
+    return out;
+  };
+  const molhado = (r) => ["coz", "sc", "s"].includes(r.kind);
+  for (const r of M.rooms) {
+    const A = area(r), P = perim(r);
+    // iluminação (ponto no teto)
+    const vaLuz = A <= 6 ? 100 : 100 + 60 * Math.floor((A - 6) / 4 + 1e-9);
+    ele.push({ tipo: "luz", x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2, va: vaLuz, circ: "ILUM", room: r.name });
+    // tomadas
+    const ocup = [];
+    if (r.kind === "b" || r.kind === "bs") {
+      const ladoL = r.door !== "L", xw = ladoL ? r.x0 : r.x1;
+      ele.push({ tipo: "tugA", x: xw, y: r.y0 + 0.9, n: [ladoL ? 1 : -1, 0], va: 600, circ: "TUG-BAN", room: r.name, h: 1.1 });
+      const box = r.y1 - Math.min(0.9, r.y1 - r.y0 - 1.4) / 2;
+      ele.push({ tipo: "tue", x: (r.x0 + r.x1) / 2, y: r.y1, n: [0, -1], va: pChuv, circ: "CHUV", room: r.name, h: 2.2, rot: "CH" });
+      void box;
+    } else if (molhado(r)) {
+      let nT = Math.max(1, Math.ceil(P / 3.5 - 1e-9));
+      const pts = [];
+      if (r.kind !== "s") {          // bancada da pia: 2 tomadas na parede da pia
+        const pc = (r.y0 + r.y1) / 2;
+        for (const dy of [-0.45, 0.45]) { const p = { tipo: "tugA", x: r.x1, y: pc + dy, n: [-1, 0], room: r.name, h: 1.1 }; pts.push(p); ocup.push(p); }
+        nT = Math.max(nT, 2);
+      }
+      const resto = Math.max(0, nT - pts.length);
+      if (r.kind === "sc") {         // sala/cozinha: tomadas da cozinha (3,5 m) só na metade da pia; a sala segue 5 m
+        const cozP = (r.y1 - r.y0) * 2 + Math.min(3, (r.x1 - r.x0) / 2) * 2;
+        const nC = Math.max(2, Math.ceil(cozP / 3.5 - 1e-9));
+        const meia = { ...r, x0: r.x1 - Math.min(3, (r.x1 - r.x0) / 2) };
+        pts.push(...distribuir(meia, nC - 2, "tug", 0, "", ocup));
+        const sala = { ...r, x1: meia.x0 };
+        const nS = Math.max(1, Math.ceil((2 * (sala.x1 - sala.x0) + 2 * (sala.y1 - sala.y0)) / 5 - 1e-9));
+        distribuir(sala, nS, "tug", 100, "TUG-SOC", ocup).forEach((p) => ele.push(p));
+      } else pts.push(...distribuir(r, resto, "tug", 0, "", ocup));
+      pts.forEach((p, i) => ele.push({ ...p, va: i < 3 ? 600 : 100, circ: r.kind === "s" ? "TUG-SERV" : "TUG-COZ", room: r.name }));
+      if (r.kind === "s") ele.push({ tipo: "tue", x: Math.min(r.x0 + 0.95, r.x1 - 0.3), y: r.y1, n: [0, -1], va: 1000, circ: "MLR", room: r.name, h: 0.9, rot: "MLR" });
+    } else {
+      const nT = A <= 6 ? 1 : Math.max(1, Math.ceil(P / 5 - 1e-9));
+      distribuir(r, nT, "tug", 100, "TUG-SOC", ocup).forEach((p) => ele.push(p));
+    }
+  }
+  if (!M.rooms.some((r) => r.kind === "s")) {                           // sem área de serviço: máquina na cozinha
+    const k = M.rooms.find((r) => r.kind === "coz" || r.kind === "sc");
+    ele.push({ tipo: "tue", x: k.x1, y: Math.max(k.y0 + 0.4, (k.y0 + k.y1) / 2 - 1.3), n: [-1, 0], va: 1000, circ: "MLR", room: k.name, h: 0.9, rot: "MLR" });
+  }
+  if (M.varanda) {
+    ele.push({ tipo: "luz", x: M.W * 0.4, y: -M.dv / 2, va: 100, circ: "ILUM", room: "VARANDA" });
+    ele.push({ tipo: "tug", x: M.W * 0.2, y: 0, n: [0, -1], va: 100, circ: "TUG-SOC", room: "VARANDA", h: 0.3 });
+  }
+  // interruptores junto às portas (lado da fechadura, dentro do ambiente)
+  for (const r of M.rooms) {
+    const portas = M.O.filter((o) => o.type !== "J" && ((o.orient === "H" && o.p1 > r.x0 && o.p0 < r.x1 && (Math.abs(o.q1 - r.y0) < 1e-6 || Math.abs(o.q0 - r.y1) < 1e-6))
+      || (o.orient === "V" && o.p1 > r.y0 && o.p0 < r.y1 && (Math.abs(o.q1 - r.x0) < 1e-6 || Math.abs(o.q0 - r.x1) < 1e-6))));
+    const o = portas.find((x) => x.entrada) || portas.find((x) => x.room === r.name) || portas.find((x) => x.type === "P") || portas[0];
+    if (!o) continue;
+    const hinge = o.swing ? (o.orient === "H" ? o.swing.h[0] : o.swing.h[1]) : o.p0;
+    const latch = Math.abs(hinge - o.p0) < 1e-6 ? o.p1 + 0.15 : o.p0 - 0.15;
+    let x, y, n;
+    if (o.orient === "H") { x = latch; y = Math.abs(o.q1 - r.y0) < 1e-6 ? r.y0 : r.y1; n = [0, y === r.y0 ? 1 : -1]; }
+    else { y = latch; x = Math.abs(o.q1 - r.x0) < 1e-6 ? r.x0 : r.x1; n = [x === r.x0 ? 1 : -1, 0]; }
+    x = clamp(x, r.x0 + 0.1, r.x1 - 0.1); y = clamp(y, r.y0 + 0.1, r.y1 - 0.1);
+    ele.push({ tipo: "int", x, y, n, va: 0, circ: "", room: r.name, h: 1.1, rot: M.varanda && o.entrada ? "S2" : "S" });
+  }
+  // quadro de distribuição: parede da frente, ao lado da porta de entrada (lado da dobradiça)
+  const ent = M.O.find((o) => o.entrada), sala = M.sala;
+  const xq = ent.p0 - 0.45 > sala.x0 + 0.3 ? ent.p0 - 0.45 : ent.p1 + 0.6;
+  ele.push({ tipo: "qd", x: xq, y: M.t, n: [0, 1], va: 0, circ: "", room: sala.name, h: 1.5 });
+
+  // circuitos
+  const grupo = (c) => ele.filter((p) => p.circ === c);
+  const circ = [];
+  const add = (nome, pts, tensao, secMin, dr) => {
+    if (!pts.length) return;
+    const va = pts.reduce((s, p) => s + p.va, 0), Ib = va / tensao;
+    const { In, sec } = protecao(Ib, secMin);
+    const id = `C${circ.length + 1}`;
+    pts.forEach((p) => (p.cid = id));
+    circ.push({ id, nome, n: pts.length, va, tensao, Ib, In, sec, dr });
+  };
+  const ilum = grupo("ILUM"), vaIl = ilum.reduce((s, p) => s + p.va, 0);
+  if (vaIl > 1200) { const fr = ilum.filter((p) => p.y < M.yi0), fu = ilum.filter((p) => p.y >= M.yi0); add("Iluminação social", fr, V, 1.5, false); add("Iluminação íntima", fu, V, 1.5, false); }
+  else add("Iluminação", ilum, V, 1.5, false);
+  const soc = grupo("TUG-SOC"), ext = soc.some((p) => p.room === "VARANDA");   // tomada externa pede DR
+  if (soc.reduce((s, p) => s + p.va, 0) > 1800) { const h = Math.ceil(soc.length / 2); add("Tomadas sala/quartos (1)", soc.slice(0, h), V, 2.5, soc.slice(0, h).some((p) => p.room === "VARANDA")); add("Tomadas sala/quartos (2)", soc.slice(h), V, 2.5, soc.slice(h).some((p) => p.room === "VARANDA")); }
+  else add(ext ? "Tomadas sala, quartos e varanda" : "Tomadas sala e quartos", soc, V, 2.5, ext);
+  add("Tomadas cozinha", grupo("TUG-COZ"), V, 2.5, true);
+  add("Tomadas área de serviço", grupo("TUG-SERV"), V, 2.5, true);
+  add("Tomadas banheiros", grupo("TUG-BAN"), V, 2.5, true);
+  grupo("CHUV").forEach((p) => add(`Chuveiro (${p.room.toLowerCase()})`, [p], Vch, 2.5, true));
+  add("Máquina de lavar", grupo("MLR"), V, 2.5, true);
+  const total = circ.reduce((s, c) => s + c.va, 0);
+
+  // hidrossanitário
+  const H = (tipo, x, y, ap, room, extra = {}) => hid.push({ tipo, x, y, ap, room, ...extra });
+  for (const r of M.rooms) {
+    if (r.kind === "b" || r.kind === "bs") {
+      const ladoL = r.door !== "L", xw = ladoL ? r.x0 : r.x1, sg = ladoL ? 1 : -1;
+      const boxD = Math.min(0.9, (r.y1 - r.y0) - 1.4), vy = r.y0 + Math.min(1.35, (r.y1 - r.y0) - boxD - 0.45);
+      H("AF", xw, vy + 0.15, "Vaso", r.name); H("ES", xw + sg * 0.3, vy, "Vaso (100)", r.name, { d: 100 });
+      if (vy - 0.25 > r.y0 + 0.62) { H("AF", xw, r.y0 + 0.37, "Lavatório", r.name); H("ES", xw + sg * 0.12, r.y0 + 0.25, "Lavatório (40)", r.name, { d: 40 }); }
+      H("AF", (r.x0 + r.x1) / 2, r.y1, "Chuveiro", r.name);
+      H("RS", (r.x0 + r.x1) / 2, r.y1 - boxD / 2, "Ralo sifonado (box)", r.name);
+      H("RS", (r.x0 + r.x1) / 2 + sg * 0.2, r.y0 + 0.5, "Ralo sifonado", r.name);
+    } else if (r.kind === "coz" || r.kind === "sc") {
+      const pc = (r.y0 + r.y1) / 2;
+      H("AF", r.x1, pc - 0.1, "Pia", r.name); H("ES", r.x1 - 0.2, pc - 0.1, "Pia (50)", r.name, { d: 50 });
+    } else if (r.kind === "s") {
+      H("AF", r.x0 + 0.28, r.y1, "Tanque", r.name); H("ES", r.x0 + 0.28, r.y1 - 0.2, "Tanque (40)", r.name, { d: 40 });
+      H("AF", Math.min(r.x0 + 0.95, r.x1 - 0.3), r.y1, "Máquina de lavar", r.name); H("ES", Math.min(r.x0 + 0.95, r.x1 - 0.3), r.y1 - 0.2, "Máquina (50)", r.name, { d: 50 });
+      H("RS", (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, "Ralo sifonado", r.name);
+    }
+  }
+  if (!M.rooms.some((r) => r.kind === "s")) {
+    const k = M.rooms.find((r) => r.kind === "coz" || r.kind === "sc"), yk = Math.max(k.y0 + 0.4, (k.y0 + k.y1) / 2 - 1.3);
+    H("AF", k.x1, yk, "Máquina de lavar", k.name); H("ES", k.x1 - 0.2, yk, "Máquina (50)", k.name, { d: 50 });
+  }
+  // caixas externas: inspeção atrás das áreas molhadas do fundo, gordura ao lado da cozinha
+  const fundoMolh = M.rooms.filter((r) => ["b", "bs", "s"].includes(r.kind));
+  fundoMolh.forEach((r) => H("CI", (r.x0 + r.x1) / 2, M.D + 0.8, "Caixa de inspeção 60×60", r.name));
+  const kz = M.rooms.find((r) => r.kind === "coz" || r.kind === "sc");
+  H("CG", M.W + 0.8, (kz.y0 + kz.y1) / 2, "Caixa de gordura", kz.name);
+  H("CI", M.W + 0.8, M.D + 0.8, "Caixa de inspeção 60×60", "");
+  const moradores = M.rooms.filter((r) => r.kind === "q").length * 2;
+  const litros = moradores * 150;
+  const caixa = [500, 1000, 1500, 2000, 3000].find((v) => v >= litros) || 3000;
+  return {
+    ele, circ, total, V, pChuv, hid,
+    reserv: { moradores, consumo: 150, litros, caixa },
+    resumo: {
+      luz: ele.filter((p) => p.tipo === "luz").length, tug: ele.filter((p) => p.tipo === "tug" || p.tipo === "tugA").length,
+      chuv: ele.filter((p) => p.rot === "CH").length, tue: ele.filter((p) => p.tipo === "tue").length, int: ele.filter((p) => p.tipo === "int").length,
+      af: hid.filter((p) => p.tipo === "AF").length, es: hid.filter((p) => p.tipo === "ES").length, rs: hid.filter((p) => p.tipo === "RS").length,
+      ci: hid.filter((p) => p.tipo === "CI").length, cg: hid.filter((p) => p.tipo === "CG").length, vaso: hid.filter((p) => p.ap === "Vaso").length,
+    },
+  };
 }
