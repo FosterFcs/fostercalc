@@ -1,4 +1,4 @@
-// Foster Calc · Planta IA — núcleo geométrico
+// Foster Calc · Foster Projeto — núcleo geométrico
 // modelo → folha 01 (planta, cortes, fachada frontal, quadros) e folha 02 (situação, implantação,
 // cobertura, fachadas, índices) → DXF / SVG
 import {
@@ -1155,7 +1155,7 @@ function drawCarimbo(M, k, fmtNome, escala, folha, conteudo) {
   rows.slice(1, -1).forEach((y) => d.line([0, y], [W, y], C));
   d.line([42 * u, H], [42 * u, rows[1]], C);
   d.text([21 * u, H - 6.2 * u], 3.6 * u, "FOSTER CALC", { al: "c", va: "m", layer: T, bold: true });
-  d.text([21 * u, H - 11.2 * u], 1.7 * u, "Planta IA · estudo gerado", { al: "c", va: "m", layer: T });
+  d.text([21 * u, H - 11.2 * u], 1.7 * u, "Foster Projeto · estudo gerado", { al: "c", va: "m", layer: T });
   const nq = M.rooms.filter((r) => r.kind === "q").length;
   const tit = (S.titulo || `CASA TÉRREA - ${nq} QUARTO${nq > 1 ? "S" : ""}`).toUpperCase().slice(0, 44);
   lab(42 * u, H, "PROJETO ARQUITETÔNICO");
