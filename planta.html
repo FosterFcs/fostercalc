@@ -441,10 +441,13 @@ $('btnOrca').addEventListener('click', async () => {
     cli: { nome: S.proprietario || '', end: S.endereco || '' },
     com: P.ambientes(M).map(r => ({ nome: r.name.charAt(0) + r.name.slice(1).toLowerCase(), l: +(r.x1 - r.x0).toFixed(2), c: +(r.y1 - r.y0).toFixed(2) })), it,
   };
+  // memorial descritivo vai junto nos planos Estudante e Pro (mesma regra do PDF do memorial)
+  const comMemorial = temIA();
+  if (comMemorial) pac.desc = res.MD.map(sec => `${sec.t.toUpperCase()}\n${sec.p.join('\n')}`).join('\n\n').slice(0, 15000);
   const url = ORCA_URL + '#calc=' + await empacotar(pac);
   const w = window.open(url, '_blank');
   if (w) { try { w.opener = null; } catch (e) {} } else location.href = url;
-  $('qMsg').textContent = `Abrindo o Foster Orça com ${it.length} serviços. Os de obra nova chegam com preço em branco para você preencher.`;
+  $('qMsg').textContent = `Abrindo o Foster Orça com ${it.length} serviços${comMemorial ? ' e o memorial descritivo' : ''}. Os de obra nova chegam com preço em branco para você preencher.${comMemorial ? '' : ' O memorial vai junto nos planos Estudante e Pro.'}`;
 });
 
 $('btnMemorial').addEventListener('click', async () => {
