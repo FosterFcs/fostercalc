@@ -141,16 +141,153 @@ const translate = (E, dx, dy) => transform(E, (p) => [p[0] + dx, p[1] + dy]);
 /* ------------------------------------------------------------------ */
 /* 1. Modelo paramétrico                                               */
 /* ------------------------------------------------------------------ */
+/* Sobrado: térreo social (sala, cozinha, lavabo, serviço) e superior íntimo (quartos e banheiros), escada em U */
+function layoutSobrado(S, P, avisos) {
+  const { t, nq, H, laje, qw, suite, serv } = P;
+  let { ds, db } = P;
+  const hpp = H + laje, nE = Math.ceil(hpp / 0.185 - 1e-9), esp = hpp / nE, piso = 0.28;
+  const n1 = Math.ceil(nE / 2), n2 = nE - n1, run1 = (n1 - 1) * piso, run2 = (n2 - 1) * piso, pat = 0.95, ew = 1.9;
+  const dbMin = r2(Math.ceil((run1 + pat + 0.05) * 20) / 20);
+  if (db < dbMin) { avisos.push(`Sobrado: a profundidade do fundo subiu para ${fmt(dbMin)} m para caber a escada.`); db = dbMin; }
+  const hallD = 0.95;
+  if (ds < 3.8) { avisos.push("Sobrado: a profundidade da frente subiu para 3,80 m (quartos da frente e circulação de 0,95 m)."); ds = 3.8; }
+  const bw = clamp(num(S.bw, 1.6), 1.1, 3), bsw = clamp(num(S.bsw, 1.4), 1.1, 3), sw = clamp(num(S.sw, 1.6), 1.2, 3.5);
+  const lvw = clamp(num(S.lvw, 1.2), 1.0, 2.0);
+  const qs = Array.from({ length: nq }, (_, i) => ({ name: i === 0 && suite ? "SUÍTE" : nq === 1 ? "QUARTO" : `QUARTO ${i + 1}`, w: qw[i], kind: "q", first: i === 0 }));
+  const frente = [qs[0]]; if (suite) frente.push({ name: "BANHO SUÍTE", w: bsw, kind: "bs" });
+  const fundo = [{ name: "ESCADA", w: ew, kind: "esc" }, { name: "BANHEIRO", w: Math.max(bw, lvw), kind: "b" }, ...qs.slice(1)];
+  const larg = (l) => t + l.reduce((a, r) => a + r.w, 0) + (l.length - 1) * t + t;
+  // passa quartos do fundo para a frente enquanto isso estreitar a casa
+  for (;;) {
+    const ult = fundo[fundo.length - 1];
+    if (ult.kind !== "q") break;
+    const antes = Math.max(larg(frente), larg(fundo));
+    const depois = Math.max(larg([...frente, ult]), larg(fundo.slice(0, -1)));
+    if (depois >= antes - 1e-6) break;
+    frente.push(fundo.pop());
+  }
+  // térreo no fundo: escada | lavabo (sob o banheiro) | cozinha [| serviço]; a cozinha precisa de 2,40 m
+  const xLav1 = t + ew + t + fundo[1].w;                       // fim do lavabo
+  const servCabe = serv;
+  const Wmin = r2(xLav1 + t + 2.4 + (servCabe ? t + sw : 0) + t);
+  let W = r2(Math.max(larg(frente), larg(fundo), Wmin));
+  // completa as linhas até a largura W
+  const completar = (l) => {
+    let falta = r2(W - larg(l));
+    if (falta <= 0.005) return;
+    const qsL = l.filter((r) => r.kind === "q");
+    if (falta >= 2.2 + t && (!qsL.length || falta > 1.2)) { l.push({ name: frente.some((r) => r.kind === "of") ? "ESTÚDIO" : "ESCRITÓRIO", w: r2(falta - t), kind: "of" }); return; }
+    (qsL[qsL.length - 1] || l[l.length - 1]).w = r2((qsL[qsL.length - 1] || l[l.length - 1]).w + falta);
+  };
+  completar(frente); completar(fundo);
+  const dsF = r2(ds - hallD - t), yF1 = r2(t + dsF), yF2 = r2(yF1 + t);
+  const yi0 = r2(t + ds), yi1 = r2(2 * t + ds), ytop = r2(yi1 + db), D = r2(ytop + t);
+  const mk = (lista, y0, y1) => { let x = t; return lista.map((r) => { const o = { ...r, x0: r2(x), x1: r2(x + r.w), y0, y1 }; x += r.w + t; return o; }); };
+  const supFrente = mk(frente, t, yF1).map((r) => ({ ...r, flip: true }));
+  const supFundo = mk(fundo, yi1, ytop);
+  const hall = { name: "CIRCULAÇÃO", kind: "hall", x0: t, x1: r2(W - t), y0: yF2, y1: yi0 };
+  const esc0 = supFundo[0];
+  // térreo
+  const sala = { name: "SALA", kind: "sala", x0: t, y0: t, x1: r2(W - t), y1: yi0 };
+  const tEsc = { name: "ESCADA", kind: "esc", x0: esc0.x0, x1: esc0.x1, y0: yi1, y1: ytop };
+  const tLav = { name: "LAVABO", kind: "lav", x0: supFundo[1].x0, x1: r2(supFundo[1].x0 + lvw), y0: yi1, y1: ytop };
+  const xr = r2(tLav.x1 + t), xf = r2(W - t);
+  let coz, serR = null;
+  if (servCabe) { serR = { name: "A. SERVIÇO", kind: "s", x0: r2(xf - sw), x1: xf, y0: yi1, y1: ytop }; coz = { name: "COZINHA", kind: "coz", x0: xr, x1: r2(serR.x0 - t), y0: yi1, y1: ytop }; }
+  else coz = { name: "COZINHA", kind: "coz", x0: xr, x1: xf, y0: yi1, y1: ytop };
+  const rooms = [sala, tEsc, tLav, coz, ...(serR ? [serR] : [])];
+  if (tLav.x1 < supFundo[1].x1 - 0.01) { /* sobra sob o banheiro vira parte do lavabo */ tLav.x1 = supFundo[1].x1; coz.x0 = r2(tLav.x1 + t); }
+
+  // aberturas
+  const O = [], OS = [];
+  const add = (lst, o) => { o.w = r2(o.p1 - o.p0); o.hgt = r2(o.head - o.sill); lst.push(o); return o; };
+  // térreo: frente
+  let jw = Math.min(1.5, Math.max(1.0, (W - 2 * t) / 3.6));
+  const jp0 = t + 0.5, dp0 = r2(jp0 + jw + 0.5);
+  add(O, { type: "J", orient: "H", p0: r2(jp0), p1: r2(jp0 + jw), q0: 0, q1: t, sill: 0.9, head: 2.1, desc: "Correr 2 folhas" });
+  add(O, { type: "P", orient: "H", p0: dp0, p1: r2(dp0 + 0.9), q0: 0, q1: t, sill: 0, head: 2.1, desc: "Abrir 1 folha", entrada: true, swing: { h: [dp0, t], open: 90, closed: 0 } });
+  if (W - t - (dp0 + 0.9) > 2.0) { const a = r2(dp0 + 0.9 + 0.6), c = r2(Math.min(a + 1.5, W - t - 0.4)); add(O, { type: "J", orient: "H", p0: a, p1: c, q0: 0, q1: t, sill: 0.9, head: 2.1, desc: "Correr 2 folhas" }); }
+  const kc = t + ds / 2;
+  add(O, { type: "J", orient: "V", p0: r2(kc - 0.6), p1: r2(kc + 0.6), q0: r2(W - t), q1: W, sill: 0.9, head: 2.1, desc: "Correr 2 folhas" });
+  // térreo: fundo
+  add(O, { type: "V", orient: "H", p0: r2(tEsc.x0 + 0.05), p1: r2(tEsc.x0 + 0.95), q0: yi0, q1: yi1, sill: 0, head: 2.1, desc: "Vão livre" });
+  const lw = Math.min(0.7, tLav.x1 - tLav.x0 - 0.3);
+  add(O, { type: "P", orient: "H", p0: r2(tLav.x1 - 0.10 - lw), p1: r2(tLav.x1 - 0.10), q0: yi0, q1: yi1, sill: 0, head: 2.1, desc: "Abrir 1 folha", room: "LAVABO", swing: { h: [r2(tLav.x1 - 0.10), yi1], open: 90, closed: 180 } });
+  tLav.door = "R";
+  const cv = Math.min(1.2, coz.x1 - coz.x0 - 0.4);
+  add(O, { type: "V", orient: "H", p0: r2(coz.x0 + 0.2), p1: r2(coz.x0 + 0.2 + cv), q0: yi0, q1: yi1, sill: 0, head: 2.1, desc: "Vão livre" });
+  const cx = (coz.x0 + coz.x1) / 2, kjw = Math.min(1.2, coz.x1 - coz.x0 - 1.0);
+  if (kjw >= 0.6) add(O, { type: "J", orient: "H", p0: r2(cx - kjw / 2 - 0.2), p1: r2(cx + kjw / 2 - 0.2), q0: ytop, q1: D, sill: 1.1, head: 2.1, desc: "Correr 2 folhas" });
+  add(O, { type: "J", orient: "H", p0: r2((tLav.x0 + tLav.x1) / 2 - 0.3), p1: r2((tLav.x0 + tLav.x1) / 2 + 0.3), q0: ytop, q1: D, sill: 1.5, head: 2.1, desc: "Basculante" });
+  if (serR) {
+    add(O, { type: "P", orient: "V", p0: r2(yi1 + 0.15), p1: r2(yi1 + 0.95), q0: coz.x1, q1: serR.x0, sill: 0, head: 2.1, desc: "Abrir 1 folha", swing: { h: [serR.x0, r2(yi1 + 0.15)], open: 0, closed: 90 } });
+    const p1 = r2(serR.x1 - 0.10), p0 = r2(p1 - 0.8);
+    add(O, { type: "P", orient: "H", p0, p1, q0: ytop, q1: D, sill: 0, head: 2.1, desc: "Abrir 1 folha (externa)", swing: { h: [p1, ytop], open: 270, closed: 180 } });
+    serR.door = "L";
+  } else {
+    // sem área de serviço: porta da cozinha para o quintal
+    const p1 = r2(coz.x1 - 0.10), p0 = r2(p1 - 0.8);
+    add(O, { type: "P", orient: "H", p0, p1, q0: ytop, q1: D, sill: 0, head: 2.1, desc: "Abrir 1 folha (externa)", swing: { h: [p1, ytop], open: 270, closed: 180 } });
+  }
+  // superior: frente
+  for (const r of supFrente) {
+    const w = r.x1 - r.x0, c = (r.x0 + r.x1) / 2;
+    if (r.kind === "bs") {
+      const qq = supFrente[supFrente.indexOf(r) - 1];
+      add(OS, { type: "P", orient: "V", p0: r2(yF1 - 0.85), p1: r2(yF1 - 0.15), q0: qq.x1, q1: r.x0, sill: 0, head: 2.1, desc: "Abrir 1 folha", swing: { h: [qq.x1, r2(yF1 - 0.15)], open: 180, closed: 270 } });
+      r.door = "L";
+      add(OS, { type: "J", orient: "H", p0: r2(c - 0.3), p1: r2(c + 0.3), q0: 0, q1: t, sill: 1.5, head: 2.1, desc: "Basculante" });
+      continue;
+    }
+    const temBS = supFrente[supFrente.indexOf(r) + 1]?.kind === "bs";
+    const lado = temBS ? "L" : "R";
+    r.door = lado;
+    const cand = lado === "R"
+      ? { p0: r2(r.x1 - 0.90), p1: r2(r.x1 - 0.10), swing: { h: [r2(r.x1 - 0.10), yF1], open: 270, closed: 180 } }
+      : { p0: r2(r.x0 + 0.10), p1: r2(r.x0 + 0.90), swing: { h: [r2(r.x0 + 0.10), yF1], open: 270, closed: 0 } };
+    add(OS, { type: "P", orient: "H", ...cand, q0: yF1, q1: yF2, sill: 0, head: 2.1, desc: "Abrir 1 folha", room: r.name });
+    const ww = Math.min(r.kind === "of" ? 1.2 : 1.5, w - 0.6);
+    add(OS, { type: "J", orient: "H", p0: r2(c - ww / 2), p1: r2(c + ww / 2), q0: 0, q1: t, sill: 0.9, head: 2.1, desc: "Correr 2 folhas" });
+  }
+  // superior: fundo
+  for (const r of supFundo) {
+    const w = r.x1 - r.x0, c = (r.x0 + r.x1) / 2;
+    if (r.kind === "esc") {
+      add(OS, { type: "V", orient: "H", p0: r2(r.x1 - 0.95), p1: r2(r.x1 - 0.05), q0: yi0, q1: yi1, sill: 0, head: 2.1, desc: "Vão livre" });
+      add(OS, { type: "J", orient: "H", p0: r2(c - 0.3), p1: r2(c + 0.3), q0: ytop, q1: D, sill: 1.5, head: 2.1, desc: "Basculante" });
+      continue;
+    }
+    const dw = r.kind === "b" ? 0.7 : 0.8;
+    r.door = "R";
+    add(OS, { type: "P", orient: "H", p0: r2(r.x1 - 0.10 - dw), p1: r2(r.x1 - 0.10), q0: yi0, q1: yi1, sill: 0, head: 2.1, desc: "Abrir 1 folha", room: r.name,
+      swing: { h: [r2(r.x1 - 0.10), yi1], open: 90, closed: 180 } });
+    if (r.kind === "b") add(OS, { type: "J", orient: "H", p0: r2(c - 0.3), p1: r2(c + 0.3), q0: ytop, q1: D, sill: 1.5, head: 2.1, desc: "Basculante" });
+    else { const ww = Math.min(r.kind === "of" ? 1.2 : 1.5, w - 0.6); add(OS, { type: "J", orient: "H", p0: r2(c - ww / 2), p1: r2(c + ww / 2), q0: ytop, q1: D, sill: 0.9, head: 2.1, desc: "Correr 2 folhas" }); }
+  }
+  const esc = { x0: tEsc.x0, x1: tEsc.x1, y0: yi1, y1: ytop, nE, esp, piso, n1, n2, run1, run2, pat, larg: 0.9 };
+  if (serv && !servCabe) avisos.push("Área de serviço não coube no térreo do sobrado.");
+  return {
+    W, D, yi0, yi1, ytop, rooms, O, sala, coz, cozSep: false, ds, db, esc,
+    sup: { rooms: [...supFrente, hall, ...supFundo], O: OS, yF1, yF2, hall },
+  };
+}
+
 export function buildModel(S0) {
   const S = { ...defaults(), ...S0 };
   const avisos = [];
   const t = clamp(num(S.t, 0.15), 0.1, 0.3);
   const nq = clamp(Math.round(num(S.nq, 2)), 1, 3);
-  const ds = clamp(num(S.ds, 3.8), 2.5, 8), db = clamp(num(S.db, 3.0), 2.2, 6);
+  let ds = clamp(num(S.ds, 3.8), 2.5, 8), db = clamp(num(S.db, 3.0), 2.2, 6);
+  const pav2 = num(S.pav, 1) === 2;
   const H = clamp(num(S.H, 2.8), 2.3, 5), laje = clamp(num(S.laje, 0.1), 0.06, 0.3);
   const qw = [0, 1, 2].map((i) => clamp(num((S.qw || [])[i], 2.8), 2.0, 6));
-  const suite = !!S.suite, serv = !!S.serv, varanda = !!S.varanda;
+  const suite = !!S.suite, serv = !!S.serv;
+  const varanda = !!S.varanda && !pav2;
+  if (S.varanda && pav2) avisos.push("Varanda ainda não sai no sobrado: foi retirada.");
 
+  let L;
+  if (pav2) L = layoutSobrado(S, { t, nq, ds, db, H, laje, qw, suite, serv }, avisos);
+  else L = (() => {
   const back = [];
   for (let i = 0; i < nq; i++) {
     const name = i === 0 && suite ? "SUÍTE" : nq === 1 ? "QUARTO" : `QUARTO ${i + 1}`;
@@ -250,9 +387,13 @@ export function buildModel(S0) {
             swing: { h: [p1, ytop], open: 270, closed: 180 } });
     }
   }
+  return { W, D, yi0, yi1, ytop, rooms, O, sala, coz, cozSep, ds, db };
+  })();
+  ({ ds, db } = L);
+  const { W, D, yi0, yi1, ytop, rooms, O, sala, coz, cozSep } = L, sup = L.sup || null;
   // códigos automáticos por tipo e tamanho: J1, J2… / P1 (entrada), P2… / V1
   const grupos = { J: [], P: [], V: [] };
-  for (const o of O) {
+  for (const o of sup ? [...O, ...sup.O] : O) {
     const chave = `${o.w}|${o.hgt}|${o.sill}|${o.desc}`;
     let g = grupos[o.type].find((x) => x.chave === chave);
     if (!g) grupos[o.type].push(g = { chave, w: o.w, hgt: o.hgt, desc: o.desc, itens: [] });
@@ -269,7 +410,7 @@ export function buildModel(S0) {
   const i = tel.i, b = clamp(num(S.beiral, 0.6), 0.2, 1.5);
   const dv = varanda ? clamp(num(S.dv, 1.8), 1.0, 4) : 0;
   const Y0 = -dv, Y1 = D, Yr = (Y0 + Y1) / 2;
-  const zb = r2(H + laje), zw = r2(zb + 0.15);
+  const zs = r2(H + laje), zb = r2((pav2 ? 2 : 1) * (H + laje)), zw = r2(zb + 0.15);
   const quatro = num(S.aguas, 2) === 4;
   // altura do telhado em (x, y): planos com a mesma inclinação partindo das paredes (o beiral é a extensão)
   const roofAt = (x, y) => zw + i * (quatro ? Math.min(y - Y0, Y1 - y, x, W - x) : Math.min(y - Y0, Y1 - y));
@@ -324,18 +465,19 @@ export function buildModel(S0) {
     if (caminho && caminho.x1 - caminho.x0 < 0.8) caminho = null;
   }
   const Agar = gar ? gar.A : 0;
-  const Alote = lf * lp, Afech = W * D, Avar = W * dv, Aproj = W * (D + dv) + Agar;
+  const Alote = lf * lp, Afech = W * D * (pav2 ? 2 : 1), Avar = W * dv, Aproj = W * (D + dv) + Agar;
   const ar = (v) => (v ? (v.x1 - v.x0) * (v.y1 - v.y0) : 0);
   const Apav = ar(vaga) + ar(caminho) + ar(rampa);
   const Aperm = Math.max(0, Alote - Aproj - Apav);
   const idx = { Alote, Afech, Avar, Agar, Aconst: Afech + Avar + Agar, Aproj, Apav, Aperm, TO: Aproj / Alote, CA: (Afech + Avar + Agar) / Alote, perm: Aperm / Alote };
 
-  const bwc = rooms.find((r) => r.kind === "b");
+  const bwc = rooms.find((r) => r.kind === "b") || rooms.find((r) => r.kind === "lav");
   const xA = S.corteA === "auto" || S.corteA == null ? r2((bwc.x0 + bwc.x1) / 2 + 0.12) : num(S.corteA, (bwc.x0 + bwc.x1) / 2);
   const yB = S.corteB === "auto" || S.corteB == null ? r2(yi1 + db * 0.55) : num(S.corteB, yi1 + db / 2);
 
   return {
-    S, avisos, t, W, D, yi0, yi1, ytop, ds, db, rooms, O, H, laje, zb, zw, zr, i, b, tel, roofZ, roofAt, quatro, xA, yB,
+    S, avisos, t, W, D, yi0, yi1, ytop, ds, db, rooms, O, H, laje, zs, zb, zw, zr, i, b, tel, roofZ, roofAt, quatro, xA, yB,
+    pav: pav2 ? 2 : 1, sup, esc: L.esc || null,
     varanda, dv, Y0, Y1, Yr, pilares, sala, coz, cozSep, gar,
     lote: { lf, lp, hx0, hy0, recuos, vaga, caminho, rampa, calc: Math.max(0, num(S.calc, 2)), norte: num(S.norte, 0) }, idx,
   };
@@ -455,6 +597,30 @@ function arcoPorta(d, o, E) {
 /* ------------------------------------------------------------------ */
 /* 2. Planta baixa                                                     */
 /* ------------------------------------------------------------------ */
+// escada em U: 1º lance sobe junto à parede esquerda, patamar no fundo, 2º lance desce para a frente pela direita
+function desenharEscada(d, e, k, superior) {
+  const L = "ARQ-VISTA", xa = e.x0, xb = e.x1, la = e.larg, y0 = e.y0, yP = y0 + e.run1, yP1 = yP + e.pat;
+  for (let i = 0; i <= e.n1 - 1; i++) d.line([xa, y0 + i * e.piso], [xa + la, y0 + i * e.piso], L);
+  for (let i = 0; i <= e.n2 - 1; i++) d.line([xb - la, yP - i * e.piso], [xb, yP - i * e.piso], L);
+  d.line([xa + la, y0], [xa + la, yP], L); d.line([xb - la, yP - e.run2], [xb - la, yP], L);
+  d.line([xa, yP1], [xb, yP1], L);
+  const m1 = xa + la / 2, m2 = xb - la / 2;
+  d.poly([[m1, y0 + 0.15], [m1, yP + e.pat / 2], [m2, yP + e.pat / 2], [m2, yP - e.run2 + 0.25]], false, L);
+  seta(d, [m2, yP - e.run2 + 0.6], [m2, yP - e.run2 + 0.1], k, L);
+  d.text([m1, y0 + 0.35], 1.6 * k, superior ? "" : "SOBE", { al: "c", va: "b", layer: "ARQ-TEXTO" });
+  d.text([m2, yP - e.run2 - 0.05], 1.6 * k, superior ? "DESCE" : "", { al: "c", va: "t", layer: "ARQ-TEXTO" });
+  d.text([(xa + xb) / 2, yP1 - e.pat / 2 - 0.05], 1.4 * k, `${e.nE} DEGRAUS · e=${fmt(e.esp * 100, 1)} cm · p=${Math.round(e.piso * 100)} cm`, { al: "c", va: "t", layer: "ARQ-TEXTO" });
+}
+// todos os ambientes (térreo e superior)
+export const ambientes = (M) => (M.sup ? [...M.rooms, ...M.sup.rooms] : M.rooms);
+const nQuartos = (M) => ambientes(M).filter((r) => r.kind === "q").length;
+const tipoCasa = (M) => (M.pav === 2 ? "SOBRADO" : "CASA TÉRREA");
+// modelo do pavimento superior com a mesma interface do térreo (para plantas e instalações)
+export function pavSuperior(M) {
+  if (!M.sup) return null;
+  return { ...M, rooms: M.sup.rooms, O: M.sup.O, varanda: false, gar: null, pilares: [], nivelPlanta: "sup", sala: M.sup.hall, piso: M.zs };
+}
+
 function drawPlan(M, k, esc) {
   const d = new Draw(), G = grid(M), { X, Y, C } = G, t = M.t;
   const isW = (i, j) => i >= 0 && j >= 0 && i < C.length && j < C[0].length && C[i][j].c === 1;
@@ -519,17 +685,26 @@ function drawPlan(M, k, esc) {
   for (const r of M.rooms) {
     const w = r.x1 - r.x0, h = r.y1 - r.y0;
     if (r.kind === "q") {
+      const dq = r.flip ? new Draw() : d;
       const bw = r.first && w >= 2.7 ? 1.38 : 0.88;
       const shift = w > 2.6 ? (r.door === "L" ? 0.25 : -0.25) : 0;
       const cx = (r.x0 + r.x1) / 2 + shift, y1 = r.y1, y0 = y1 - 1.88;
-      d.rect(cx - bw / 2, y0, cx + bw / 2, y1, F);
-      d.rect(cx - bw / 2 + 0.05, y1 - 0.45, cx + bw / 2 - 0.05, y1 - 0.08, F);
+      dq.rect(cx - bw / 2, y0, cx + bw / 2, y1, F);
+      dq.rect(cx - bw / 2 + 0.05, y1 - 0.45, cx + bw / 2 - 0.05, y1 - 0.08, F);
       const temSuite = M.rooms.some((x) => x.kind === "bs") && r.first;
-      if (h >= 2.8 && w >= 2.4) {
+      if (h >= 2.6 && w >= 2.4) {
         const gl = Math.min(1.6, h - 2.1);
-        if (r.door !== "L") d.rect(r.x0, r.y0 + 0.15, r.x0 + 0.55, r.y0 + 0.15 + gl, F);
-        else if (!temSuite) d.rect(r.x1 - 0.55, r.y0 + 0.95, r.x1, r.y0 + 0.95 + Math.min(gl, h - 2.9), F);
+        if (r.door !== "L") dq.rect(r.x0, r.y0 + 0.15, r.x0 + 0.55, r.y0 + 0.15 + gl, F);
+        else if (!temSuite) dq.rect(r.x1 - 0.55, r.y0 + 0.95, r.x1, r.y0 + 0.95 + Math.min(gl, h - 2.9), F);
       }
+      if (r.flip) d.E.push(...transform(dq.E, ([x, y]) => [x, r.y0 + r.y1 - y]));
+    } else if (r.kind === "of") {
+      const dq = r.flip ? new Draw() : d, cx = (r.x0 + r.x1) / 2, dw = Math.min(1.4, w - 0.6);
+      dq.rect(cx - dw / 2, r.y1 - 0.6, cx + dw / 2, r.y1, F);
+      dq.rect(cx - 0.25, r.y1 - 1.15, cx + 0.25, r.y1 - 0.7, F);
+      if (r.flip) d.E.push(...transform(dq.E, ([x, y]) => [x, r.y0 + r.y1 - y]));
+    } else if (r.kind === "esc" && M.esc) {
+      desenharEscada(d, M.esc, k, M.nivelPlanta === "sup");
     } else if (r.kind === "b" || r.kind === "bs") {
       const top = r.y1, boxD = Math.min(0.9, h - 1.4);
       d.rect(r.x0, top - boxD, r.x1, top, F);
@@ -573,6 +748,7 @@ function drawPlan(M, k, esc) {
   // textos dos ambientes
   for (const r of M.rooms) {
     const w = r2(r.x1 - r.x0), h = r2(r.y1 - r.y0), A = w * h;
+    if (r.kind === "esc") { d.text([(r.x0 + r.x1) / 2, r.y1 - 0.12], 1.8 * k, r.name, { al: "c", va: "t", layer: "ARQ-TEXTO", bold: true }); continue; }
     const banho = r.kind === "b" || r.kind === "bs" || r.kind === "lav";
     const dx = banho ? (r.door === "L" ? -0.15 : 0.18) : 0;
     const cx = (r.x0 + r.x1) / 2 + dx, cy = (r.y0 + r.y1) / 2 + (r.kind === "q" ? -0.35 : banho ? -0.1 : 0);
@@ -609,7 +785,7 @@ function drawPlan(M, k, esc) {
   marcaCorte(d, [M.xA, yF - 4 * k - 3.2 * k], k, "A", [-1, 0]);
   marcaCorte(d, [-ext - 3.2 * k, M.yB], k, "B", [0, 1]);
   marcaCorte(d, [M.W + b + 6 * k + 3.2 * k, M.yB], k, "B", [0, 1]);
-  tituloAbaixo(d, k, "PLANTA BAIXA", `ESC. 1:${esc}`, M.W / 2);
+  tituloAbaixo(d, k, M.pav === 2 ? (M.nivelPlanta === "sup" ? "PLANTA DO PAVIMENTO SUPERIOR" : "PLANTA DO PAVIMENTO TÉRREO") : "PLANTA BAIXA", `ESC. 1:${esc}`, M.W / 2);
   return d.E;
 }
 
@@ -671,40 +847,49 @@ function drawSection(M, axis, k, esc) {
   const struct = [];
   for (const s of segs) if (s.c !== 0) { const l = struct[struct.length - 1]; if (l && Math.abs(l.s1 - s.s0) < 1e-6) l.s1 = s.s1; else struct.push({ s0: s.s0, s1: s.s1 }); }
   for (const s of struct) d.hrect(s.s0 - 0.025, -0.50, s.s1 + 0.025, -0.10, "ANSI37", CO, P, hs * 1.6);
+  const pavim = (Mf, segs, z0) => {
+    const zf = z0 === 0 ? -0.10 : z0;
   for (const s of segs) {
-    if (s.c === 1) d.hrect(s.s0, -0.10, s.s1, H, "ANSI31", AL, P, hs);
+    if (s.c === 1) d.hrect(s.s0, zf, s.s1, z0 + H, "ANSI31", AL, P, hs);
     else if (s.c === 2) {
       const o = s.o;
-      if (o.type !== "J") { d.hrect(s.s0, o.head, s.s1, H, "ANSI31", AL, P, hs); d.line([s.s0, 0], [s.s1, 0], P); }
+      if (o.type !== "J") { d.hrect(s.s0, z0 + o.head, s.s1, z0 + H, "ANSI31", AL, P, hs); d.line([s.s0, z0], [s.s1, z0], P); }
       else {
-        d.hrect(s.s0, -0.10, s.s1, o.sill, "ANSI31", AL, P, hs);
-        d.hrect(s.s0, o.head, s.s1, H, "ANSI31", AL, P, hs);
-        d.rect(s.s0, o.sill, s.s1, o.head, "ARQ-ESQUADRIA");
+        d.hrect(s.s0, zf, s.s1, z0 + o.sill, "ANSI31", AL, P, hs);
+        d.hrect(s.s0, z0 + o.head, s.s1, z0 + H, "ANSI31", AL, P, hs);
+        d.rect(s.s0, z0 + o.sill, s.s1, z0 + o.head, "ARQ-ESQUADRIA");
         const m = (s.s0 + s.s1) / 2;
-        d.line([m - 0.015, o.sill], [m - 0.015, o.head], "ARQ-ESQUADRIA");
-        d.line([m + 0.015, o.sill], [m + 0.015, o.head], "ARQ-ESQUADRIA");
+        d.line([m - 0.015, z0 + o.sill], [m - 0.015, z0 + o.head], "ARQ-ESQUADRIA");
+        d.line([m + 0.015, z0 + o.sill], [m + 0.015, z0 + o.head], "ARQ-ESQUADRIA");
       }
     }
   }
-  d.hrect(0, H, L, M.zb, "ANSI37", CO, P, hs * 1.6);
+  d.hrect(0, z0 + H, L, z0 + H + M.laje, "ANSI37", CO, P, hs * 1.6);
   for (const s of segs.filter((x) => x.room)) {
     const r = s.room, mid = (s.s0 + s.s1) / 2;
-    d.text([mid, 1.35], (s.s1 - s.s0 < 1.6 ? 1.8 : 2.2) * k, r.name, { al: "c", va: "m", layer: "ARQ-TEXTO", bold: true });
+    d.text([mid, z0 + 1.35], (s.s1 - s.s0 < 1.6 ? 1.8 : 2.2) * k, r.name, { al: "c", va: "m", layer: "ARQ-TEXTO", bold: true });
     if (r.kind === "b" || r.kind === "bs" || r.kind === "lav" || r.kind === "s") {
-      d.line([s.s0, 1.5], [s.s1, 1.5], "ARQ-VISTA");
-      if (s.s1 - s.s0 > 1.3) d.text([mid, 1.5 + 0.8 * k], 1.6 * k, "REV. CERÂMICO h=1,50", { al: "c", va: "b", layer: "ARQ-TEXTO" });
+      d.line([s.s0, z0 + 1.5], [s.s1, z0 + 1.5], "ARQ-VISTA");
+      if (s.s1 - s.s0 > 1.3) d.text([mid, z0 + 1.5 + 0.8 * k], 1.6 * k, "REV. CERÂMICO h=1,50", { al: "c", va: "b", layer: "ARQ-TEXTO" });
     }
-    for (const o of M.O) {
+    for (const o of Mf.O) {
       let onWall = false;
       if (axis === "y" && o.orient === "H" && Math.abs(o.q0 - r.y1) < 1e-6) onWall = true;
       if (axis === "x" && o.orient === "V" && Math.abs(o.q1 - r.x0) < 1e-6) onWall = true;
       if (!onWall) continue;
       const a = Math.max(o.p0, s.s0), c = Math.min(o.p1, s.s1);
       if (c - a < 0.05) continue;
-      d.rect(a, o.sill, c, o.head, "ARQ-VISTA");
-      if (o.type === "J") { d.rect(a + 0.05, o.sill + 0.05, c - 0.05, o.head - 0.05, "ARQ-VISTA"); if (o.desc.startsWith("Correr")) d.line([(a + c) / 2, o.sill + 0.05], [(a + c) / 2, o.head - 0.05], "ARQ-VISTA"); }
-      else if (o.type === "P") d.rect(a + 0.05, 0, c - 0.05, o.head - 0.05, "ARQ-VISTA");
+      d.rect(a, z0 + o.sill, c, z0 + o.head, "ARQ-VISTA");
+      if (o.type === "J") { d.rect(a + 0.05, z0 + o.sill + 0.05, c - 0.05, z0 + o.head - 0.05, "ARQ-VISTA"); if (o.desc.startsWith("Correr")) d.line([(a + c) / 2, z0 + o.sill + 0.05], [(a + c) / 2, z0 + o.head - 0.05], "ARQ-VISTA"); }
+      else if (o.type === "P") d.rect(a + 0.05, z0, c - 0.05, z0 + o.head - 0.05, "ARQ-VISTA");
     }
+  }
+  };
+  pavim(M, segs, 0);
+  const MS = pavSuperior(M);
+  if (MS) {
+    pavim(MS, cutLine(MS, axis, pos), M.zs);
+    d.line([0, M.zs], [L, M.zs], "ARQ-PISO");
   }
   const i = M.i, zw = M.zw, th = 0.05, TL = "ARQ-COBERTURA";
   if (axis === "x") {
@@ -766,11 +951,12 @@ function drawSection(M, axis, k, esc) {
   }
   const nx = (G && axis === "y" ? G.x0 - G.ov : s0 - b) - 0.9;
   nivel(d, nx, 0, k, "±0,00", -1);
-  nivel(d, nx, H, k, fmtNivel(H) + " (forro)", -1);
+  if (M.pav === 2) { nivel(d, nx, M.zs, k, fmtNivel(M.zs) + " (piso sup.)", -1); nivel(d, nx, M.zs + H, k, fmtNivel(M.zs + H) + " (forro)", -1); }
+  else nivel(d, nx, H, k, fmtNivel(H) + " (forro)", -1);
   d.text([(G && axis === "y" ? G.x0 - G.ov : s0 - b) - 0.2, -0.10 - 1.0 * k], 1.8 * k, "TERRENO " + fmtNivel(-0.10), { al: "r", va: "t", layer: "ARQ-NIVEL" });
   const vx = L + b + 1.0 + 4 * k;
   const zTop = axis === "x" ? Math.max(...perfilTelhado(M, "x", M.xA, M.Y0, M.D).map((p) => p[1])) : M.quatro ? Math.max(...perfilTelhado(M, "y", M.yB, 0, M.W).map((p) => p[1])) : M.roofZ(M.yB);
-  dimChain(d, [0, H, M.zb, zTop], k, { dir: "v", at: vx, from: L + b + 1.0 });
+  dimChain(d, (M.pav === 2 ? [0, H, M.zs, M.zs + H, M.zb] : [0, H, M.zb]).concat([zTop]), k, { dir: "v", at: vx, from: L + b + 1.0 });
   const hp = []; struct.forEach((s) => hp.push(s.s0, s.s1));
   if (axis === "x" && M.varanda) hp.push(M.Y0);
   dimChain(d, hp.concat([0, L]), k, { dir: "h", at: -0.50 - 6 * k, from: -0.50 });
@@ -826,20 +1012,22 @@ function drawFacade(M, k, lado, esc) {
     : lado === "fundos" ? o.orient === "H" && o.q1 > M.D - EPS
     : lado === "direita" ? o.orient === "V" && o.q1 > M.W - EPS
     : o.orient === "V" && o.q0 < EPS;
-  for (const o of M.O.filter(naParede)) {
+  const vaos = M.O.map((o) => [o, 0]).concat(M.sup ? M.sup.O.map((o) => [o, M.zs]) : []);
+  for (const [o, z] of vaos.filter(([o]) => naParede(o))) {
     const a = Math.min(S(o.p0), S(o.p1)), c = Math.max(S(o.p0), S(o.p1));
     if (o.type === "J") {
-      d.rect(a, o.sill, c, o.head, E);
-      d.rect(a + 0.05, o.sill + 0.05, c - 0.05, o.head - 0.05, E);
-      if (o.desc.startsWith("Correr")) d.line([(a + c) / 2, o.sill + 0.05], [(a + c) / 2, o.head - 0.05], E);
-      else d.line([a + 0.05, (o.sill + o.head) / 2], [c - 0.05, (o.sill + o.head) / 2], E);
-      d.rect(a - 0.05, o.sill - 0.04, c + 0.05, o.sill, E);
+      d.rect(a, z + o.sill, c, z + o.head, E);
+      d.rect(a + 0.05, z + o.sill + 0.05, c - 0.05, z + o.head - 0.05, E);
+      if (o.desc.startsWith("Correr")) d.line([(a + c) / 2, z + o.sill + 0.05], [(a + c) / 2, z + o.head - 0.05], E);
+      else d.line([a + 0.05, z + (o.sill + o.head) / 2], [c - 0.05, z + (o.sill + o.head) / 2], E);
+      d.rect(a - 0.05, z + o.sill - 0.04, c + 0.05, z + o.sill, E);
     } else {
-      d.rect(a, 0, c, o.head, E);
-      d.rect(a + 0.05, 0, c - 0.05, o.head - 0.05, E);
-      d.circle([c - 0.15, 1.05], 0.03, E);
+      d.rect(a, z, c, z + o.head, E);
+      d.rect(a + 0.05, z, c - 0.05, z + o.head - 0.05, E);
+      d.circle([c - 0.15, z + 1.05], 0.03, E);
     }
   }
+  if (M.pav === 2) { const a = longa ? 0 : Math.min(S(0), S(M.D)), c = longa ? M.W : Math.max(S(0), S(M.D)); d.line([a, M.zs - M.laje], [c, M.zs - M.laje], "ARQ-VISTA"); d.line([a, M.zs], [c, M.zs], "ARQ-VISTA"); }
   if (M.varanda) {
     if (lado === "frente") {
       for (const p of M.pilares) d.rect(S(p.x0), 0, S(p.x1), ze, "ARQ-PILAR");
@@ -870,7 +1058,7 @@ function drawFacade(M, k, lado, esc) {
   if (G && longa && lado === "frente") base.push(S(G.x0));
   if (!longa && M.varanda) base.push(S(M.Y0));
   dimChain(d, base, k, { dir: "h", at: -0.10 - 6 * k, from: -0.10 });
-  dimChain(d, longa || M.quatro ? [-0.10, ze, M.zr] : [-0.10, M.zb, M.zr], k, { dir: "v", at: r1 + 6 * k, from: r1 });
+  dimChain(d, (M.pav === 2 ? [-0.10, M.zs] : [-0.10]).concat(longa || M.quatro ? [ze, M.zr] : [M.zb, M.zr]), k, { dir: "v", at: r1 + 6 * k, from: r1 });
   tituloAbaixo(d, k, cfg.nome, `ESC. 1:${esc}`, (Math.min(...base) + Math.max(...base)) / 2);
   return d.E;
 }
@@ -967,8 +1155,8 @@ function drawImplantacao(M, k, esc) {
   }
   if (L.rampa) { const v = L.rampa; d.rect(v.x0, v.y0, v.x1, v.y1, "ARQ-PISO"); if (v.y1 > 2.5) d.text([(v.x0 + v.x1) / 2, v.y1 / 2], 1.6 * k, "ACESSO DE VEÍCULOS", { al: "c", va: "m", rot: 90, layer: "ARQ-TEXTO" }); }
   const cx = hx0 + M.W / 2, cy = hy0 + M.D / 2;
-  const nq = M.rooms.filter((r) => r.kind === "q").length;
-  d.text([cx, cy + 1.2 * k], 2.5 * k, `CASA TÉRREA · ${nq} QUARTO${nq > 1 ? "S" : ""}`, { al: "c", va: "b", layer: "ARQ-TEXTO", bold: true });
+  const nq = nQuartos(M);
+  d.text([cx, cy + 1.2 * k], 2.5 * k, `${tipoCasa(M)} · ${nq} QUARTO${nq > 1 ? "S" : ""}`, { al: "c", va: "b", layer: "ARQ-TEXTO", bold: true });
   d.text([cx, cy - 1.2 * k], 2.0 * k, `A. CONSTRUÍDA = ${fmt(M.idx.Aconst)} m² · PISO +0,10`, { al: "c", va: "t", layer: "ARQ-TEXTO" });
   if (L.vaga) {
     const v = L.vaga;
@@ -1092,9 +1280,11 @@ function pilaresMeio(E, vao) {
   if (!a || !b) return null;
   return Math.abs(a.y - b.y) < 1e-3 ? (a.x + b.x) / 2 : (a.y + b.y) / 2;
 }
-function drawFormas(M, E, k, esc) {
+function drawFormas(M, E, k, esc, nivel = null) {
   const d = new Draw();
-  contornoParedes(d, M, "EST-PAREDE");
+  const nv = nivel ?? Math.max(...E.vigas.map((v) => v.nivel || 1));
+  E = { ...E, vigas: E.vigas.filter((v) => (v.nivel || 1) === nv), lajes: E.lajes.filter((l) => (l.nivel || 1) === nv) };
+  contornoParedes(d, M.pav === 2 ? pavSuperior(M) : M, "EST-PAREDE");
   for (const v of E.vigas) {
     const o = v.bw / 200;
     if (v.d === "H") d.rect(v.a0, v.c - o, v.a1, v.c + o, "EST-VIGA"); else d.rect(v.c - o, v.a0, v.c + o, v.a1, "EST-VIGA");
@@ -1114,7 +1304,8 @@ function drawFormas(M, E, k, esc) {
     else d.text([v.c + v.bw / 200 + 0.8 * k, m2], 1.8 * k, `${v.id} (${v.bw}x${v.h})`, { al: "c", va: "t", rot: 90, layer: "EST-TEXTO", bold: true });
   }
   cotasEixos(d, E, M, k);
-  tituloAbaixo(d, k, "FORMAS DO RESPALDO", `ESC. 1:${esc} · LAJE +${fmt(M.H)}`, M.W / 2);
+  const sob = M.pav === 2;
+  tituloAbaixo(d, k, sob && nv === 1 ? "FORMAS DO PISO SUPERIOR" : "FORMAS DO RESPALDO", `ESC. 1:${esc} · LAJE +${fmt(sob && nv === 1 ? M.H : sob ? M.zs + M.H : M.H)}`, M.W / 2);
   return d.E;
 }
 function drawQuadrosEst(M, E, k) {
@@ -1127,12 +1318,13 @@ function drawQuadrosEst(M, E, k) {
   tabela(d2, 0, 92 * k, k, "VIGAS E BALDRAMES", [{ t: "VIGA", w: 14 * k }, { t: "SEÇÃO", w: 16 * k }, { t: "VÃOS (m)", w: 40 * k }, { t: "g+q máx", w: 22 * k }], qv);
   d.E.push(...translate(d2.E, w1 + 6 * k, 0));
   const d3 = new Draw();
-  const ql = E.lajes.map((l) => [l.id, l.nome.slice(0, 14), `${fmt(l.lx)} x ${fmt(l.ly)}`, String(l.h), `${fmt(l.g)} / ${fmt(l.q)}`]);
+  const ql = E.lajes.map((l) => [l.id, (M.pav === 2 ? (l.nivel === 1 ? "PISO " : "FORRO ") : "") + l.nome.slice(0, M.pav === 2 ? 11 : 14), `${fmt(l.lx)} x ${fmt(l.ly)}`, String(l.h), `${fmt(l.g)} / ${fmt(l.q)}`]);
   const h3 = tabela(d3, 0, 92 * k, k, "LAJES MACIÇAS", [{ t: "LAJE", w: 12 * k }, { t: "AMBIENTE", w: 28 * k }, { t: "lx x ly (m)", w: 22 * k }, { t: "h", w: 8 * k }, { t: "g / q", w: 22 * k }], ql);
   const yl = -Math.max(h1, (E.vigas.length + E.baldrames.length + 2) * 4.5 * k) - 6 * k;
   d.E.push(...translate(d3.E, w1 + 6 * k, yl));
   const notas = [
     `Cargas: laje g = 25·h + ${fmt(E.op.gAdd)} (revest./forro) + ${fmt(E.op.gTel)} (telhado) kN/m²; q = ${fmt(E.op.qL)} kN/m² (conferir NBR 6120).`,
+    ...(M.pav === 2 ? ["Piso do superior: g = 25·h + revest., q = 1,50 kN/m²; paredes do superior sobre as vigas VS. Escada à parte."] : []),
     `Paredes ${fmt(E.op.pPar)} kN/m² sobre os baldrames; σadm do solo = ${fmt(E.op.sadm, 0)} kPa (confirmar com sondagem).`,
     "Nk por reações isostáticas das vigas + peso próprio. Lançamento PRELIMINAR: dimensionar cada peça",
     "nos módulos do Foster Calc e conferir por profissional habilitado (projeto estrutural com ART).",
@@ -1151,7 +1343,7 @@ function baseInstal(d, M, k) {
   if (M.varanda) { d.line([0, -M.dv], [M.W, -M.dv], "EST-PAREDE"); for (const p of M.pilares) d.rect(p.x0, p.y0, p.x1, p.y1, "EST-PAREDE"); }
   if (M.gar) { const g = M.gar; d.poly([[0, g.y0], [g.x0, g.y0], [g.x0, g.y1], [0, g.y1]], false, "EST-PAREDE"); for (const p of g.pilares) d.rect(p.x0, p.y0, p.x1, p.y1, "EST-PAREDE"); d.text([g.x0 / 2, g.y0 + 0.35], 1.7 * k, "GARAGEM", { al: "c", va: "b", layer: "EST-PAREDE" }); }
 }
-function drawEletrica(M, I, k, esc) {
+function drawEletrica(M, I, k, esc, tit = "PONTOS ELÉTRICOS") {
   const d = new Draw(), L = "ELE-PONTO", T = "ELE-TEXTO", s = 1.6 * k;
   baseInstal(d, M, k);
   for (const p of I.ele) {
@@ -1178,10 +1370,10 @@ function drawEletrica(M, I, k, esc) {
       d.text([p.x, p.y + 0.12 + 1.2 * k], 1.8 * k, "QD", { al: "c", va: "b", layer: T, bold: true });
     }
   }
-  tituloAbaixo(d, k, "PONTOS ELÉTRICOS", `ESC. 1:${esc}`, M.W / 2);
+  tituloAbaixo(d, k, tit, `ESC. 1:${esc}`, M.W / 2);
   return d.E;
 }
-function drawHidro(M, I, k, esc) {
+function drawHidro(M, I, k, esc, tit = "PONTOS HIDROSSANITÁRIOS") {
   const d = new Draw(), A = "HID-AGUA", E = "HID-ESGOTO", T = "HID-TEXTO", s = 1.4 * k;
   baseInstal(d, M, k);
   const rot = {};
@@ -1201,8 +1393,8 @@ function drawHidro(M, I, k, esc) {
   for (let i = 0; i < cis.length - 1; i++) { const a = cis[i], b = cis[cis.length - 1]; if (a !== b) d.line([a.x, a.y], a.y === b.y ? [b.x, b.y] : [a.x, b.y], E); }
   const cg = cis.find((p) => p.tipo === "CG"), fim = cis[cis.length - 1];
   if (cg && fim) d.line([cg.x, cg.y + 0.3], [fim.x, fim.y - 0.3], E);
-  d.text([M.W / 2, M.D + 1.4], 1.8 * k, `Caixa d'água ${I.reserv.caixa} L sobre a laje (${I.reserv.moradores} moradores × ${I.reserv.consumo} L/dia)`, { al: "c", va: "b", layer: T, bold: true });
-  tituloAbaixo(d, k, "PONTOS HIDROSSANITÁRIOS", `ESC. 1:${esc}`, M.W / 2);
+  if (!M.sup || M.nivelPlanta === "sup") d.text([M.W / 2, M.D + 1.4], 1.8 * k, `Caixa d'água ${I.reserv.caixa} L sobre a laje (${I.reserv.moradores} moradores × ${I.reserv.consumo} L/dia)`, { al: "c", va: "b", layer: T, bold: true });
+  tituloAbaixo(d, k, tit, `ESC. 1:${esc}`, M.W / 2);
   return d.E;
 }
 function drawQuadrosInst(M, I, k) {
@@ -1261,13 +1453,17 @@ function tabela(d, x0, w, k, head, cols, data, boldRows = []) {
 
 function drawQuadros(M, k) {
   const d = new Draw();
-  const rows = M.rooms.map((r) => [r.name, fmt((r.x1 - r.x0) * (r.y1 - r.y0))]);
+  const ar = (r) => fmt((r.x1 - r.x0) * (r.y1 - r.y0));
+  const rows = [], negr = [];
+  if (M.sup) { negr.push(rows.length); rows.push(["PAVIMENTO TÉRREO", ""]); }
+  M.rooms.forEach((r) => rows.push([r.name, ar(r)]));
   if (M.varanda) rows.push(["VARANDA", fmt(M.idx.Avar)]);
   if (M.gar) rows.push(["GARAGEM (COBERTA)", fmt(M.idx.Agar)]);
-  const util = M.rooms.reduce((a, r) => a + (r.x1 - r.x0) * (r.y1 - r.y0), 0) + M.idx.Avar + M.idx.Agar;
+  if (M.sup) { negr.push(rows.length); rows.push(["PAVIMENTO SUPERIOR", ""]); M.sup.rooms.forEach((r) => rows.push([r.name, ar(r)])); }
+  const util = ambientes(M).reduce((a, r) => a + (r.x1 - r.x0) * (r.y1 - r.y0), 0) + M.idx.Avar + M.idx.Agar;
   rows.push(["ÁREA ÚTIL", fmt(util)], ["ÁREA CONSTRUÍDA", fmt(M.idx.Aconst)]);
   const w1 = 70 * k;
-  tabela(d, 0, w1, k, "QUADRO DE ÁREAS (m²)", [{ t: "AMBIENTE", w: 48 * k }, { t: "ÁREA", w: 22 * k }], rows, [rows.length - 2, rows.length - 1]);
+  tabela(d, 0, w1, k, "QUADRO DE ÁREAS (m²)", [{ t: "AMBIENTE", w: 48 * k }, { t: "ÁREA", w: 22 * k }], rows, [...negr, rows.length - 2, rows.length - 1]);
   const by = {};
   for (const o of M.O) (by[o.code] ||= { o, n: 0 }).n++;
   const esq = Object.values(by).sort((a, b) => a.o.code[0].localeCompare(b.o.code[0]) || +a.o.code.slice(1) - +b.o.code.slice(1))
@@ -1317,8 +1513,8 @@ function drawCarimbo(M, k, fmtNome, escala, folha, conteudo) {
   d.line([42 * u, H], [42 * u, rows[1]], C);
   d.text([21 * u, H - 6.2 * u], 3.6 * u, "FOSTER CALC", { al: "c", va: "m", layer: T, bold: true });
   d.text([21 * u, H - 11.2 * u], 1.7 * u, "Foster Projeto · estudo gerado", { al: "c", va: "m", layer: T });
-  const nq = M.rooms.filter((r) => r.kind === "q").length;
-  const tit = (S.titulo || `CASA TÉRREA - ${nq} QUARTO${nq > 1 ? "S" : ""}`).toUpperCase().slice(0, 44);
+  const nq = nQuartos(M);
+  const tit = (S.titulo || `${tipoCasa(M)} - ${nq} QUARTO${nq > 1 ? "S" : ""}`).toUpperCase().slice(0, 44);
   lab(42 * u, H, "PROJETO ARQUITETÔNICO");
   val(42 * u, rows[1] + 1 * u, tit, 4.0, true);
   lab(0, rows[1], "CONTEÚDO"); val(0, rows[2], conteudo, 2.2);
@@ -1419,26 +1615,32 @@ export function buildSheets(S0, op = {}) {
   const M = buildModel(S);
   const escolha = (v, padrao) => (v && v !== "auto" ? [v.split("@")].map(([f, e]) => [f, +e]) : padrao);
   const avisos = [...M.avisos];
-  const conteudo1 = "PLANTA BAIXA, CORTES AA E BB, FACHADA FRONTAL, QUADROS DE ÁREAS E ESQUADRIAS";
+  const conteudo1 = M.pav === 2 ? "PLANTAS DO TÉRREO E DO SUPERIOR, CORTES AA E BB, FACHADA FRONTAL, QUADROS" : "PLANTA BAIXA, CORTES AA E BB, FACHADA FRONTAL, QUADROS DE ÁREAS E ESQUADRIAS";
   const conteudo2 = "SITUAÇÃO, IMPLANTAÇÃO, COBERTURA, FACHADAS LATERAIS E POSTERIOR, ÍNDICES";
-  const m1 = (k, f, esc) => ({ ordem: ["P", "F", "AA", "BB", "Q"], blocos: {
-    P: drawPlan(M, k, esc), AA: drawSection(M, "x", k, esc), BB: drawSection(M, "y", k, esc), F: drawFacade(M, k, "frente", esc), Q: drawQuadros(M, k),
+  const MS = pavSuperior(M);
+  const m1 = (k, f, esc) => ({ ordem: MS ? ["P", "PS", "F", "AA", "BB", "Q"] : ["P", "F", "AA", "BB", "Q"], blocos: {
+    P: drawPlan(M, k, esc), ...(MS ? { PS: drawPlan(MS, k, esc) } : {}), AA: drawSection(M, "x", k, esc), BB: drawSection(M, "y", k, esc), F: drawFacade(M, k, "frente", esc), Q: drawQuadros(M, k),
     C: drawCarimbo(M, k, f, `1:${esc}`, "01/04", conteudo1) } });
   const m2 = (k, f, esc) => ({ ordem: ["IMP", "SIT", "COB", "FP", "FD", "FE", "QI"], blocos: {
     IMP: drawImplantacao(M, k, esc), SIT: drawSituacao(M, k, esc), COB: drawCobertura(M, k, esc),
     FP: drawFacade(M, k, "fundos", esc), FD: drawFacade(M, k, "direita", esc), FE: drawFacade(M, k, "esquerda", esc), QI: drawIndices(M, k),
     C: drawCarimbo(M, k, f, `INDICADAS`, "02/04", conteudo2) } });
   const E = estrutura(M, op.est || {});
-  const conteudo3 = "LOCAÇÃO DE PILARES E FUNDAÇÕES, FORMAS DO RESPALDO, QUADROS ESTRUTURAIS (PRELIMINAR)";
-  const m3 = (k, f, esc) => ({ ordem: ["LOC", "FOR", "QE"], blocos: {
-    LOC: drawLocacao(M, E, k, esc), FOR: drawFormas(M, E, k, esc), QE: drawQuadrosEst(M, E, k),
+  const conteudo3 = M.pav === 2 ? "LOCAÇÃO E FUNDAÇÕES, FORMAS DO PISO SUPERIOR E DO RESPALDO, QUADROS (PRELIMINAR)" : "LOCAÇÃO DE PILARES E FUNDAÇÕES, FORMAS DO RESPALDO, QUADROS ESTRUTURAIS (PRELIMINAR)";
+  const m3 = (k, f, esc) => ({ ordem: M.pav === 2 ? ["LOC", "FOR1", "FOR", "QE"] : ["LOC", "FOR", "QE"], blocos: {
+    LOC: drawLocacao(M, E, k, esc), FOR: drawFormas(M, E, k, esc), ...(M.pav === 2 ? { FOR1: drawFormas(M, E, k, esc, 1) } : {}), QE: drawQuadrosEst(M, E, k),
     C: drawCarimbo(M, k, f, `1:${esc}`, "03/04", conteudo3) } });
   const I4 = instalacoes(M, op.inst || {});
   const conteudo4 = "PONTOS ELÉTRICOS E HIDROSSANITÁRIOS, QUADRO DE CIRCUITOS, LEGENDA (PRELIMINAR)";
-  const m4 = (k, f, esc) => ({ ordem: ["ELE", "HID", "QI4"], blocos: {
+  const so = (pv) => ({ ...I4, ele: I4.ele.filter((p) => p.pav === pv), hid: I4.hid.filter((p) => p.pav === pv) });
+  const m4 = (k, f, esc) => (MS ? { ordem: ["ELE", "ELE2", "HID", "HID2", "QI4"], blocos: {
+    ELE: drawEletrica(M, so(0), k, esc, "PONTOS ELÉTRICOS · TÉRREO"), ELE2: drawEletrica(MS, so(1), k, esc, "PONTOS ELÉTRICOS · SUPERIOR"),
+    HID: drawHidro(M, so(0), k, esc, "HIDROSSANITÁRIO · TÉRREO"), HID2: drawHidro(MS, so(1), k, esc, "HIDROSSANITÁRIO · SUPERIOR"), QI4: drawQuadrosInst(M, I4, k),
+    C: drawCarimbo(M, k, f, `1:${esc}`, "04/04", conteudo4) } } : { ordem: ["ELE", "HID", "QI4"], blocos: {
     ELE: drawEletrica(M, I4, k, esc), HID: drawHidro(M, I4, k, esc), QI4: drawQuadrosInst(M, I4, k),
     C: drawCarimbo(M, k, f, `1:${esc}`, "04/04", conteudo4) } });
   const folhas = [];
+  void so;
   for (const [montar, cands, nome] of [[m1, escolha(S.formato, CAND1), "Folha 01"], [m2, escolha(S.formato2, CAND2), "Folha 02"], [m3, escolha(S.formato3, CAND1), "Folha 03"], [m4, escolha(S.formato4, CAND1), "Folha 04"]]) {
     let lay = diagramar(cands, montar);
     if (!lay) {
@@ -1608,7 +1810,9 @@ export function interpretarTexto(texto) {
   if (/lavabo/.test(t)) { c.lavabo = true; ok.push("lavabo"); }
   if (/garagem|abrigo (?:de|para) carro|carro coberto|vaga coberta/.test(t) && !/garagem descoberta|sem garagem/.test(t)) { c.garagem = true; ok.push("garagem coberta"); }
   // o que o módulo ainda não faz
-  const fora = [[/sobrado|dois andares|2 andares|pavimento superior/, "Sobrado ainda não: o módulo faz casa térrea."],
+  if (/sobrado|dois andares|2 andares|dois pavimentos|2 pavimentos|pavimento superior|assobradad/.test(t)) { c.pav = 2; ok.push("sobrado (quartos em cima)"); }
+  else if (/terrea|terreo so|um pavimento|1 pavimento/.test(t)) c.pav = 1;
+  const fora = [[/tres andares|3 andares|tres pavimentos|3 pavimentos|cobertura com terraco/, "Só térrea ou sobrado de 2 pavimentos."],
     [/piscina/, "Piscina não entra no desenho."], [/churrasqueira|area gourmet|espaco gourmet/, "Churrasqueira/área gourmet ainda não."],
     [/edicula/, "Edícula ainda não."], [/casa em l\b|formato (?:de |em )?l\b/, "Casa em L ainda não: sai retangular."],
     [/closet/, "Closet ainda não."], [/escritorio/, "Escritório ainda não."], [/dois banheiros sociais|2 banheiros sociais|tres banheiros|3 banheiros/, "Só um banheiro social (mais o da suíte e o lavabo)."]];
@@ -1624,6 +1828,23 @@ export function encaixar(S0) {
   const S = { ...defaults(), ...S0 };
   const M = buildModel(S);
   const lf = M.lote.lf;
+  if (M.pav === 2) {
+    // sobrado: reduz as larguras dos quartos e banheiros na mesma proporção até caber (busca binária)
+    const base = { qw0: num(S.qw?.[0], 3), qw1: num(S.qw?.[1], 2.8), qw2: num(S.qw?.[2], 2.8), bw: num(S.bw, 1.6), bsw: num(S.bsw, 1.4) };
+    const mn = { qw0: 2.5, qw1: 2.5, qw2: 2.5, bw: 1.2, bsw: 1.2 };
+    const com = (al) => { const c = {}; for (const k in base) c[k] = +(Math.floor((mn[k] + al * Math.max(0, base[k] - mn[k])) / 0.05 + 1e-6) * 0.05).toFixed(2); return c; };
+    const larg = (c) => buildModel({ ...S, ...c, qw: [c.qw0, c.qw1, c.qw2] }).W + (M.gar ? M.gar.w : 0);
+    for (const [afTotal, divisa] of [[3.0, false], [1.5, true]]) {
+      const disp = lf - afTotal;
+      if (M.W + (M.gar ? M.gar.w : 0) <= disp + 1e-6) return { ok: true, mudou: divisa, divisa, campos: divisa ? { afE: "0" } : {}, largura: M.W };
+      if (larg(com(0)) > disp + 1e-6) continue;
+      let lo = 0, hi = 1;
+      for (let n = 0; n < 12; n++) { const md = (lo + hi) / 2; if (larg(com(md)) <= disp + 1e-6) lo = md; else hi = md; }
+      const campos = com(lo); if (divisa) campos.afE = "0";
+      return { ok: true, mudou: true, divisa, campos, largura: r2(larg(campos) - (M.gar ? M.gar.w : 0)) };
+    }
+    return { ok: false, mudou: true, campos: {}, largura: r2(larg(com(0))) };
+  }
   const MIN = { q: 2.5, b: 1.2, bs: 1.2, s: 1.2, lav: 1.0 };
   const chave = (r) => r.kind === "q" ? "qw" + (r.first ? 0 : +r.name.slice(-1) - 1) : { b: "bw", bs: "bsw", s: "sw", lav: "lvw" }[r.kind];
   const fundo = M.rooms.filter((r) => r.y0 === M.yi1).map((r) => ({ k: chave(r), w: r.x1 - r.x0, min: MIN[r.kind] }));
@@ -1655,14 +1876,21 @@ export function estrutura(M, op = {}) {
   const sadm = num(op.sadm ?? S.sadm, 150), fck = num(op.fck ?? S.fck, 25);
   const hL = M.laje, gTel = CARGA_TELHA[S.telha] ?? 1.0;
   const avisos = [];
-  // linhas de parede (eixos)
-  const linhas = [];
-  linhas.push({ d: "H", c: c, a0: c, a1: W - c }, { d: "H", c: M.yi0 + c, a0: c, a1: W - c }, { d: "H", c: M.ytop + c, a0: c, a1: W - c });
-  linhas.push({ d: "V", c: c, a0: c, a1: D - c }, { d: "V", c: W - c, a0: c, a1: D - c });
-  const fundo = M.rooms.filter((r) => r.y0 === M.yi1).sort((a, b) => a.x0 - b.x0);
-  fundo.slice(0, -1).forEach((r) => linhas.push({ d: "V", c: r.x1 + c, a0: M.yi0 + c, a1: M.ytop + c }));
-  if (M.cozSep) linhas.push({ d: "V", c: M.coz.x0 - c, a0: c, a1: M.yi0 + c });
   const k3 = (v) => Math.round(v * 1000) / 1000;
+  const sob = M.pav === 2, Hpav = M.H + M.laje;
+  // linhas de parede (eixos) tiradas dos ambientes de cada pavimento; no sobrado, a união dos dois
+  const mapa = new Map();
+  const addL = (dd, cc, a0, a1, pv) => {
+    const key = dd + k3(cc), l = mapa.get(key);
+    if (l) { l.a0 = Math.min(l.a0, k3(a0)); l.a1 = Math.max(l.a1, k3(a1)); l.pav.add(pv); }
+    else mapa.set(key, { d: dd, c: k3(cc), a0: k3(a0), a1: k3(a1), pav: new Set([pv]) });
+  };
+  const pavs = sob ? [[M.rooms, 0], [M.sup.rooms, 1]] : [[M.rooms, 0]];
+  for (const [rs, pv] of pavs) for (const r of rs) {
+    addL("H", r.y0 - c, r.x0 - c, r.x1 + c, pv); addL("H", r.y1 + c, r.x0 - c, r.x1 + c, pv);
+    addL("V", r.x0 - c, r.y0 - c, r.y1 + c, pv); addL("V", r.x1 + c, r.y0 - c, r.y1 + c, pv);
+  }
+  const linhas = [...mapa.values()];
   const nos = new Map();
   const addNo = (x, y) => { const key = k3(x) + "|" + k3(y); if (!nos.has(key)) nos.set(key, { x: k3(x), y: k3(y) }); return nos.get(key); };
   // nós: pontas das paredes e todos os cruzamentos (cantos, encontros em T e em cruz)
@@ -1699,13 +1927,19 @@ export function estrutura(M, op = {}) {
   if (M.varanda) M.pilares.forEach((q) => pilares.push({ id: `P${pilares.length + 1}`, x: (q.x0 + q.x1) / 2, y: (q.y0 + q.y1) / 2, bx: 0.15, by: 0.15, b: 15, h: 15, ori: "H", N: 0, var: true }));
   const pilarEm = (x, y) => pilares.find((p) => Math.abs(p.x - x) < 1e-3 && Math.abs(p.y - y) < 1e-3);
   // lajes (eixo a eixo)
-  const ordem = M.rooms.slice().sort((a, b) => b.y0 - a.y0 || a.x0 - b.x0);
-  const lajes = ordem.map((r, i) => {
+  const ordem = (sob ? M.sup.rooms : M.rooms).slice().sort((a, b) => b.y0 - a.y0 || a.x0 - b.x0);
+  const qPiso = 1.5;                                                   // dormitórios, sala, banheiro (NBR 6120)
+  const lajes = [];
+  if (sob) ordem.filter((r) => r.kind !== "esc").forEach((r) => {
     const x0 = r.x0 - c, x1 = r.x1 + c, y0 = r.y0 - c, y1 = r.y1 + c;
-    return { id: `L${i + 1}`, nome: r.name, x0, x1, y0, y1, lx: r2(x1 - x0), ly: r2(y1 - y0), h: Math.round(hL * 100), g: r2(gAdd + gTel), q: qL };
+    lajes.push({ id: `L${lajes.length + 1}`, nome: r.name, nivel: 1, x0, x1, y0, y1, lx: r2(x1 - x0), ly: r2(y1 - y0), h: Math.round(hL * 100), g: r2(gAdd), q: qPiso });
+  });
+  ordem.forEach((r) => {
+    const x0 = r.x0 - c, x1 = r.x1 + c, y0 = r.y0 - c, y1 = r.y1 + c;
+    lajes.push({ id: `L${lajes.length + 1}`, nome: r.name, nivel: sob ? 2 : 1, forro: true, x0, x1, y0, y1, lx: r2(x1 - x0), ly: r2(y1 - y0), h: Math.round(hL * 100), g: r2(gAdd + gTel), q: qL });
   });
   for (const l of lajes) {
-    const viz = (fn) => lajes.some((o) => o !== l && fn(o));
+    const viz = (fn) => lajes.some((o) => o !== l && o.nivel === l.nivel && fn(o));
     const sob = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0) > 0.3;
     l.bordas = {
       esq: viz((o) => Math.abs(o.x1 - l.x0) < 1e-3 && sob(o.y0, o.y1, l.y0, l.y1)) ? "E" : "A",
@@ -1727,14 +1961,16 @@ export function estrutura(M, op = {}) {
   const linhasOrd = [...linhas.filter((l) => l.d === "H").sort((a, b) => b.c - a.c), ...linhas.filter((l) => l.d === "V").sort((a, b) => a.c - b.c || b.a1 - a.a1)];
   const vigas = [], baldrames = [];
   const gVar = M.varanda ? (gTel + 0.3) * M.dv / 2 : 0, qVar = M.varanda ? 0.25 * M.dv / 2 : 0;
-  linhasOrd.forEach((L, i) => {
+  const niveis = sob ? [1, 2] : [1];
+  for (const nivel of niveis) linhasOrd.forEach((L, i) => {
     const ps = pilares.filter((p) => !p.var && naLinha(L, p)).sort((a, b) => (L.d === "H" ? a.x - b.x : a.y - b.y));
     const pos = ps.map((p) => (L.d === "H" ? p.x : p.y));
     const vaos = [];
     for (let n = 0; n < pos.length - 1; n++) {
       const s0 = pos[n], s1 = pos[n + 1], Lv = s1 - s0;
       let g = 0, q = 0;
-      for (const l of lajes) for (const e of l.bordasCarga) {
+      if (sob && nivel === 1 && L.pav.has(1)) g += pPar * M.H;               // parede do superior apoiada na viga
+      for (const l of lajes.filter((x) => x.nivel === nivel)) for (const e of l.bordasCarga) {
         if (e.d !== L.d || Math.abs(e.c - L.c) > 1e-3) continue;
         const ov = Math.min(s1, e.a1) - Math.max(s0, e.a0);
         if (ov > 1e-3) { g += e.g * ov / Lv; q += e.q * ov / Lv; }
@@ -1745,8 +1981,9 @@ export function estrutura(M, op = {}) {
     if (!vaos.length) return;
     const hV = Math.max(30, Math.ceil(Math.max(...vaos.map((v) => v.L)) * 100 / 12 / 5) * 5);
     const comum = { d: L.d, c: L.c, a0: pos[0], a1: pos[pos.length - 1], bw: Math.round(t * 100), pilares: ps.map((p) => p.id) };
-    vigas.push({ ...comum, id: `V${vigas.length + 1}`, h: hV, vaos });
-    baldrames.push({ ...comum, id: `VB${baldrames.length + 1}`, h: 30, vaos: vaos.map((v) => ({ ...v, g: r2(M.H * pPar), q: 0 })) });
+    const nv = vigas.filter((v) => v.nivel === nivel).length + 1;
+    vigas.push({ ...comum, id: sob && nivel === 1 ? `VS${nv}` : `V${nv}`, nivel, h: hV, vaos });
+    if (nivel === niveis[0]) baldrames.push({ ...comum, id: `VB${baldrames.length + 1}`, h: 30, vaos: vaos.map((v) => ({ ...v, g: L.pav.has(0) ? r2(M.H * pPar) : 0, q: 0 })) });
   });
   // cargas nos pilares: reações isostáticas das vigas + peso próprio
   const reag = (v) => v.vaos.forEach((s) => {
@@ -1758,9 +1995,10 @@ export function estrutura(M, op = {}) {
   const nVar = pilares.filter((p) => p.var).length;
   for (const p of pilares) {
     if (p.var) p.N += ((gTel + 0.3 + 0.25) * M.W * M.dv / 2) / nVar;
-    p.N += 25 * (p.b / 100) * (p.h / 100) * (M.H + M.laje + 0.5);
+    p.N += 25 * (p.b / 100) * (p.h / 100) * ((sob ? 2 : 1) * Hpav + 0.5);
+    if (sob) p.N += 0;                                                     // escada: carga entra pelas vigas do contorno (simplificação)
     p.N = Math.ceil(p.N);
-    p.L = r2(M.H + M.laje + 0.5);
+    p.L = r2(Hpav + 0.5);
     // sapata (A em x, B em y) com balanços iguais
     const ap = p.bx * 100, bp = p.by * 100, area = (p.N * 1.05) / sadm * 1e4;  // cm²
     const dif = ap - bp;
@@ -1768,6 +2006,7 @@ export function estrutura(M, op = {}) {
     A = Math.max(60, Math.ceil(A / 5) * 5); B = Math.max(60, Math.ceil(B / 5) * 5);
     p.sap = { A, B };
   }
+  if (sob) avisos.push("Sobrado: a escada em U (concreto armado) apoia nas vigas do contorno; dimensionar à parte.");
   if (lajes.some((l) => Math.min(l.lx, l.ly) > 5)) avisos.push("Há laje com menor vão acima de 5 m: confira a espessura e considere uma viga intermediária.");
   return { pilares, vigas, baldrames, lajes, avisos, op: { gAdd, qL, pPar, sadm, fck, gTel, hp } };
 }
@@ -1794,34 +2033,41 @@ export function quantitativos(M, E, INS = instalacoes(M)) {
   const t = M.t, H = M.H, hL = M.laje;
   const area = (r) => (r.x1 - r.x0) * (r.y1 - r.y0);
   const perim = (r) => 2 * ((r.x1 - r.x0) + (r.y1 - r.y0));
-  // paredes: comprimento de eixo pela área das células de parede e vãos
-  const G = grid(M); let aPar = 0, aVao = 0;
-  for (let i = 0; i < G.C.length; i++) for (let j = 0; j < G.C[0].length; j++) {
-    const a = (G.X[i + 1] - G.X[i]) * (G.Y[j + 1] - G.Y[j]);
-    if (G.C[i][j].c === 1) aPar += a; else if (G.C[i][j].c === 2) aVao += a;
-  }
-  const Lparede = (aPar + aVao) / t;
-  const Lext = 2 * (M.W - t) + 2 * (M.D - t), Lint = Math.max(0, Lparede - Lext);
+  // paredes: comprimento de eixo pela área das células de parede e vãos (por pavimento)
+  const pavs = M.sup ? [M, pavSuperior(M)] : [M];
   const ext = (o) => (o.orient === "H" ? o.q0 < EPS || o.q1 > M.D - EPS : o.q0 < EPS || o.q1 > M.W - EPS);
-  const vaosExt = M.O.filter(ext), vaosInt = M.O.filter((o) => !ext(o));
   const aV = (l) => l.reduce((s, o) => s + o.w * o.hgt, 0);
+  const Lext = 2 * (M.W - t) + 2 * (M.D - t);
+  let Lparede = 0, LintH = 0;
+  for (const Mf of pavs) {
+    const G = grid(Mf); let aPar = 0, aVao = 0;
+    for (let i = 0; i < G.C.length; i++) for (let j = 0; j < G.C[0].length; j++) {
+      const a = (G.X[i + 1] - G.X[i]) * (G.Y[j + 1] - G.Y[j]);
+      if (G.C[i][j].c === 1) aPar += a; else if (G.C[i][j].c === 2) aVao += a;
+    }
+    const Lp = (aPar + aVao) / t;
+    Lparede += Lp; LintH += Math.max(0, Lp - Lext);
+  }
+  const Lint = LintH;
+  const todasO = pavs.flatMap((Mf) => Mf.O);
+  const vaosExt = todasO.filter(ext), vaosInt = todasO.filter((o) => !ext(o));
   // oitões (parede acima da laje nas duas laterais, até o telhado)
   let aOitao = 0; const n = M.quatro ? 0 : 60;
   for (let k = 0; k < n; k++) { const y = (M.D * (k + 0.5)) / n; aOitao += Math.max(0, M.roofZ(y) - M.zb) * (M.D / n); }
   aOitao *= 2;
-  const alvenaria = Lparede * H - aV(M.O) + aOitao;
+  const alvenaria = Lparede * H - aV(todasO) + aOitao;
   // revestimentos de parede
   const pInt = 2 * (M.W - 2 * t) + 2 * (M.D - 2 * t);
-  const revInt = 2 * Lint * H + pInt * H - 2 * aV(vaosInt) - aV(vaosExt);
-  const molh = M.rooms.filter((r) => ["b", "bs", "lav", "s", "coz"].includes(r.kind));
+  const revInt = 2 * Lint * H + pavs.length * pInt * H - 2 * aV(vaosInt) - aV(vaosExt);
+  const molh = ambientes(M).filter((r) => ["b", "bs", "lav", "s", "coz"].includes(r.kind));
   let ceramParede = molh.reduce((s, r) => s + perim(r) * 1.5, 0)
-    - M.O.filter((o) => o.type !== "J").reduce((s, o) => s + (molh.some((r) => (o.room || "") === r.name) ? o.w * 1.5 : 0), 0);
-  if (!M.cozSep) ceramParede += (M.ds) * 1.5;                       // parede da pia na sala/cozinha
+    - todasO.filter((o) => o.type !== "J").reduce((s, o) => s + (molh.some((r) => (o.room || "") === r.name) ? o.w * 1.5 : 0), 0);
+  if (!M.cozSep && !M.sup) ceramParede += (M.ds) * 1.5;                       // parede da pia na sala/cozinha
   const zParede = M.zw;                                              // parede externa até o apoio do telhado
   const revExt = 2 * (M.W + M.D) * zParede + aOitao - aV(vaosExt);
-  const pisoInt = M.rooms.reduce((s, r) => s + area(r), 0), pisoVar = M.varanda ? M.W * M.dv : 0;
-  const secos = M.rooms.filter((r) => ["q", "sala", "sc"].includes(r.kind));
-  const rodape = secos.reduce((s, r) => s + perim(r), 0) - M.O.filter((o) => o.type !== "J").reduce((s, o) => s + o.w, 0) * 0.8;
+  const pisoInt = ambientes(M).filter((r) => !(r.kind === "esc" && M.sup && M.sup.rooms.includes(r))).reduce((s, r) => s + area(r), 0), pisoVar = M.varanda ? M.W * M.dv : 0;
+  const secos = ambientes(M).filter((r) => ["q", "sala", "sc", "of", "hall"].includes(r.kind));
+  const rodape = secos.reduce((s, r) => s + perim(r), 0) - todasO.filter((o) => o.type !== "J").reduce((s, o) => s + o.w, 0) * 0.8;
   const tetos = pisoInt;
   const telhado = (M.W + 2 * M.b) * (M.D - M.Y0 + 2 * M.b) * Math.sqrt(1 + M.i * M.i);
   // estrutura (a partir do pré-lançamento)
@@ -1839,7 +2085,7 @@ export function quantitativos(M, E, INS = instalacoes(M)) {
   const escav = sap.reduce((s, x) => s + (x.A + 0.3) * (x.B + 0.3) * 1.5, 0) + E.baldrames.reduce((s, v) => s + (v.bw / 100 + 0.3) * 0.4 * v.vaos.reduce((a, x) => a + x.L, 0), 0);
   const Ac = M.idx.Aconst;
   const esq = {};
-  for (const o of M.O) (esq[o.code] ||= { o, n: 0 }).n++;
+  for (const o of todasO) (esq[o.code] ||= { o, n: 0 }).n++;
   const I_ = (desc, un, qtd, memoria) => ({ desc, un, qtd: Math.round(qtd * 100) / 100, memoria });
   const etapas = [
     { etapa: "Serviços preliminares", itens: [
@@ -1857,14 +2103,21 @@ export function quantitativos(M, E, INS = instalacoes(M)) {
     ] },
     { etapa: "Estrutura", itens: [
       I_("Concreto dos pilares", "m³", vPil, `${E.pilares.length} pilares`),
-      I_("Concreto das vigas de respaldo", "m³", vVig, "seção abaixo da laje"),
+      I_(M.sup ? "Concreto das vigas (piso superior e respaldo)" : "Concreto das vigas de respaldo", "m³", vVig, "seção abaixo da laje"),
+      ...(M.esc ? (() => {
+        const e = M.esc, incl = Math.sqrt(1 + (e.esp / e.piso) ** 2);
+        const vol = (e.run1 + e.run2) * e.larg * (0.12 * incl + e.esp / 2) + e.pat * (e.x1 - e.x0) * 0.12;
+        return [I_("Escada em U de concreto armado (lances e patamar)", "m³", vol, `${e.nE} degraus de ${fmt(e.esp * 100, 1)} × ${Math.round(e.piso * 100)} cm, largura ${fmt(e.larg)} m`),
+          I_("Revestimento dos degraus (piso e espelho)", "m", e.nE * e.larg, "granito ou porcelanato"),
+          I_("Guarda-corpo / corrimão", "m", e.run1 + e.run2 + e.pat + 1.0, "h = 1,10 m")];
+      })() : []),
       I_(`Concreto da laje maciça (h=${Math.round(hL * 100)} cm)`, "m³", vLaje, `${fmt(aLaje)} m² de laje`),
       I_("Fôrmas (pilares, vigas e laje)", "m²", fPil + fVig + aLaje, "faces de pilares, laterais e fundo de vigas, fundo de laje"),
       I_("Aço CA-50/60 (estrutura)", "kg", vPil * TAXA_ACO.pilar + vVig * TAXA_ACO.viga + vLaje * TAXA_ACO.laje, `taxas ${TAXA_ACO.pilar}/${TAXA_ACO.viga}/${TAXA_ACO.laje} kg/m³`),
     ] },
     { etapa: "Alvenaria", itens: [
       I_(`Alvenaria de vedação ${Math.round(t * 100) - 1} cm (bloco cerâmico)`, "m²", alvenaria, `${fmt(Lparede)} m de parede × ${fmt(H)} m − vãos${M.quatro ? "" : " + oitões"}`),
-      I_("Vergas e contravergas", "m", M.O.reduce((s, o) => s + (o.w + 0.6) * (o.type === "J" ? 2 : 1), 0), "vão + 30 cm de cada lado"),
+      I_("Vergas e contravergas", "m", todasO.reduce((s, o) => s + (o.w + 0.6) * (o.type === "J" ? 2 : 1), 0), "vão + 30 cm de cada lado"),
     ] },
     { etapa: "Cobertura", itens: [
       I_(`Telhado (${M.tel.nome.toLowerCase()}) com madeiramento`, "m²", telhado, `projeção × √(1+i²), i = ${Math.round(M.i * 100)}%`),
@@ -1877,7 +2130,7 @@ export function quantitativos(M, E, INS = instalacoes(M)) {
     { etapa: "Esquadrias", itens: Object.values(esq).sort((a, b) => a.o.code.localeCompare(b.o.code, "pt", { numeric: true }))
         .map(({ o, n }) => I_(`${o.code} · ${o.type === "J" ? "janela" : o.type === "P" ? "porta" : "vão"} ${o.desc.toLowerCase()} ${fmt(o.w)} × ${fmt(o.hgt)} m`, "un", n, o.type === "J" ? `peitoril ${fmt(o.sill)} m` : ""))
         .filter((x) => !x.desc.includes("vão livre"))
-        .concat([I_("Peitoris de granito", "m", M.O.filter((o) => o.type === "J").reduce((s, o) => s + o.w + 0.1, 0), "largura das janelas + 10 cm"),
+        .concat([I_("Peitoris de granito", "m", todasO.filter((o) => o.type === "J").reduce((s, o) => s + o.w + 0.1, 0), "largura das janelas + 10 cm"),
           I_("Soleiras de granito (portas externas)", "m", vaosExt.filter((o) => o.type === "P").reduce((s, o) => s + o.w, 0), "")]) },
     { etapa: "Instalações elétricas", itens: [
       I_("Ponto de luz com interruptor", "un", INS.resumo.luz, "um por ambiente (NBR 5410)"),
@@ -1934,16 +2187,16 @@ export function quantitativos(M, E, INS = instalacoes(M)) {
 /* 14. Memorial descritivo                                             */
 /* ------------------------------------------------------------------ */
 export function memorial(M, E, Q, INS = instalacoes(M)) {
-  const S = M.S, I = M.idx, nq = M.rooms.filter((r) => r.kind === "q").length;
+  const S = M.S, I = M.idx, nq = nQuartos(M);
   const q = (etapa, inicio) => (Q.find((e) => e.etapa === etapa)?.itens || []).find((i) => i.desc.startsWith(inicio));
   const v = (it, un = true) => (it ? `${fmt(it.qtd)}${un ? " " + it.un : ""}` : "—");
-  const amb = M.rooms.map((r) => `${r.name.toLowerCase()} (${fmt((r.x1 - r.x0) * (r.y1 - r.y0))} m²)`).join(", ") + (M.varanda ? `, varanda (${fmt(I.Avar)} m²)` : "");
+  const amb = ambientes(M).map((r) => `${r.name.toLowerCase()} (${fmt((r.x1 - r.x0) * (r.y1 - r.y0))} m²)`).join(", ") + (M.varanda ? `, varanda (${fmt(I.Avar)} m²)` : "");
   const end = [S.endereco, S.bairro, S.cidade].filter(Boolean).join(", ");
   const lote = [S.lote && `lote ${S.lote}`, S.quadra && `quadra ${S.quadra}`].filter(Boolean).join(", ");
   const esqd = (Q.find((e) => e.etapa === "Esquadrias")?.itens || []).filter((i) => i.un === "un").map((i) => `${i.desc} (${fmt(i.qtd, 0)} un)`);
   return [
     { t: "1. Objeto", p: [
-      `Este memorial descreve os materiais e serviços para a construção de uma residência unifamiliar térrea de ${nq} quarto${nq > 1 ? "s" : ""}${M.rooms.some((r) => r.kind === "bs") ? ", sendo uma suíte" : ""}, com área construída de ${fmt(I.Aconst)} m²${end ? `, situada em ${end}` : ""}${lote ? ` (${lote})` : ""}.`,
+      `Este memorial descreve os materiais e serviços para a construção de uma residência unifamiliar ${M.pav === 2 ? "assobradada (térreo e pavimento superior, com escada em U)" : "térrea"} de ${nq} quarto${nq > 1 ? "s" : ""}${ambientes(M).some((r) => r.kind === "bs") ? ", sendo uma suíte" : ""}, com área construída de ${fmt(I.Aconst)} m²${end ? `, situada em ${end}` : ""}${lote ? ` (${lote})` : ""}.`,
       `Terreno de ${fmt(M.lote.lf)} × ${fmt(M.lote.lp)} m (${fmt(I.Alote)} m²). Taxa de ocupação ${fmt(I.TO * 100, 1)}%, coeficiente de aproveitamento ${fmt(I.CA, 2)} e área permeável de ${fmt(I.Aperm)} m² (${fmt(I.perm * 100, 1)}%).`,
       `Ambientes: ${amb}.`,
     ] },
@@ -1958,6 +2211,7 @@ export function memorial(M, E, Q, INS = instalacoes(M)) {
     { t: "4. Estrutura", p: [
       `Estrutura em concreto armado C${E.op.fck} (NBR 6118): pilares de ${Math.round(M.t * 100)} × ${Math.round(E.op.hp * 100)} cm, vigas de respaldo sobre as paredes e laje maciça de ${Math.round(M.laje * 100)} cm sobre todos os ambientes, com o forro em ${fmt(M.H)} m de pé-direito.`,
       `Aço CA-50 e CA-60. As armaduras, cobrimentos e detalhes seguirão o projeto estrutural, que deverá ser elaborado e assinado por profissional habilitado. Concreto estimado: ${fmt((q("Estrutura", "Concreto dos pilares")?.qtd || 0) + (q("Estrutura", "Concreto das vigas")?.qtd || 0) + (q("Estrutura", "Concreto da laje")?.qtd || 0))} m³.`,
+      ...(M.sup ? [`Sobrado: laje maciça de piso do pavimento superior (nível ${fmtNivel(M.zs)}) apoiada em vigas sob as paredes do superior (VS), e laje de forro no respaldo (nível ${fmtNivel(M.zs + M.H)}). Escada em U de concreto armado com ${M.esc.nE} degraus de ${fmt(M.esc.esp * 100, 1)} cm × ${Math.round(M.esc.piso * 100)} cm, largura útil de ${fmt(M.esc.larg)} m por lance, patamar intermediário e guarda-corpo com corrimão a 1,10 m.`] : []),
     ] },
     { t: "5. Alvenaria", p: [
       `Paredes em blocos cerâmicos de vedação de ${Math.round(M.t * 100) - 1} cm (NBR 15270), assentados com argamassa de cimento, cal e areia, em fiadas niveladas e aprumadas, amarradas aos pilares com tela ou ferro-cabelo. Área estimada: ${v(q("Alvenaria", "Alvenaria"))}.`,
@@ -2005,7 +2259,50 @@ function protecao(Ib, secMin) {
   const sec = (IZ_B1.find(([s, iz]) => s >= secMin && iz >= In) || IZ_B1[IZ_B1.length - 1])[0];
   return { In, sec };
 }
+function montarCircuitos(ele, V, Vch, social) {
+  const grupo = (c) => ele.filter((p) => p.circ === c);
+  const circ = [];
+  const add = (nome, pts, tensao, secMin, dr) => {
+    if (!pts.length) return;
+    const va = pts.reduce((s, p) => s + p.va, 0), Ib = va / tensao;
+    const { In, sec } = protecao(Ib, secMin);
+    const id = `C${circ.length + 1}`;
+    pts.forEach((p) => (p.cid = id));
+    circ.push({ id, nome, n: pts.length, va, tensao, Ib, In, sec, dr });
+  };
+  const ilum = grupo("ILUM"), vaIl = ilum.reduce((s, p) => s + p.va, 0);
+  if (vaIl > 1200) { const fr = ilum.filter(social), fu = ilum.filter((p) => !social(p)); add("Iluminação social", fr, V, 1.5, false); add("Iluminação íntima", fu, V, 1.5, false); }
+  else add("Iluminação", ilum, V, 1.5, false);
+  const fora = (p) => p.room === "VARANDA" || p.room === "GARAGEM";
+  const soc = grupo("TUG-SOC"), ext = soc.some(fora);   // tomada externa pede DR
+  if (soc.reduce((s, p) => s + p.va, 0) > 1800) { const h = Math.ceil(soc.length / 2); add("Tomadas sala/quartos (1)", soc.slice(0, h), V, 2.5, soc.slice(0, h).some(fora)); add("Tomadas sala/quartos (2)", soc.slice(h), V, 2.5, soc.slice(h).some(fora)); }
+  else add(ext ? "Tomadas sala, quartos e externas" : "Tomadas sala e quartos", soc, V, 2.5, ext);
+  add("Tomadas cozinha", grupo("TUG-COZ"), V, 2.5, true);
+  add("Tomadas área de serviço", grupo("TUG-SERV"), V, 2.5, true);
+  add("Tomadas banheiros", grupo("TUG-BAN"), V, 2.5, true);
+  grupo("CHUV").forEach((p) => add(`Chuveiro (${p.room.toLowerCase()})`, [p], Vch, 2.5, true));
+  add("Máquina de lavar", grupo("MLR"), V, 2.5, true);
+  return circ;
+}
+function instalacoesSobrado(M, op) {
+  const T = instalacoes(M, { ...op, _parte: "T" }), U = instalacoes(pavSuperior(M), { ...op, _parte: "S" });
+  const ele = [...T.ele.map((p) => ({ ...p, pav: 0 })), ...U.ele.map((p) => ({ ...p, pav: 1 }))];
+  const hid = [...T.hid.map((p) => ({ ...p, pav: 0 })), ...U.hid.map((p) => ({ ...p, pav: 1 }))];
+  const circ = montarCircuitos(ele, T.V, 220, (p) => p.pav === 0);
+  const total = circ.reduce((s, c) => s + c.va, 0);
+  const R = (f) => f(ele, hid);
+  return {
+    ele, circ, total, V: T.V, pChuv: T.pChuv, hid, reserv: T.reserv,
+    resumo: {
+      luz: R((e) => e.filter((p) => p.tipo === "luz").length), tug: R((e) => e.filter((p) => p.tipo === "tug" || p.tipo === "tugA").length),
+      chuv: R((e) => e.filter((p) => p.rot === "CH").length), tue: R((e) => e.filter((p) => p.tipo === "tue").length), int: R((e) => e.filter((p) => p.tipo === "int").length),
+      af: hid.filter((p) => p.tipo === "AF").length, es: hid.filter((p) => p.tipo === "ES").length, rs: hid.filter((p) => p.tipo === "RS").length,
+      ci: hid.filter((p) => p.tipo === "CI").length, cg: hid.filter((p) => p.tipo === "CG").length, vaso: hid.filter((p) => p.ap === "Vaso").length,
+    },
+  };
+}
 export function instalacoes(M, op = {}) {
+  if (M.sup && !op._parte) return instalacoesSobrado(M, op);
   const S = M.S, V = num(op.tensao ?? S.tensao, 127) === 220 ? 220 : 127, Vch = 220;
   const pc = num(op.pChuveiro ?? S.pChuveiro, 5500), pChuv = pc >= 2000 && pc <= 9000 ? pc : 5500;
   const ele = [], hid = [];
@@ -2079,11 +2376,11 @@ export function instalacoes(M, op = {}) {
       pts.forEach((p, i) => ele.push({ ...p, va: i < 3 ? 600 : 100, circ: r.kind === "s" ? "TUG-SERV" : "TUG-COZ", room: r.name }));
       if (r.kind === "s") ele.push({ tipo: "tue", x: Math.min(r.x0 + 0.95, r.x1 - 0.3), y: r.y1, n: [0, -1], va: 1000, circ: "MLR", room: r.name, h: 0.9, rot: "MLR" });
     } else {
-      const nT = A <= 6 ? 1 : Math.max(1, Math.ceil(P / 5 - 1e-9));
+      const nT = r.kind === "esc" ? 0 : A <= 6 ? 1 : Math.max(1, Math.ceil(P / 5 - 1e-9));
       distribuir(r, nT, "tug", 100, "TUG-SOC", ocup).forEach((p) => ele.push(p));
     }
   }
-  if (!M.rooms.some((r) => r.kind === "s")) {                           // sem área de serviço: máquina na cozinha
+  if (op._parte !== "S" && !M.rooms.some((r) => r.kind === "s")) {     // sem área de serviço: máquina na cozinha
     const k = M.rooms.find((r) => r.kind === "coz" || r.kind === "sc");
     ele.push({ tipo: "tue", x: k.x1, y: Math.max(k.y0 + 0.4, (k.y0 + k.y1) / 2 - 1.3), n: [-1, 0], va: 1000, circ: "MLR", room: k.name, h: 0.9, rot: "MLR" });
   }
@@ -2111,33 +2408,13 @@ export function instalacoes(M, op = {}) {
     ele.push({ tipo: "int", x, y, n, va: 0, circ: "", room: r.name, h: 1.1, rot: M.varanda && o.entrada ? "S2" : "S" });
   }
   // quadro de distribuição: parede da frente, ao lado da porta de entrada (lado da dobradiça)
-  const ent = M.O.find((o) => o.entrada), sala = M.sala;
-  const xq = ent.p0 - 0.45 > sala.x0 + 0.3 ? ent.p0 - 0.45 : ent.p1 + 0.6;
-  ele.push({ tipo: "qd", x: xq, y: M.t, n: [0, 1], va: 0, circ: "", room: sala.name, h: 1.5 });
+  if (op._parte !== "S") {
+    const ent = M.O.find((o) => o.entrada), sala = M.sala;
+    const xq = ent.p0 - 0.45 > sala.x0 + 0.3 ? ent.p0 - 0.45 : ent.p1 + 0.6;
+    ele.push({ tipo: "qd", x: xq, y: M.t, n: [0, 1], va: 0, circ: "", room: sala.name, h: 1.5 });
+  }
 
-  // circuitos
-  const grupo = (c) => ele.filter((p) => p.circ === c);
-  const circ = [];
-  const add = (nome, pts, tensao, secMin, dr) => {
-    if (!pts.length) return;
-    const va = pts.reduce((s, p) => s + p.va, 0), Ib = va / tensao;
-    const { In, sec } = protecao(Ib, secMin);
-    const id = `C${circ.length + 1}`;
-    pts.forEach((p) => (p.cid = id));
-    circ.push({ id, nome, n: pts.length, va, tensao, Ib, In, sec, dr });
-  };
-  const ilum = grupo("ILUM"), vaIl = ilum.reduce((s, p) => s + p.va, 0);
-  if (vaIl > 1200) { const fr = ilum.filter((p) => p.y < M.yi0), fu = ilum.filter((p) => p.y >= M.yi0); add("Iluminação social", fr, V, 1.5, false); add("Iluminação íntima", fu, V, 1.5, false); }
-  else add("Iluminação", ilum, V, 1.5, false);
-  const fora = (p) => p.room === "VARANDA" || p.room === "GARAGEM";
-  const soc = grupo("TUG-SOC"), ext = soc.some(fora);   // tomada externa pede DR
-  if (soc.reduce((s, p) => s + p.va, 0) > 1800) { const h = Math.ceil(soc.length / 2); add("Tomadas sala/quartos (1)", soc.slice(0, h), V, 2.5, soc.slice(0, h).some(fora)); add("Tomadas sala/quartos (2)", soc.slice(h), V, 2.5, soc.slice(h).some(fora)); }
-  else add(ext ? "Tomadas sala, quartos e externas" : "Tomadas sala e quartos", soc, V, 2.5, ext);
-  add("Tomadas cozinha", grupo("TUG-COZ"), V, 2.5, true);
-  add("Tomadas área de serviço", grupo("TUG-SERV"), V, 2.5, true);
-  add("Tomadas banheiros", grupo("TUG-BAN"), V, 2.5, true);
-  grupo("CHUV").forEach((p) => add(`Chuveiro (${p.room.toLowerCase()})`, [p], Vch, 2.5, true));
-  add("Máquina de lavar", grupo("MLR"), V, 2.5, true);
+  const circ = montarCircuitos(ele, V, Vch, (p) => p.y < M.yi0);
   const total = circ.reduce((s, c) => s + c.va, 0);
 
   // hidrossanitário
@@ -2165,17 +2442,20 @@ export function instalacoes(M, op = {}) {
       H("RS", (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, "Ralo sifonado", r.name);
     }
   }
-  if (!M.rooms.some((r) => r.kind === "s")) {
+  if (op._parte !== "S" && !M.rooms.some((r) => r.kind === "s")) {
     const k = M.rooms.find((r) => r.kind === "coz" || r.kind === "sc"), yk = Math.max(k.y0 + 0.4, (k.y0 + k.y1) / 2 - 1.3);
     H("AF", k.x1, yk, "Máquina de lavar", k.name); H("ES", k.x1 - 0.2, yk, "Máquina (50)", k.name, { d: 50 });
   }
   // caixas externas: inspeção atrás das áreas molhadas do fundo, gordura ao lado da cozinha
-  const fundoMolh = M.rooms.filter((r) => ["b", "bs", "lav", "s"].includes(r.kind));
+  const fundoMolh = op._parte === "S" ? [] : ambientes(M).filter((r) => ["b", "bs", "lav", "s"].includes(r.kind) && r.y1 > M.yi1)
+    .filter((r, n, a) => a.findIndex((q) => Math.abs((q.x0 + q.x1) / 2 - (r.x0 + r.x1) / 2) < 0.8) === n);
   fundoMolh.forEach((r) => H("CI", (r.x0 + r.x1) / 2, M.D + 0.8, "Caixa de inspeção 60×60", r.name));
   const kz = M.rooms.find((r) => r.kind === "coz" || r.kind === "sc");
-  H("CG", M.W + 0.8, (kz.y0 + kz.y1) / 2, "Caixa de gordura", kz.name);
-  H("CI", M.W + 0.8, M.D + 0.8, "Caixa de inspeção 60×60", "");
-  const moradores = M.rooms.filter((r) => r.kind === "q").length * 2;
+  if (op._parte !== "S") {
+    H("CG", M.W + 0.8, (kz.y0 + kz.y1) / 2, "Caixa de gordura", kz.name);
+    H("CI", M.W + 0.8, M.D + 0.8, "Caixa de inspeção 60×60", "");
+  }
+  const moradores = nQuartos(M) * 2;
   const litros = moradores * 150;
   const caixa = [500, 1000, 1500, 2000, 3000].find((v) => v >= litros) || 3000;
   return {
