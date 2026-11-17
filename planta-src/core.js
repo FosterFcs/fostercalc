@@ -3053,7 +3053,7 @@ export function maquete3D(M) {
     boxes, polys, telhado, ext,
     lote: { lf: L.lf, lp: L.lp, calc: L.calc || 0 },
     centro: [ox + M.W / 2, oy + (M.D + Math.min(M.Y0, M.yMin ?? 0)) / 2, M.zr / 2],
-    raio: Math.hypot(M.W, M.D - Math.min(M.Y0, M.yMin ?? 0)) / 2 + (G ? G.w : 0),
+    raio: Math.hypot(M.W, M.D - Math.min(M.Y0, M.yMin ?? 0), M.predio ? M.zr : 0) / 2 + (G ? G.w : 0),
     telha: M.S.telha || "ceramica", titulo: `${tipoCasa(M)} · ${nQuartos(M)} QUARTO${nQuartos(M) > 1 ? "S" : ""}`,
   };
 }
