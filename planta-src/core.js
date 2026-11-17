@@ -2977,16 +2977,87 @@ export function instalacoes(M, op = {}) {
 /* ------------------------------------------------------------------ */
 // caixas {x0,y0,z0,x1,y1,z1,mat}, polígonos planos {pts:[[x,y,z]], mat} e o telhado como malha de alturas.
 // Coordenadas do lote: x para a direita, y da rua para o fundo, z para cima.
+// pisos e móveis simples para ver o projeto por dentro (mesma lógica do mobiliário da planta)
+export function moveis3D(M, z0, B, sobe) {
+  const PISO = { q: "piso_madeira", of: "piso_madeira", b: "piso_ceramico", bs: "piso_ceramico", lav: "piso_ceramico", s: "piso_ceramico", coz: "piso_ceramico", sc: "piso_porcelanato", sala: "piso_porcelanato", hall: "piso_porcelanato", circ: "piso_porcelanato", pil: "concreto", elev: "concreto", esc: "concreto" };
+  const Bx = (x0, y0, x1, y1, za, zb, mat) => B(x0, y0, za, x1, y1, zb, mat); // ordem de retângulo da planta
+  // escada em U subindo deste pavimento: degraus maciços, patamar e o segundo lance
+  const e = M.esc;
+  if (e && sobe) {
+    const xa = e.x0, xb = e.x1, la = e.larg, yP = e.y0 + e.run1, yP1 = yP + e.pat;
+    for (let i = 1; i < e.n1; i++) Bx(xa, e.y0 + (i - 1) * e.piso, xa + la, e.y0 + i * e.piso, z0, z0 + i * e.esp, "escada");
+    Bx(xa, yP - 1e-3, xb, yP1, z0 + e.n1 * e.esp - 0.12, z0 + e.n1 * e.esp, "escada");
+    for (let j = 1; j < e.n2; j++) Bx(xb - la, yP - j * e.piso, xb, yP - (j - 1) * e.piso, z0 + (e.n1 + j) * e.esp - 0.16, z0 + (e.n1 + j) * e.esp, "escada");
+    Bx(xa + la, e.y0, xb - la, yP, z0, z0 + 1.0, "parede");
+  }
+  for (const r of M.rooms) {
+    const w = r.x1 - r.x0, h = r.y1 - r.y0, mob = (x0, y0, x1, y1, za, zb, mat) => {
+      const [a, b] = r.flip && (r.kind === "q" || r.kind === "of") ? [r.y0 + r.y1 - y1, r.y0 + r.y1 - y0] : [y0, y1];
+      B(Math.max(r.x0, x0), Math.max(r.y0, a), z0 + za, Math.min(r.x1, x1), Math.min(r.y1, b), z0 + zb, mat);
+    };
+    if (r.kind !== "esc") B(r.x0, r.y0, z0, r.x1, r.y1, z0 + 0.012, PISO[r.kind] || "piso_porcelanato");
+    if (r.kind === "q") {
+      const bw = r.first && w >= 2.7 ? 1.38 : 0.88, shift = w > 2.6 ? (r.door === "L" ? 0.25 : -0.25) : 0;
+      const cx = (r.x0 + r.x1) / 2 + shift, y1 = r.y1, y0 = y1 - 1.88;
+      mob(cx - bw / 2, y0, cx + bw / 2, y1 - 0.06, 0.0, 0.32, "movel"); mob(cx - bw / 2 + 0.03, y0 + 0.03, cx + bw / 2 - 0.03, y1 - 0.06, 0.32, 0.52, "cama");
+      mob(cx - bw / 2 + 0.08, y1 - 0.5, cx + bw / 2 - 0.08, y1 - 0.14, 0.52, 0.64, "travesseiro");
+      mob(cx - bw / 2 - 0.05, y1 - 0.06, cx + bw / 2 + 0.05, y1, 0.0, 1.05, "movel");
+      const temSuite = M.rooms.some((x) => x.kind === "bs") && r.first;
+      if (h >= 2.6 && w >= 2.4) {
+        const gl = Math.min(1.6, h - 2.1);
+        if (r.door !== "L") mob(r.x0, r.y0 + 0.15, r.x0 + 0.55, r.y0 + 0.15 + gl, 0, 2.1, "armario");
+        else if (!temSuite) mob(r.x1 - 0.55, r.y0 + 0.95, r.x1, r.y0 + 0.95 + Math.min(gl, h - 2.9), 0, 2.1, "armario");
+      }
+    } else if (r.kind === "of") {
+      const cx = (r.x0 + r.x1) / 2, dw = Math.min(1.4, w - 0.6);
+      mob(cx - dw / 2, r.y1 - 0.6, cx + dw / 2, r.y1, 0.72, 0.76, "movel"); mob(cx - dw / 2, r.y1 - 0.6, cx - dw / 2 + 0.04, r.y1, 0, 0.72, "movel"); mob(cx + dw / 2 - 0.04, r.y1 - 0.6, cx + dw / 2, r.y1, 0, 0.72, "movel");
+      mob(cx - 0.25, r.y1 - 1.15, cx + 0.25, r.y1 - 0.7, 0, 0.46, "estofado");
+    } else if (r.kind === "b" || r.kind === "bs" || r.kind === "lav") {
+      const ladoL = r.door !== "L", xw = ladoL ? r.x0 : r.x1, sg = ladoL ? 1 : -1, X = (a, b) => [Math.min(xw + sg * a, xw + sg * b), Math.max(xw + sg * a, xw + sg * b)];
+      if (r.kind === "lav") {
+        const cx = (r.x0 + r.x1) / 2; Bx(cx - 0.19, r.y1 - 0.62, cx + 0.19, r.y1 - 0.18, z0, z0 + 0.42, "louca"); Bx(cx - 0.19, r.y1 - 0.18, cx + 0.19, r.y1, z0, z0 + 0.8, "louca");
+        const ly = r.y0 + Math.min(1.2, h - 1.3), [a, b] = X(0, 0.42); Bx(a, ly, z0 + 0.82, b, ly + 0.5, z0 + 0.88, "bancada");
+      } else {
+        const top = r.y1, boxD = Math.min(0.9, h - 1.4);
+        B(r.x0, top - boxD, z0, r.x1, top, z0 + 0.03, "piso_ceramico"); B(r.x0, top - boxD - 0.01, z0, r.x1, top - boxD + 0.01, z0 + 1.9, "vidro");
+        const vy = r.y0 + Math.min(1.35, h - boxD - 0.45);
+        let [a, b] = X(0, 0.18); B(a, vy - 0.19, z0, b, vy + 0.19, z0 + 0.8, "louca");
+        [a, b] = X(0.18, 0.62); B(a, vy - 0.18, z0, b, vy + 0.18, z0 + 0.42, "louca");
+        if (vy - 0.25 > r.y0 + 0.62) { [a, b] = X(0, 0.45); B(a, r.y0 + 0.12, z0 + 0.82, b, r.y0 + 0.62, z0 + 0.88, "bancada"); B(a, r.y0 + 0.14, z0, b, r.y0 + 0.6, z0 + 0.82, "movel"); }
+      }
+    } else if (r.kind === "s") {
+      Bx(r.x0, r.y1 - 0.55, r.x0 + 0.55, r.y1, z0, z0 + 0.85, "louca");
+      if (r.x0 + 1.25 <= r.x1 - 0.9) Bx(r.x0 + 0.65, r.y1 - 0.6, r.x0 + 1.25, r.y1, z0, z0 + 0.9, "eletro");
+    }
+    if (r.kind === "sc" || r.kind === "coz") {
+      const pl = Math.min(1.5, h - 1.5), pc = (r.y0 + r.y1) / 2;
+      Bx(r.x1 - 0.6, pc - pl / 2, r.x1, pc + pl / 2, z0, z0 + 0.86, "movel"); Bx(r.x1 - 0.62, pc - pl / 2, r.x1, pc + pl / 2, z0 + 0.86, z0 + 0.9, "bancada");
+      if (pc - pl / 2 - 0.6 >= r.y0) Bx(r.x1 - 0.6, pc - pl / 2 - 0.6, r.x1, pc - pl / 2, z0, z0 + 0.88, "eletro");
+      if (pc + pl / 2 + 0.75 <= r.y1) Bx(r.x1 - 0.7, pc + pl / 2 + 0.05, r.x1, pc + pl / 2 + 0.75, z0, z0 + 1.8, "eletro");
+    }
+    if (r.kind === "sc" || r.kind === "sala") {
+      const sl = Math.min(2.1, h - 0.6), cy = (r.y0 + r.y1) / 2;
+      Bx(r.x0 + 0.05, cy - sl / 2, r.x0 + 0.85, cy + sl / 2, z0, z0 + 0.42, "estofado"); Bx(r.x0 + 0.05, cy - sl / 2, r.x0 + 0.25, cy + sl / 2, z0 + 0.42, z0 + 0.82, "estofado");
+      Bx(r.x0 + 0.05, cy - sl / 2, r.x0 + 0.85, cy - sl / 2 + 0.18, z0 + 0.42, z0 + 0.6, "estofado"); Bx(r.x0 + 0.05, cy + sl / 2 - 0.18, r.x0 + 0.85, cy + sl / 2, z0 + 0.42, z0 + 0.6, "estofado");
+      if (w > 2.9) { const tx = Math.min(r.x1 - 0.5, r.x0 + 2.6); Bx(tx, cy - 0.7, tx + 0.4, cy + 0.7, z0, z0 + 0.5, "movel"); Bx(tx + 0.12, cy - 0.55, tx + 0.16, cy + 0.55, z0 + 0.5, z0 + 1.15, "tv"); }
+    }
+  }
+}
+
 export function maquete3D(M) {
   const L = M.lote, ox = L.hx0, oy = L.hy0, t = M.t;
   const boxes = [], polys = [];
-  const B = (x0, y0, z0, x1, y1, z1, mat) => { if (x1 - x0 > 1e-4 && y1 - y0 > 1e-4 && z1 - z0 > 1e-4) boxes.push({ x0: x0 + ox, y0: y0 + oy, z0, x1: x1 + ox, y1: y1 + oy, z1, mat }); };
-  const Pl = (pts, mat) => polys.push({ pts: pts.map(([x, y, z]) => [x + ox, y + oy, z]), mat });
+  // niv: pavimento (0 = térreo); teto: some no modo "por dentro" daquele pavimento
+  let niv = 0, teto = false;
+  const B = (x0, y0, z0, x1, y1, z1, mat) => { if (x1 - x0 > 1e-4 && y1 - y0 > 1e-4 && z1 - z0 > 1e-4) boxes.push({ x0: x0 + ox, y0: y0 + oy, z0, x1: x1 + ox, y1: y1 + oy, z1, mat, niv, teto }); };
+  const Pl = (pts, mat) => polys.push({ pts: pts.map(([x, y, z]) => [x + ox, y + oy, z]), mat, niv, teto });
   const foot = M.foot || [{ x0: 0, y0: 0, x1: M.W, y1: M.D }];
   const pavs = [[M, 0]]; const MS = pavSuperior(M); if (MS) M.niveis.forEach((z) => pavs.push([MS, z]));
   if (M.predio) for (const p of estrutura(M).pilares) B(p.x - p.bx / 2, p.y - p.by / 2, 0, p.x + p.bx / 2, p.y + p.by / 2, M.H, "pilar");
-  for (const [Mf, z0] of pavs) {
+  for (const [ip, [Mf, z0]] of pavs.entries()) {
+    niv = ip; teto = false;
     const G = grid(Mf), { X, Y, C } = G, zf = z0 === 0 ? -0.10 : z0, zt = z0 + M.H;
+    moveis3D(Mf, z0, B, ip < pavs.length - 1);
     for (let i = 0; i < C.length; i++) for (let j = 0; j < C[0].length; j++) {
       const c = C[i][j], x0 = X[i], x1 = X[i + 1], y0 = Y[j], y1 = Y[j + 1];
       if (c.c === 1) B(x0, y0, zf, x1, y1, zt, "parede");
@@ -3006,10 +3077,11 @@ export function maquete3D(M) {
       }
     }
     for (const f of foot) {
-      B(f.x0, f.y0, z0 + M.H, f.x1, f.y1, z0 + M.H + M.laje, "laje");
       if (z0 === 0) B(f.x0, f.y0, -0.10, f.x1, f.y1, 0.0, "piso");
+      teto = true; B(f.x0, f.y0, z0 + M.H, f.x1, f.y1, z0 + M.H + M.laje, "laje"); teto = false;
     }
   }
+  niv = pavs.length - 1; teto = true;
   // paredes externas acima da laje até o telhado (respaldo e oitões)
   const laco = contornoUniao(foot)[0];
   for (let n = 0; n < laco.length; n++) {
@@ -3035,6 +3107,7 @@ export function maquete3D(M) {
   }
   const telhado = { x0: xs0 + ox, y0: ys0 + oy, hx, hy, nx, ny, z, esp: 0.05, mat: "telha" };
   // varanda e garagem
+  niv = 0; teto = false;
   if (M.varanda) {
     B(0, M.Y0, -0.10, M.W, 0, 0, "piso");
     for (const p of M.pilares) B(p.x0, p.y0, 0, p.x1, p.y1, M.roofAt((p.x0 + p.x1) / 2, (p.y0 + p.y1) / 2), "pilar");
@@ -3043,7 +3116,7 @@ export function maquete3D(M) {
   if (G) {
     B(G.x0, G.y0, -0.10, 0, G.y1, -0.02, "concreto");
     for (const p of G.pilares) B(p.x0, p.y0, 0, p.x1, p.y1, G.z(p.x0), "pilar");
-    const gx0 = G.x0 - G.ov;
+    const gx0 = G.x0 - G.ov; teto = true;
     Pl([[gx0, G.y0 - 0.1, G.z(gx0)], [0, G.y0 - 0.1, G.zh], [0, G.y1 + 0.1, G.zh], [gx0, G.y1 + 0.1, G.z(gx0)]], "fibro");
   }
   // lote, passeio e pisos externos (coordenadas do lote)
@@ -3052,8 +3125,10 @@ export function maquete3D(M) {
   return {
     boxes, polys, telhado, ext,
     lote: { lf: L.lf, lp: L.lp, calc: L.calc || 0 },
+    niveis: pavs.map(([, z], i) => ({ z, nome: M.predio ? (i ? `${i}º andar` : "Térreo (pilotis)") : pavs.length > 1 ? (i ? "Pavimento superior" : "Térreo") : "Casa" })),
     centro: [ox + M.W / 2, oy + (M.D + Math.min(M.Y0, M.yMin ?? 0)) / 2, M.zr / 2],
     raio: Math.hypot(M.W, M.D - Math.min(M.Y0, M.yMin ?? 0), M.predio ? M.zr : 0) / 2 + (G ? G.w : 0),
+    raioPlano: Math.hypot(M.W, M.D - Math.min(M.Y0, M.yMin ?? 0)) / 2 + (G ? G.w : 0),
     telha: M.S.telha || "ceramica", titulo: `${tipoCasa(M)} · ${nQuartos(M)} QUARTO${nQuartos(M) > 1 ? "S" : ""}`,
   };
 }
