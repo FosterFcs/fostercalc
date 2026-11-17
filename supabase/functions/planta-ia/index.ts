@@ -47,12 +47,13 @@ function limpar(c: Record<string, unknown>) {
   if (c.t === 0.15 || c.t === 0.2 || c.t === "0.15" || c.t === "0.2") out.t = Number(c.t);
   if (["ceramica", "concreto", "fibrocimento"].includes(String(c.telha))) out.telha = String(c.telha);
   if (c.aguas === 2 || c.aguas === 4 || c.aguas === "2" || c.aguas === "4") out.aguas = Number(c.aguas);
-  if (c.pav === 1 || c.pav === 2 || c.pav === "1" || c.pav === "2") out.pav = Number(c.pav);
+  if ([1, 2, 3].includes(Number(c.pav))) out.pav = Number(c.pav);
+  if (out.pav === 3) { const n = Math.round(Number(c.nand)); out.nand = Number.isFinite(n) ? Math.min(4, Math.max(1, n)) : 4; }
   for (const [k, n] of Object.entries(TXT)) if (typeof c[k] === "string" && c[k]) out[k] = (c[k] as string).trim().slice(0, n);
   return out;
 }
 
-const SISTEMA = `Você é o assistente do módulo Foster Projeto do Foster Calc. Ele desenha o projeto legal de UMA CASA TÉRREA OU SOBRADO
+const SISTEMA = `Você é o assistente do módulo Foster Projeto do Foster Calc. Ele desenha o projeto legal de UMA CASA TÉRREA, SOBRADO OU PRÉDIO DE ATÉ 5 PAVIMENTOS
 (planta, cortes, fachadas, implantação) a partir de campos fixos. Leia a descrição do usuário (português do Brasil, às vezes
 transcrita de áudio, com erros) e devolva SOMENTE JSON no formato:
 {"campos": {...}, "resumo": "uma frase do que foi entendido", "observacoes": ["..."]}
@@ -60,9 +61,11 @@ transcrita de áudio, com erros) e devolva SOMENTE JSON no formato:
 Tipologia: casa retangular com quartos e banheiros enfileirados no fundo; sala/cozinha na frente; laje plana;
 telhado de duas ou quatro águas; garagem coberta opcional na lateral esquerda.
 Sobrado (pav 2): térreo com sala, cozinha, lavabo, serviço e escada; superior com todos os quartos e banheiros.
+Prédio (pav 3): térreo em pilotis (garagem, hall, escada e elevador) + nand andares-tipo (1 a 4) com 4 apartamentos por andar; os campos de quartos, banheiro, suíte, cozinha e serviço descrevem UM apartamento. "Prédio de 5 andares/pavimentos" = nand 4; "N apartamentos" = nand ceil(N/4).
 Casa em L (formaL, só térrea com 2+ quartos): o quarto 1 (ou a suíte com o banho) vira uma ala que avança wl metros para a frente.
 Campos possíveis (use só os que a descrição pedir ou deixar claros; medidas em metros, números com ponto):
-- pav: 1 para casa térrea, 2 para sobrado (dois andares/pavimentos)
+- pav: 1 para casa térrea, 2 para sobrado (dois andares/pavimentos), 3 para prédio/edifício de apartamentos (3 a 5 pavimentos)
+- nand: só no prédio, número de andares-tipo acima do térreo (1 a 4)
 - nq: quantidade de quartos (1 a 3), contando a suíte
 - qw0, qw1, qw2: largura de cada quarto (2,2 a 5). "quartos de 3x3" → largura 3 e db 3
 - db: profundidade dos quartos e banheiros (2,4 a 5)
@@ -91,7 +94,7 @@ Regras:
   (com garagem coberta, desconte também a largura da garagem).
   Reduza as larguras (quartos até 2,5; banheiros e serviço até 1,2) e, se ainda assim não couber, diga em "observacoes".
 - Não invente nomes, endereços nem medidas que não foram ditos, exceto para atingir uma área pedida.
-- Em "observacoes", liste em frases curtas o que foi pedido e o módulo NÃO faz (mais de 2 pavimentos, sobrado em L, segundo banheiro social,
+- Em "observacoes", liste em frases curtas o que foi pedido e o módulo NÃO faz (mais de 5 pavimentos, sobrado em L, segundo banheiro social,
   piscina, churrasqueira, edícula, mais de 3 quartos, closet, escritório etc.)
   e as dúvidas importantes. Se não houver, use [].
 - Responda só o JSON, sem texto fora dele.`;
