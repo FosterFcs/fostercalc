@@ -747,6 +747,51 @@ function desenharEscada(d, e, k, superior) {
   d.text([m2, yP - e.run2 - 0.05], 1.6 * k, superior ? "DESCE" : "", { al: "c", va: "t", layer: "ARQ-TEXTO" });
   d.text([(xa + xb) / 2, yP1 - e.pat / 2 - 0.05], 1.4 * k, `${e.nE} DEGRAUS · e=${fmt(e.esp * 100, 1)} cm · p=${Math.round(e.piso * 100)} cm`, { al: "c", va: "t", layer: "ARQ-TEXTO" });
 }
+// áreas na frente das portas e vãos de um ambiente (para não pôr móvel na passagem)
+function zonasPortas(M, r, prof = 0.9) {
+  const z = [], e = 0.05;
+  for (const o of M.O || []) {
+    if (o.type === "J") continue;
+    if (o.orient === "H") {
+      if (o.p1 <= r.x0 + e || o.p0 >= r.x1 - e) continue;
+      if (Math.abs(o.q0 - r.y1) < 0.02) z.push([o.p0 - 0.1, r.y1 - prof, o.p1 + 0.1, r.y1]);
+      else if (Math.abs(o.q1 - r.y0) < 0.02) z.push([o.p0 - 0.1, r.y0, o.p1 + 0.1, r.y0 + prof]);
+    } else {
+      if (o.p1 <= r.y0 + e || o.p0 >= r.y1 - e) continue;
+      if (Math.abs(o.q0 - r.x1) < 0.02) z.push([r.x1 - prof, o.p0 - 0.1, r.x1, o.p1 + 0.1]);
+      else if (Math.abs(o.q1 - r.x0) < 0.02) z.push([r.x0, o.p0 - 0.1, r.x0 + prof, o.p1 + 0.1]);
+    }
+  }
+  return z;
+}
+const bate = (a, zs) => zs.some((b) => a[0] < b[2] - 1e-3 && a[2] > b[0] + 1e-3 && a[1] < b[3] - 1e-3 && a[3] > b[1] + 1e-3);
+// cozinha linear na parede da direita, fora das passagens: pia (bancada), fogão e geladeira
+export function layoutCozinha(M, r) {
+  const zs = zonasPortas(M, r), x0 = r.x1 - 0.7;
+  // trechos livres da parede
+  const cortes = zs.filter((b) => b[2] > x0 && b[0] < r.x1).map((b) => [Math.max(r.y0, b[1]), Math.min(r.y1, b[3])]).sort((a, b) => a[0] - b[0]);
+  const livres = []; let y = r.y0;
+  for (const [a, b] of cortes) { if (a > y) livres.push([y, a]); y = Math.max(y, b); }
+  if (r.y1 > y) livres.push([y, r.y1]);
+  livres.sort((p, q) => q[1] - q[0] - (p[1] - p[0]));
+  const [a, b] = livres[0] || [r.y0, r.y0], L = b - a, out = {};
+  if (L < 0.8) return out;
+  // prioridade: pia, geladeira, fogão; a bancada encolhe até 1,0 m antes de perder um eletrodoméstico
+  const outro = livres.slice(1).find(([u, v]) => v - u >= 0.75);
+  const temGel = L >= 1.75 || !!outro, gelAqui = L >= 1.75;
+  const temFog = L - (gelAqui ? 0.75 : 0) >= 1.6;
+  const pl = Math.min(1.5, (r.y1 - r.y0) - 1.5 > 0.8 ? (r.y1 - r.y0) - 1.5 : 1.5, L - (gelAqui ? 0.75 : 0) - (temFog ? 0.6 : 0));
+  const tot = pl + (temFog ? 0.6 : 0) + (gelAqui ? 0.75 : 0), c = Math.min(Math.max((r.y0 + r.y1) / 2, a + tot / 2), b - tot / 2);
+  let yy = c - tot / 2;
+  if (temFog) { out.fogao = [r.x1 - 0.6, yy, r.x1, yy + 0.6]; yy += 0.6; }
+  out.pia = [r.x1 - 0.6, yy, r.x1, yy + pl];
+  if (!temFog && pl >= 1.2) out.cook = [r.x1 - 0.6, yy + pl - 0.6, r.x1, yy + pl]; // cooktop na própria bancada
+  out.cuba = out.cook ? yy + (pl - 0.6) / 2 : yy + pl / 2;
+  yy += pl;
+  if (gelAqui) out.gel = [r.x1 - 0.7, yy + 0.05, r.x1, yy + 0.75];
+  else if (temGel) { const m = (outro[0] + outro[1]) / 2; out.gel = [r.x1 - 0.7, m - 0.35, r.x1, m + 0.35]; }
+  return out;
+}
 // todos os ambientes (térreo e superior)
 export const ambientes = (M) => (M.sup ? [...M.rooms, ...Array.from({ length: M.predio ? M.predio.n : 1 }, () => M.sup.rooms).flat()] : M.rooms);
 const nQuartosApto = (M) => (M.predio ? M.predio.apto.rooms.filter((r) => r.kind === "q").length : 0);
@@ -880,14 +925,11 @@ export function drawPlan(M, k, esc) {
       if (r.x0 + 1.25 <= r.x1 - 0.9) d.rect(r.x0 + 0.65, r.y1 - 0.6, r.x0 + 1.25, r.y1, F);
     }
     if (r.kind === "sc" || r.kind === "coz") {
-      const pl = Math.min(1.5, h - 1.5), pc = (r.y0 + r.y1) / 2;
-      d.rect(r.x1 - 0.6, pc - pl / 2, r.x1, pc + pl / 2, F);
-      d.rect(r.x1 - 0.48, pc - 0.25, r.x1 - 0.08, pc + 0.05, F);
-      if (pc - pl / 2 - 0.6 >= r.y0) {
-        d.rect(r.x1 - 0.6, pc - pl / 2 - 0.6, r.x1, pc - pl / 2, F);
-        [[0.15, 0.15], [0.45, 0.15], [0.15, 0.45], [0.45, 0.45]].forEach(([a, b]) => d.circle([r.x1 - 0.6 + a, pc - pl / 2 - 0.6 + b], 0.08, F));
-      }
-      if (pc + pl / 2 + 0.75 <= r.y1) d.rect(r.x1 - 0.7, pc + pl / 2 + 0.05, r.x1, pc + pl / 2 + 0.75, F);
+      const K = layoutCozinha(M, r);
+      if (K.pia) { const [a, b, c, e] = K.pia, m = K.cuba; d.rect(a, b, c, e, F); d.rect(r.x1 - 0.48, m - 0.2, r.x1 - 0.08, m + 0.2, F); }
+      if (K.cook) { const [a, b] = K.cook; [[0.15, 0.15], [0.45, 0.15], [0.15, 0.45], [0.45, 0.45]].forEach(([u, v]) => d.circle([a + u, b + v], 0.08, F)); }
+      if (K.fogao) { const [a, b, c, e] = K.fogao; d.rect(a, b, c, e, F); [[0.15, 0.15], [0.45, 0.15], [0.15, 0.45], [0.45, 0.45]].forEach(([u, v]) => d.circle([a + u, b + v], 0.08, F)); }
+      if (K.gel) d.rect(...K.gel, F);
     }
     if (r.kind === "sc" || r.kind === "sala") {
       const sl = Math.min(2.1, h - 0.6), cy = (r.y0 + r.y1) / 2;
@@ -3030,10 +3072,11 @@ export function moveis3D(M, z0, B, sobe) {
       if (r.x0 + 1.25 <= r.x1 - 0.9) Bx(r.x0 + 0.65, r.y1 - 0.6, r.x0 + 1.25, r.y1, z0, z0 + 0.9, "eletro");
     }
     if (r.kind === "sc" || r.kind === "coz") {
-      const pl = Math.min(1.5, h - 1.5), pc = (r.y0 + r.y1) / 2;
-      Bx(r.x1 - 0.6, pc - pl / 2, r.x1, pc + pl / 2, z0, z0 + 0.86, "movel"); Bx(r.x1 - 0.62, pc - pl / 2, r.x1, pc + pl / 2, z0 + 0.86, z0 + 0.9, "bancada");
-      if (pc - pl / 2 - 0.6 >= r.y0) Bx(r.x1 - 0.6, pc - pl / 2 - 0.6, r.x1, pc - pl / 2, z0, z0 + 0.88, "eletro");
-      if (pc + pl / 2 + 0.75 <= r.y1) Bx(r.x1 - 0.7, pc + pl / 2 + 0.05, r.x1, pc + pl / 2 + 0.75, z0, z0 + 1.8, "eletro");
+      const K = layoutCozinha(M, r);
+      if (K.pia) { const [a, b, c, e] = K.pia; Bx(a, b, c, e, z0, z0 + 0.86, "movel"); Bx(a - 0.02, b, c, e, z0 + 0.86, z0 + 0.9, "bancada"); }
+      if (K.fogao) { const [a, b, c, e] = K.fogao; Bx(a, b, c, e, z0, z0 + 0.88, "eletro"); Bx(a + 0.05, b + 0.05, c - 0.05, e - 0.05, z0 + 0.88, z0 + 0.9, "tv"); }
+      if (K.cook) { const [a, b, c, e] = K.cook; Bx(a + 0.08, b + 0.05, c - 0.05, e - 0.05, z0 + 0.9, z0 + 0.915, "tv"); }
+      if (K.gel) { const [a, b, c, e] = K.gel; Bx(a, b, c, e, z0, z0 + 1.8, "eletro"); }
     }
     if (r.kind === "sc" || r.kind === "sala") {
       const sl = Math.min(2.1, h - 0.6), cy = (r.y0 + r.y1) / 2;
