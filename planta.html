@@ -760,14 +760,15 @@ function atualizar3D(reset) {
   const borda = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(lf, 0.02, lp)), new T.LineBasicMaterial({ color: 0xffffff }));
   borda.position.set(lf / 2, -0.09, -lp / 2); g.add(borda);
   V3.cena.add(g);
-  const [cx, cy, cz] = D.centro; V3.alvo = new T.Vector3(cx, cz, -cy); V3.raio = Math.max(5, D.raio);
+  const [cx, cy, cz] = D.centro; V3.alvo = new T.Vector3(cx, cz, -cy); V3.raio = Math.max(5, D.raio); V3.alto = !!res.M.predio;
   V3.sol.position.set(cx - 20, 15, -cy + 12); V3.sol.target.position.copy(V3.alvo);
   const sc = V3.sol.shadow.camera, s = V3.raio * 2.2; Object.assign(sc, { left: -s, right: s, top: s, bottom: -s, near: 1, far: 120 }); sc.updateProjectionMatrix();
   V3.titulo = ($('titulo').value || D.titulo).toUpperCase();
   if (reset) posicionar3D(VISTAS[V3.vista][0]);
 }
 function posicionar3D(v) {
-  const c = V3.alvo, R = V3.raio * 2.3;
+  const c = V3.alvo.clone(), R = V3.raio * (V3.alto ? 2.6 : 2.3);
+  if (V3.alto) c.y *= 0.85; // prédio: mira um pouco abaixo do meio para a base não ficar sob a legenda
   if (v === 'frente') V3.cam.position.set(c.x - R * 0.55, c.y + R * 0.3, c.z + R * 0.85);
   else if (v === 'fundos') V3.cam.position.set(c.x + R * 0.55, c.y + R * 0.3, c.z - R * 0.85);
   else V3.cam.position.set(c.x + 0.01, c.y + R * 1.25, c.z + R * 0.25);
