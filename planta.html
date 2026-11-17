@@ -250,7 +250,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 
   <section class="sheet" id="sec3d">
     <h2>Maquete 3D · imagem e vídeo</h2>
-    <p class="note" style="margin:0 0 10px">Volume do projeto gerado das mesmas medidas da prancha. Gire com o dedo ou o mouse, aproxime com pinça ou rolagem. Baixe uma imagem ou grave um vídeo dando a volta na casa para mandar ao cliente.</p>
+    <p class="note" style="margin:0 0 10px">Volume do projeto gerado das mesmas medidas da prancha. Gire com o dedo ou o mouse, aproxime com pinça ou rolagem. Baixe uma imagem ou grave um vídeo dando a volta na casa para mandar ao cliente. Em <b>Por dentro</b>, o telhado e a laje saem e aparecem os pisos e os móveis de cada pavimento.</p>
     <div id="v3d" style="position:relative;width:100%;aspect-ratio:16/9;background:linear-gradient(#cfe3f5,#eef4f9);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none">
       <button type="button" class="pri" id="btn3d">Abrir maquete 3D</button>
     </div>
@@ -258,6 +258,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
       <button type="button" class="pri ghost" id="btnPng" disabled>Baixar imagem (PNG)</button>
       <button type="button" class="pri ghost" id="btnVideo" disabled>Gravar vídeo 360°</button>
       <button type="button" class="pri ghost" id="btnVista" disabled>Vista: frente</button>
+      <select id="sel3dNivel" disabled aria-label="Ver por fora ou por dentro" style="width:auto;min-width:0"><option value="-1">Por fora</option></select>
       <span class="note" id="msg3d" role="status"></span>
     </div>
   </section>
@@ -677,8 +678,9 @@ $('f').addEventListener('change', e => { if (e.target.id !== 'desc') agendar(); 
 render();
 
 // ---------- maquete 3D (three.js carregado só quando abrir) ----------
-var V3 = { on: false };
-const COR3 = { parede: 0xf3efe6, laje: 0xd8d4cc, piso: 0xcbc5ba, vidro: 0x86b3d6, peitoril: 0xe6e1d8, porta: 0x8a5a33, pilar: 0xefebe3, concreto: 0xbcb8b0, fibro: 0xb3b8be };
+var V3 = { on: false, nivel: -1 };
+const COR3 = { parede: 0xf3efe6, laje: 0xd8d4cc, piso: 0xcbc5ba, vidro: 0x86b3d6, peitoril: 0xe6e1d8, porta: 0x8a5a33, pilar: 0xefebe3, concreto: 0xbcb8b0, fibro: 0xb3b8be,
+  piso_madeira: 0xb98a5a, piso_ceramico: 0xdfe3e7, piso_porcelanato: 0xd8d0c2, movel: 0x8f6340, cama: 0xf2eee6, travesseiro: 0xffffff, armario: 0xc7a47c, louca: 0xf7f7f7, bancada: 0x45484d, estofado: 0x5d7286, eletro: 0xcfd3d8, tv: 0x1c1e21, escada: 0xd9d4ca };
 const TELHA3 = { ceramica: 0xb0522f, concreto: 0x78808a, fibrocimento: 0xa7adb3 };
 const VISTAS = [['frente', 'Vista: frente'], ['fundos', 'Vista: fundos'], ['cima', 'Vista: de cima']];
 async function abrir3D() {
@@ -706,7 +708,7 @@ async function abrir3D() {
   const loop = () => { requestAnimationFrame(loop); if (V3.anima) V3.anima(); else ctl.update(); r.render(cena, cam); if (V3.posRender) V3.posRender(); };
   loop();
   atualizar3D(true);
-  ['btnPng', 'btnVideo', 'btnVista'].forEach((id) => { $(id).disabled = false; });
+  ['btnPng', 'btnVideo', 'btnVista', 'sel3dNivel'].forEach((id) => { $(id).disabled = false; });
   $('msg3d').textContent = '';
 }
 function malha3D(T, arr, mat) {
@@ -731,15 +733,22 @@ function atualizar3D(reset) {
     o.p.push(...pa, ...pb, ...pc); o.n.push(...n, ...n, ...n);
   };
   const quad = (k, a, b, c, d) => { tri(k, a, b, c); tri(k, a, c, d); };
+  // por dentro: mostra até o pavimento escolhido, sem a laje dele e sem telhado
+  if (V3.nivel >= D.niveis.length) V3.nivel = -1;
+  const sel = $('sel3dNivel'), ops = [['-1', 'Por fora'], ...D.niveis.map((n, i) => [String(i), D.niveis.length > 1 ? `Por dentro: ${n.nome}` : 'Por dentro'])];
+  if (sel.options.length !== ops.length || [...sel.options].some((o, i) => o.textContent !== ops[i][1])) sel.innerHTML = ops.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+  sel.value = String(V3.nivel);
+  const dentro = V3.nivel >= 0, ve = (b) => !dentro || b.niv < V3.nivel || (b.niv === V3.nivel && !b.teto);
   for (const b of D.boxes) {
+    if (!ve(b)) continue;
     const { x0, y0, z0, x1, y1, z1 } = b, k = b.mat;
     quad(k, [x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]); quad(k, [x1, y1, z0], [x0, y1, z0], [x0, y1, z1], [x1, y1, z1]);
     quad(k, [x0, y1, z0], [x0, y0, z0], [x0, y0, z1], [x0, y1, z1]); quad(k, [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]);
     quad(k, [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]); quad(k, [x0, y1, z0], [x1, y1, z0], [x1, y0, z0], [x0, y0, z0]);
   }
-  for (const pl of D.polys) for (let i = 1; i < pl.pts.length - 1; i++) tri(pl.mat, pl.pts[0], pl.pts[i], pl.pts[i + 1]);
+  for (const pl of D.polys) if (ve(pl)) for (let i = 1; i < pl.pts.length - 1; i++) tri(pl.mat, pl.pts[0], pl.pts[i], pl.pts[i + 1]);
   const R = D.telhado, Z = (i, j) => R.z[i * (R.ny + 1) + j];
-  for (let i = 0; i < R.nx; i++) for (let j = 0; j < R.ny; j++) {
+  if (!dentro) for (let i = 0; i < R.nx; i++) for (let j = 0; j < R.ny; j++) {
     const a = Z(i, j), b = Z(i + 1, j), c = Z(i + 1, j + 1), d = Z(i, j + 1);
     if (a == null || b == null || c == null || d == null) continue;
     const x0 = R.x0 + i * R.hx, x1 = x0 + R.hx, y0 = R.y0 + j * R.hy, y1 = y0 + R.hy, e = R.esp;
@@ -760,13 +769,23 @@ function atualizar3D(reset) {
   const borda = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(lf, 0.02, lp)), new T.LineBasicMaterial({ color: 0xffffff }));
   borda.position.set(lf / 2, -0.09, -lp / 2); g.add(borda);
   V3.cena.add(g);
-  const [cx, cy, cz] = D.centro; V3.alvo = new T.Vector3(cx, cz, -cy); V3.raio = Math.max(5, D.raio); V3.alto = !!res.M.predio;
-  V3.sol.position.set(cx - 20, 15, -cy + 12); V3.sol.target.position.copy(V3.alvo);
+  const [cx, cy, cz] = D.centro; V3.alvo = new T.Vector3(cx, cz, -cy); V3.raio = Math.max(5, D.raio); V3.alto = !!res.M.predio; V3.raioPlano = Math.max(4, D.raioPlano); V3.zNiv = D.niveis.map((n) => n.z);
+  if (dentro) V3.sol.position.set(cx - 6, 45, -cy + 8); else V3.sol.position.set(cx - 20, 15, -cy + 12); V3.sol.target.position.copy(V3.alvo);
   const sc = V3.sol.shadow.camera, s = V3.raio * 2.2; Object.assign(sc, { left: -s, right: s, top: s, bottom: -s, near: 1, far: 120 }); sc.updateProjectionMatrix();
-  V3.titulo = ($('titulo').value || D.titulo).toUpperCase();
+  V3.titulo = ($('titulo').value || D.titulo).toUpperCase() + (dentro ? ` · ${D.niveis.length > 1 ? D.niveis[V3.nivel].nome.toUpperCase() : 'INTERIOR'}` : '');
   if (reset) posicionar3D(VISTAS[V3.vista][0]);
 }
+function orbita3D() {
+  if (V3.nivel >= 0) { const c = V3.alvo.clone(); c.y = V3.zNiv[V3.nivel] + 0.6; return { c, R: V3.raioPlano * 2.0, el: 0.78 }; }
+  return { c: V3.alvo, R: V3.raio * 2.5, el: 0.42 };
+}
 function posicionar3D(v) {
+  if (V3.nivel >= 0) {
+    const { c, R } = orbita3D(), s = v === 'fundos' ? -1 : 1;
+    if (v === 'cima') V3.cam.position.set(c.x + 0.01, c.y + R * 1.3, c.z + R * 0.08);
+    else V3.cam.position.set(c.x - s * R * 0.35, c.y + R * 0.95, c.z + s * R * 0.6);
+    V3.ctl.target.copy(c); V3.ctl.update(); return;
+  }
   const c = V3.alvo.clone(), R = V3.raio * (V3.alto ? 2.6 : 2.3);
   if (V3.alto) c.y *= 0.85; // prédio: mira um pouco abaixo do meio para a base não ficar sob a legenda
   if (v === 'frente') V3.cam.position.set(c.x - R * 0.55, c.y + R * 0.3, c.z + R * 0.85);
@@ -795,6 +814,7 @@ function emTamanho(w, h, fn) {
   return fn(() => { V3.gravando = false; r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); const bw = box.clientWidth, bh = box.clientHeight; r.setSize(bw, bh, false); cam.aspect = bw / bh; cam.updateProjectionMatrix(); });
 }
 $('btn3d').addEventListener('click', abrir3D);
+$('sel3dNivel').addEventListener('change', () => { V3.nivel = +$('sel3dNivel').value; V3.ctl.minDistance = V3.nivel >= 0 ? 1 : 3; atualizar3D(false); posicionar3D(VISTAS[V3.vista][0]); });
 $('btnVista').addEventListener('click', () => { V3.vista = (V3.vista + 1) % VISTAS.length; $('btnVista').textContent = VISTAS[V3.vista][1]; posicionar3D(VISTAS[V3.vista][0]); });
 $('btnPng').addEventListener('click', () => {
   if (!V3.on) return;
@@ -816,11 +836,11 @@ $('btnVideo').addEventListener('click', async () => {
   const rec = new MediaRecorder(cv.captureStream(30), { mimeType: tipo, videoBitsPerSecond: 6000000 });
   rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
   emTamanho(1280, 720, (volta) => {
-    const c = V3.alvo, R = V3.raio * 2.5, dur = 12000, t0 = performance.now(), a0 = Math.atan2(V3.cam.position.x - c.x, V3.cam.position.z - c.z);
+    const { c, R, el } = orbita3D(), dur = 12000, t0 = performance.now(), a0 = Math.atan2(V3.cam.position.x - c.x, V3.cam.position.z - c.z);
     $('btnVideo').disabled = true; $('msg3d').textContent = 'Gravando o vídeo (12 s)…';
     V3.anima = () => {
       const f = Math.min(1, (performance.now() - t0) / dur), a = a0 + f * Math.PI * 2;
-      V3.cam.position.set(c.x + R * Math.sin(a), c.y + R * (0.42 + 0.08 * Math.sin(f * Math.PI * 2)), c.z + R * Math.cos(a));
+      V3.cam.position.set(c.x + R * Math.sin(a), c.y + R * (el + 0.08 * Math.sin(f * Math.PI * 2)), c.z + R * Math.cos(a));
       V3.cam.lookAt(c);
       if (f >= 1 && rec.state === 'recording') rec.stop();
     };
