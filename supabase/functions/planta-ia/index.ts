@@ -29,10 +29,10 @@ const json = (body: unknown, status: number, headers: Record<string, string>) =>
 const NUM: Record<string, [number, number]> = {
   nq: [1, 3], qw0: [2.2, 5], qw1: [2.2, 5], qw2: [2.2, 5], db: [2.4, 5], bw: [1.2, 3], ds: [2.8, 6],
   bsw: [1.1, 3], kw: [2, 5], sw: [1.2, 3], dv: [1, 4], H: [2.4, 4], laje: [0.08, 0.2], beiral: [0.3, 1.2],
-  lvw: [1, 2], gw: [2.6, 4.5], gl: [4.5, 7],
+  lvw: [1, 2], gw: [2.6, 4.5], gl: [4.5, 7], wl: [2.6, 5],
   lf: [3, 100], lp: [5, 200], rf: [0, 30], afE: [0, 50], calc: [0, 6], norte: [-360, 360], esquina: [0, 1000],
 };
-const BOOL = ["suite", "cozSep", "serv", "varanda", "vaga", "lavabo", "garagem"];
+const BOOL = ["suite", "cozSep", "serv", "varanda", "vaga", "lavabo", "garagem", "formaL"];
 const TXT: Record<string, number> = { rua: 60, ruaLat: 40, quadra: 12, lote: 12, bairro: 40, cidade: 40, proprietario: 70, endereco: 78, titulo: 44 };
 
 function limpar(c: Record<string, unknown>) {
@@ -60,6 +60,7 @@ transcrita de áudio, com erros) e devolva SOMENTE JSON no formato:
 Tipologia: casa retangular com quartos e banheiros enfileirados no fundo; sala/cozinha na frente; laje plana;
 telhado de duas ou quatro águas; garagem coberta opcional na lateral esquerda.
 Sobrado (pav 2): térreo com sala, cozinha, lavabo, serviço e escada; superior com todos os quartos e banheiros.
+Casa em L (formaL, só térrea com 2+ quartos): o quarto 1 (ou a suíte com o banho) vira uma ala que avança wl metros para a frente.
 Campos possíveis (use só os que a descrição pedir ou deixar claros; medidas em metros, números com ponto):
 - pav: 1 para casa térrea, 2 para sobrado (dois andares/pavimentos)
 - nq: quantidade de quartos (1 a 3), contando a suíte
@@ -74,6 +75,7 @@ Campos possíveis (use só os que a descrição pedir ou deixar claros; medidas 
 - lavabo: true se pedir lavabo; lvw: largura (1 a 2)
 - garagem: true se pedir garagem coberta/abrigo para carro; gw: largura (2,6 a 4,5); gl: comprimento (4,5 a 7)
 - aguas: 2 ou 4 (telhado de duas ou quatro águas)
+- formaL: true se pedir casa em L; wl: avanço da ala (2,6 a 5)
 - H: pé-direito (2,4 a 4); laje: espessura (0,08 a 0,2); t: parede 0.15 ou 0.2
 - telha: "ceramica", "concreto" ou "fibrocimento"; beiral (0,3 a 1,2)
 - lf: frente do terreno; lp: profundidade do terreno ("terreno 10x25" → lf 10, lp 25); rf: recuo frontal;
@@ -89,7 +91,7 @@ Regras:
   (com garagem coberta, desconte também a largura da garagem).
   Reduza as larguras (quartos até 2,5; banheiros e serviço até 1,2) e, se ainda assim não couber, diga em "observacoes".
 - Não invente nomes, endereços nem medidas que não foram ditos, exceto para atingir uma área pedida.
-- Em "observacoes", liste em frases curtas o que foi pedido e o módulo NÃO faz (mais de 2 pavimentos, casa em L, segundo banheiro social,
+- Em "observacoes", liste em frases curtas o que foi pedido e o módulo NÃO faz (mais de 2 pavimentos, sobrado em L, segundo banheiro social,
   piscina, churrasqueira, edícula, mais de 3 quartos, closet, escritório etc.)
   e as dúvidas importantes. Se não houver, use [].
 - Responda só o JSON, sem texto fora dele.`;
