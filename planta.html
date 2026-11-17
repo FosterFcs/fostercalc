@@ -112,7 +112,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 <div id="fc-bar"></div>
 <header class="top">
   <h1>Foster Projeto <span>· prancha em DXF</span> <span class="beta">beta</span></h1>
-  <p>Casa térrea · projeto legal em 4 folhas: arquitetura, implantação e índices, pré-lançamento estrutural ligado aos módulos do Calc e pontos de elétrica e hidráulica</p>
+  <p>Casa térrea ou sobrado · projeto legal em 4 folhas: arquitetura, implantação e índices, pré-lançamento estrutural ligado aos módulos do Calc e pontos de elétrica e hidráulica</p>
 </header>
 
 <div class="grid">
@@ -129,6 +129,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
     </fieldset>
     <fieldset>
       <legend>Programa</legend>
+      <label class="full">Tipo<select id="pav"><option value="1">Casa térrea</option><option value="2">Sobrado (quartos em cima)</option></select></label>
       <label>Quartos<select id="nq"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></label>
       <label>Profundidade quartos<span class="unit"><input id="db" type="number" step="0.05" min="2.4" max="5" value="3.00"><i>m</i></span></label>
       <label data-q="0">Largura quarto 1<span class="unit"><input id="qw0" type="number" step="0.05" min="2.2" max="5" value="3.00"><i>m</i></span></label>
@@ -304,7 +305,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 const $ = id => document.getElementById(id);
 const P = window.PlantaIA;
 const modulo = 'planta';
-const NUM = ['tensao', 'pChuveiro', 'sadm', 'gAdd', 'qLaje', 'pPar', 'fck', 'secao', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'lvw', 'gw', 'gl', 'aguas', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
+const NUM = ['pav', 'tensao', 'pChuveiro', 'sadm', 'gAdd', 'qLaje', 'pPar', 'fck', 'secao', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'lvw', 'gw', 'gl', 'aguas', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
 const TXT = ['desc', 'telha', 'formato', 'formato2', 'formato3', 'formato4', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
   'afE', 'esquina', 'rua', 'ruaLat', 'quadra', 'lote', 'bairro', 'cidade', 'toMax', 'caMax', 'permMin', 'rfMin', 'rlMin', 'rfuMin'];
 const BOOL = ['serv', 'suite', 'cozSep', 'varanda', 'vaga', 'lavabo', 'garagem'];
@@ -327,15 +328,15 @@ function paraModelo(e) { return Object.assign(P.defaults(), e, { qw: [e.qw0, e.q
 const fmt = (v, n = 2) => P.fmt(v, n);
 const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-function conferencia(M) {
-  return M.rooms.map(r => {
+function conferencia(M0) {
+  return [M0, P.pavSuperior(M0)].filter(Boolean).map(M => M.rooms.filter(r => r.kind !== 'esc' && r.kind !== 'hall').map(r => {
     const A = (r.x1 - r.x0) * (r.y1 - r.y0);
     const jan = M.O.filter(o => o.type === 'J' && (
       (o.orient === 'H' && o.p0 >= r.x0 - 1e-6 && o.p1 <= r.x1 + 1e-6 && (Math.abs(o.q0 - r.y1) < 1e-6 || Math.abs(o.q1 - r.y0) < 1e-6)) ||
       (o.orient === 'V' && o.p0 >= r.y0 - 1e-6 && o.p1 <= r.y1 + 1e-6 && (Math.abs(o.q0 - r.x1) < 1e-6 || Math.abs(o.q1 - r.x0) < 1e-6))));
     const Aj = jan.reduce((a, o) => a + o.w * o.hgt, 0);
-    return `<tr><td>${r.name}</td><td class="v">${fmt(A)} m²</td><td class="v">${fmt(Math.min(r.x1 - r.x0, r.y1 - r.y0))} m</td><td class="v">${Aj ? '1/' + fmt(A / Aj, 1) : '—'}</td></tr>`;
-  }).join('');
+    return `<tr><td>${r.name}${M0.sup ? (M.nivelPlanta === 'sup' ? ' · sup.' : ' · térreo') : ''}</td><td class="v">${fmt(A)} m²</td><td class="v">${fmt(Math.min(r.x1 - r.x0, r.y1 - r.y0))} m</td><td class="v">${Aj ? '1/' + fmt(A / Aj, 1) : '—'}</td></tr>`;
+  }).join('')).join('');
 }
 
 function render() {
@@ -375,8 +376,8 @@ function estruturaHtml() {
   const a = (id, txt = 'Dimensionar →') => `<a class="dim" href="${L[id]}" target="_blank" rel="noopener">${txt}</a>`;
   const tab = (tit, cab, linhas) => `<h3 class="est-t">${tit}</h3><div class="tbl"><table><thead><tr>${cab.map((c, i) => `<th${i && i < cab.length - 1 ? ' style="text-align:right"' : ''}>${c}</th>`).join('')}</tr></thead><tbody>${linhas.join('')}</tbody></table></div>`;
   $('estrutura').innerHTML =
-    tab('Lajes', ['Laje', 'Vãos', 'g / q (kN/m²)', ''], E.lajes.map(l => `<tr><td><b>${l.id}</b> · ${l.nome.toLowerCase()}</td><td class="v">${fmt(l.lx)} × ${fmt(l.ly)} m</td><td class="v">${fmt(l.g)} / ${fmt(l.q)}</td><td>${a(l.id)}</td></tr>`)) +
-    tab('Vigas do respaldo', ['Viga', 'Seção · vãos (m)', 'g+q máx (kN/m)', ''], E.vigas.map(v => `<tr><td><b>${v.id}</b></td><td class="v">${v.bw}×${v.h} · ${v.vaos.map(s => fmt(s.L)).join(' / ')}</td><td class="v">${fmt(Math.max(...v.vaos.map(s => s.g + s.q)), 1)}</td><td>${a(v.id)}</td></tr>`)) +
+    tab('Lajes', ['Laje', 'Vãos', 'g / q (kN/m²)', ''], E.lajes.map(l => `<tr><td><b>${l.id}</b> · ${M.pav === 2 ? (l.nivel === 1 ? 'piso ' : 'forro ') : ''}${l.nome.toLowerCase()}</td><td class="v">${fmt(l.lx)} × ${fmt(l.ly)} m</td><td class="v">${fmt(l.g)} / ${fmt(l.q)}</td><td>${a(l.id)}</td></tr>`)) +
+    tab(M.pav === 2 ? 'Vigas (VS = piso superior, V = respaldo)' : 'Vigas do respaldo', ['Viga', 'Seção · vãos (m)', 'g+q máx (kN/m)', ''], E.vigas.map(v => `<tr><td><b>${v.id}</b></td><td class="v">${v.bw}×${v.h} · ${v.vaos.map(s => fmt(s.L)).join(' / ')}</td><td class="v">${fmt(Math.max(...v.vaos.map(s => s.g + s.q)), 1)}</td><td>${a(v.id)}</td></tr>`)) +
     tab('Baldrames', ['Viga', 'Seção · vãos (m)', 'Parede', ''], E.baldrames.map(v => `<tr><td><b>${v.id}</b></td><td class="v">${v.bw}×${v.h} · ${v.vaos.map(s => fmt(s.L)).join(' / ')}</td><td class="v">${fmt(M.H)} m</td><td>${a(v.id)}</td></tr>`)) +
     tab('Pilares e sapatas', ['Pilar', 'Seção · Nk', 'Sapata (estimada)', ''], E.pilares.map(p => `<tr><td><b>${p.id}</b>${p.var ? ' · varanda' : ''}</td><td class="v">${p.b}×${p.h} · ${p.N} kN</td><td class="v">S${p.id.slice(1)} ${p.sap.A}×${p.sap.B} cm</td><td>${a(p.id, 'Pilar →')} ${a('S' + p.id.slice(1), 'Sapata →')}</td></tr>`)) +
     `<p class="note" style="margin:8px 0 0">Soma das cargas: <b>${E.pilares.reduce((s, p) => s + p.N, 0)} kN</b> (${fmt(E.pilares.reduce((s, p) => s + p.N, 0) / (M.W * M.D), 1)} kN/m² de área fechada). Os módulos refazem os cálculos com as normas; as reações das vigas contínuas substituem as estimativas.</p>`;
@@ -424,7 +425,7 @@ async function empacotar(obj) {   // mesmo formato do Foster Orça: 'z' + deflat
 }
 $('btnOrca').addEventListener('click', async () => {
   if (!window.CompressionStream) { FC.toast('Atualize o navegador para enviar ao Foster Orça.'); return; }
-  const S = lerEntrada(), M = res.M, nq = M.rooms.filter(r => r.kind === 'q').length;
+  const S = lerEntrada(), M = res.M, nq = P.ambientes(M).filter(r => r.kind === 'q').length;
   const it = [];
   for (const e of res.Q) for (const i of e.itens) {
     if (e.etapa === 'Serviços preliminares' && i.desc.startsWith('Limpeza do terreno')) continue;
@@ -434,9 +435,9 @@ $('btnOrca').addEventListener('click', async () => {
     if (i.desc.startsWith('Pintura látex acrílica interna')) it.push({ n: 'Massa corrida', u: 'm²', q: i.qtd, sid: 'massa' });
   }
   const pac = {
-    v: 1, t: S.titulo || `Casa térrea - ${nq} quarto${nq > 1 ? 's' : ''}`, pd: M.H,
+    v: 1, t: S.titulo || `${M.pav === 2 ? 'Sobrado' : 'Casa térrea'} - ${nq} quarto${nq > 1 ? 's' : ''}`, pd: M.H,
     cli: { nome: S.proprietario || '', end: S.endereco || '' },
-    com: M.rooms.map(r => ({ nome: r.name.charAt(0) + r.name.slice(1).toLowerCase(), l: +(r.x1 - r.x0).toFixed(2), c: +(r.y1 - r.y0).toFixed(2) })), it,
+    com: P.ambientes(M).map(r => ({ nome: r.name.charAt(0) + r.name.slice(1).toLowerCase(), l: +(r.x1 - r.x0).toFixed(2), c: +(r.y1 - r.y0).toFixed(2) })), it,
   };
   const url = ORCA_URL + '#calc=' + await empacotar(pac);
   const w = window.open(url, '_blank');
@@ -447,8 +448,8 @@ $('btnOrca').addEventListener('click', async () => {
 $('btnMemorial').addEventListener('click', async () => {
   if (!(await FC.exigirPro('gerar o memorial descritivo'))) return;
   const S = lerEntrada(), M = res.M, academico = !FC.pro;
-  const nq = M.rooms.filter(r => r.kind === 'q').length;
-  const titulo = (S.titulo || `CASA TÉRREA - ${nq} QUARTO${nq > 1 ? 'S' : ''}`).toUpperCase();
+  const nq = P.ambientes(M).filter(r => r.kind === 'q').length;
+  const titulo = (S.titulo || `${M.pav === 2 ? 'SOBRADO' : 'CASA TÉRREA'} - ${nq} QUARTO${nq > 1 ? 'S' : ''}`).toUpperCase();
   const resp = academico ? 'USO ACADÊMICO' : (S.resp || '');
   const reg = academico ? 'Não válido para ART/RRT · Foster Calc plano Estudante' : (S.registro || '');
   const dado = (r, v) => v ? `<tr><th>${r}</th><td>${escHtml(v)}</td></tr>` : '';
@@ -534,7 +535,7 @@ function encaixarNoLote() {
     : `Reduzi as larguras dos cômodos para a casa caber no lote com 1,50 m de cada lado (${fmt(e.largura)} m de frente).`;
 }
 // a cada descrição nova o programa da casa volta ao padrão; terreno, construção e carimbo continuam
-const PROGRAMA = ['nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'suite', 'bsw', 'cozSep', 'kw', 'serv', 'sw', 'varanda', 'dv', 'lavabo', 'lvw', 'garagem', 'gw', 'gl'];
+const PROGRAMA = ['pav', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'suite', 'bsw', 'cozSep', 'kw', 'serv', 'sw', 'varanda', 'dv', 'lavabo', 'lvw', 'garagem', 'gw', 'gl'];
 function programaPadrao() {
   const d = P.defaults(), c = {};
   for (const k of PROGRAMA) c[k] = /^qw\d$/.test(k) ? d.qw[+k[2]] : d[k];
@@ -597,8 +598,8 @@ $('btnFalar').addEventListener('click', async () => {
 // ---------- exportação ----------
 const msg = t => { $('expMsg').textContent = t; };
 function nomeArquivo(ext) {
-  const nq = res.M.rooms.filter(r => r.kind === 'q').length;
-  const base = ($('titulo').value || `casa-terrea-${nq}-quartos`).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+  const nq = P.ambientes(res.M).filter(r => r.kind === 'q').length;
+  const base = ($('titulo').value || `${res.M.pav === 2 ? 'sobrado' : 'casa-terrea'}-${nq}-quartos`).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
   return `${base}.${ext}`;
 }
 function marcaDoPlano() { return FC.pro ? null : FC.plano === 'estudante' ? 'academico' : 'estudo'; }
