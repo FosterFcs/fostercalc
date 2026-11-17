@@ -2796,3 +2796,88 @@ export function instalacoes(M, op = {}) {
     },
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* 16. Maquete 3D (dados neutros para o visualizador)                  */
+/* ------------------------------------------------------------------ */
+// caixas {x0,y0,z0,x1,y1,z1,mat}, polígonos planos {pts:[[x,y,z]], mat} e o telhado como malha de alturas.
+// Coordenadas do lote: x para a direita, y da rua para o fundo, z para cima.
+export function maquete3D(M) {
+  const L = M.lote, ox = L.hx0, oy = L.hy0, t = M.t;
+  const boxes = [], polys = [];
+  const B = (x0, y0, z0, x1, y1, z1, mat) => { if (x1 - x0 > 1e-4 && y1 - y0 > 1e-4 && z1 - z0 > 1e-4) boxes.push({ x0: x0 + ox, y0: y0 + oy, z0, x1: x1 + ox, y1: y1 + oy, z1, mat }); };
+  const Pl = (pts, mat) => polys.push({ pts: pts.map(([x, y, z]) => [x + ox, y + oy, z]), mat });
+  const foot = M.foot || [{ x0: 0, y0: 0, x1: M.W, y1: M.D }];
+  const pavs = [[M, 0]]; const MS = pavSuperior(M); if (MS) pavs.push([MS, M.zs]);
+  for (const [Mf, z0] of pavs) {
+    const G = grid(Mf), { X, Y, C } = G, zf = z0 === 0 ? -0.10 : z0, zt = z0 + M.H;
+    for (let i = 0; i < C.length; i++) for (let j = 0; j < C[0].length; j++) {
+      const c = C[i][j], x0 = X[i], x1 = X[i + 1], y0 = Y[j], y1 = Y[j + 1];
+      if (c.c === 1) B(x0, y0, zf, x1, y1, zt, "parede");
+      else if (c.c === 2) {
+        const o = c.o, m = (o.q0 + o.q1) / 2, H = o.orient === "H";
+        B(x0, y0, z0 + o.head, x1, y1, zt, "parede");
+        if (o.type === "J") {
+          B(x0, y0, zf, x1, y1, z0 + o.sill, "parede");
+          if (H) B(x0, m - 0.015, z0 + o.sill, x1, m + 0.015, z0 + o.head, "vidro"); else B(m - 0.015, y0, z0 + o.sill, m + 0.015, y1, z0 + o.head, "vidro");
+          if (H) B(x0, y0 - 0.02, z0 + o.sill - 0.03, x1, y1 + 0.02, z0 + o.sill, "peitoril"); else B(x0 - 0.02, y0, z0 + o.sill - 0.03, x1 + 0.02, y1, z0 + o.sill, "peitoril");
+        } else if (o.type === "P") {
+          const P = (q) => (H ? [m, q] : [q, m]);
+          const externa = !naPlanta(Mf, ...((q) => (H ? [(o.p0 + o.p1) / 2, q] : [q, (o.p0 + o.p1) / 2]))(o.q0 - 0.01)) || !naPlanta(Mf, ...((q) => (H ? [(o.p0 + o.p1) / 2, q] : [q, (o.p0 + o.p1) / 2]))(o.q1 + 0.01));
+          void P;
+          if (externa) { if (H) B(x0, o.q0 + 0.02, z0, x1, o.q0 + 0.06, z0 + o.head, "porta"); else B(o.q0 + 0.02, y0, z0, o.q0 + 0.06, y1, z0 + o.head, "porta"); }
+        }
+      }
+    }
+    for (const f of foot) {
+      B(f.x0, f.y0, z0 + M.H, f.x1, f.y1, z0 + M.H + M.laje, "laje");
+      if (z0 === 0) B(f.x0, f.y0, -0.10, f.x1, f.y1, 0.0, "piso");
+    }
+  }
+  // paredes externas acima da laje até o telhado (respaldo e oitões)
+  const laco = contornoUniao(foot)[0];
+  for (let n = 0; n < laco.length; n++) {
+    const A = laco[n], Bp = laco[(n + 1) % laco.length], hor = Math.abs(A[1] - Bp[1]) < 1e-9;
+    const fixo = hor ? A[1] : A[0], a = Math.min(hor ? A[0] : A[1], hor ? Bp[0] : Bp[1]), c = Math.max(hor ? A[0] : A[1], hor ? Bp[0] : Bp[1]);
+    const pr = M.telhados ? perfilGenerico(M, hor ? "y" : "x", fixo, a, c) : perfilTelhado(M, hor ? "y" : "x", fixo, a, c);
+    for (let k = 0; k < pr.length - 1; k++) {
+      const [u0, z0] = pr[k], [u1, z1] = pr[k + 1], P3 = (u, z) => (hor ? [u, fixo, z] : [fixo, u, z]);
+      if (Math.max(z0, z1) <= M.zb + 1e-3) continue;
+      Pl([P3(u0, M.zb), P3(u1, M.zb), P3(u1, Math.max(z1, M.zb)), P3(u0, Math.max(z0, M.zb))], "parede");
+    }
+  }
+  // telhado: malha de alturas sobre a área coberta (beirais incluídos)
+  const b = M.b, dentro = M.telhados ? (x, y) => !!planoAtivo(M, x, y) : (x, y) => x >= -b - 1e-9 && x <= M.W + b + 1e-9 && y >= M.Y0 - b - 1e-9 && y <= M.D + b + 1e-9;
+  const xs0 = M.telhados ? Math.min(...M.telhados.map((T) => T.x0)) - b : -b, xs1 = M.telhados ? Math.max(...M.telhados.map((T) => T.x1)) + b : M.W + b;
+  const ys0 = M.telhados ? Math.min(...M.telhados.map((T) => T.y0)) - b : M.Y0 - b, ys1 = M.D + b;
+  const h = 0.1, nx = Math.ceil((xs1 - xs0) / h - 1e-9), ny = Math.ceil((ys1 - ys0) / h - 1e-9);
+  const hx = (xs1 - xs0) / nx, hy = (ys1 - ys0) / ny;
+  const z = new Array((nx + 1) * (ny + 1));
+  for (let i = 0; i <= nx; i++) for (let j = 0; j <= ny; j++) {
+    const x = Math.min(xs1 - 1e-6, Math.max(xs0 + 1e-6, xs0 + i * hx)), y = Math.min(ys1 - 1e-6, Math.max(ys0 + 1e-6, ys0 + j * hy));
+    z[i * (ny + 1) + j] = dentro(x, y) ? +M.roofAt(x, y).toFixed(4) : null;
+  }
+  const telhado = { x0: xs0 + ox, y0: ys0 + oy, hx, hy, nx, ny, z, esp: 0.05, mat: "telha" };
+  // varanda e garagem
+  if (M.varanda) {
+    B(0, M.Y0, -0.10, M.W, 0, 0, "piso");
+    for (const p of M.pilares) B(p.x0, p.y0, 0, p.x1, p.y1, M.roofAt((p.x0 + p.x1) / 2, (p.y0 + p.y1) / 2), "pilar");
+  }
+  const G = M.gar;
+  if (G) {
+    B(G.x0, G.y0, -0.10, 0, G.y1, -0.02, "concreto");
+    for (const p of G.pilares) B(p.x0, p.y0, 0, p.x1, p.y1, G.z(p.x0), "pilar");
+    const gx0 = G.x0 - G.ov;
+    Pl([[gx0, G.y0 - 0.1, G.z(gx0)], [0, G.y0 - 0.1, G.zh], [0, G.y1 + 0.1, G.zh], [gx0, G.y1 + 0.1, G.z(gx0)]], "fibro");
+  }
+  // lote, passeio e pisos externos (coordenadas do lote)
+  const ext = [];
+  for (const k of ["vaga", "caminho", "rampa"]) if (L[k]) ext.push({ ...L[k], mat: "concreto" });
+  return {
+    boxes, polys, telhado, ext,
+    lote: { lf: L.lf, lp: L.lp, calc: L.calc || 0 },
+    centro: [ox + M.W / 2, oy + (M.D + Math.min(M.Y0, M.yMin ?? 0)) / 2, M.zr / 2],
+    raio: Math.hypot(M.W, M.D - Math.min(M.Y0, M.yMin ?? 0)) / 2 + (G ? G.w : 0),
+    telha: M.S.telha || "ceramica", titulo: `${tipoCasa(M)} · ${nQuartos(M)} QUARTO${nQuartos(M) > 1 ? "S" : ""}`,
+  };
+}
