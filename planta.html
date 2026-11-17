@@ -129,7 +129,9 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
     </fieldset>
     <fieldset>
       <legend>Programa</legend>
-      <label class="full">Tipo<select id="pav"><option value="1">Casa térrea</option><option value="2">Sobrado (quartos em cima)</option></select></label>
+      <label class="full">Tipo<select id="pav"><option value="1">Casa térrea</option><option value="2">Sobrado (quartos em cima)</option><option value="3">Prédio (até 5 pavimentos)</option></select></label>
+      <label class="full" data-pav="3">Andares-tipo sobre o térreo em pilotis<select id="nand"><option value="1">1 andar · 4 aptos</option><option value="2">2 andares · 8 aptos</option><option value="3">3 andares · 12 aptos</option><option value="4" selected>4 andares · 16 aptos</option></select></label>
+      <p class="full" data-pav="3" style="grid-column:1/-1;margin:0;font-size:12px;opacity:.8">Os quartos, banheiros e cozinha abaixo definem cada apartamento. Escada, elevador e saídas precisam de aprovação no Corpo de Bombeiros (IT 11) e na prefeitura.</p>
       <label>Quartos<select id="nq"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></label>
       <label>Profundidade quartos<span class="unit"><input id="db" type="number" step="0.05" min="2.4" max="5" value="3.00"><i>m</i></span></label>
       <label data-q="0">Largura quarto 1<span class="unit"><input id="qw0" type="number" step="0.05" min="2.2" max="5" value="3.00"><i>m</i></span></label>
@@ -322,7 +324,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 const $ = id => document.getElementById(id);
 const P = window.PlantaIA;
 const modulo = 'planta';
-const NUM = ['pav', 'tensao', 'pChuveiro', 'sadm', 'gAdd', 'qLaje', 'pPar', 'fck', 'secao', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'wl', 'lvw', 'gw', 'gl', 'aguas', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
+const NUM = ['pav', 'nand', 'tensao', 'pChuveiro', 'sadm', 'gAdd', 'qLaje', 'pPar', 'fck', 'secao', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'sw', 'bsw', 'kw', 'dv', 'wl', 'lvw', 'gw', 'gl', 'aguas', 'H', 'laje', 't', 'beiral', 'lf', 'lp', 'rf', 'calc', 'norte'];
 const TXT = ['desc', 'telha', 'formato', 'formato2', 'formato3', 'formato4', 'titulo', 'proprietario', 'endereco', 'resp', 'registro', 'data',
   'afE', 'esquina', 'rua', 'ruaLat', 'quadra', 'lote', 'bairro', 'cidade', 'toMax', 'caMax', 'permMin', 'rfMin', 'rlMin', 'rfuMin'];
 const BOOL = ['serv', 'suite', 'cozSep', 'varanda', 'vaga', 'lavabo', 'garagem', 'formaL'];
@@ -352,13 +354,14 @@ function conferencia(M0) {
       (o.orient === 'H' && o.p0 >= r.x0 - 1e-6 && o.p1 <= r.x1 + 1e-6 && (Math.abs(o.q0 - r.y1) < 1e-6 || Math.abs(o.q1 - r.y0) < 1e-6)) ||
       (o.orient === 'V' && o.p0 >= r.y0 - 1e-6 && o.p1 <= r.y1 + 1e-6 && (Math.abs(o.q0 - r.x1) < 1e-6 || Math.abs(o.q1 - r.x0) < 1e-6))));
     const Aj = jan.reduce((a, o) => a + o.w * o.hgt, 0);
-    return `<tr><td>${r.name}${M0.sup ? (M.nivelPlanta === 'sup' ? ' · sup.' : ' · térreo') : ''}</td><td class="v">${fmt(A)} m²</td><td class="v">${fmt(Math.min(r.x1 - r.x0, r.y1 - r.y0))} m</td><td class="v">${Aj ? '1/' + fmt(A / Aj, 1) : '—'}</td></tr>`;
+    return `<tr><td>${r.name}${M0.sup ? (M.nivelPlanta === 'sup' ? (M0.predio ? ' · tipo' : ' · sup.') : ' · térreo') : ''}</td><td class="v">${fmt(A)} m²</td><td class="v">${fmt(Math.min(r.x1 - r.x0, r.y1 - r.y0))} m</td><td class="v">${Aj ? '1/' + fmt(A / Aj, 1) : '—'}</td></tr>`;
   }).join('')).join('');
 }
 
 function render() {
   for (let i = 0; i < 3; i++) document.querySelector(`[data-q="${i}"]`).hidden = i >= +$('nq').value;
   document.querySelectorAll('[data-se]').forEach(el => { el.hidden = !$(el.dataset.se).checked; });
+  document.querySelectorAll('[data-pav]').forEach(el => { el.hidden = $('pav').value !== el.dataset.pav; });
   try { res = P.buildSheets(paraModelo(lerEntrada())); if (V3 && V3.on) { clearTimeout(V3.tm); V3.tm = setTimeout(() => atualizar3D(false), 400); } }
   catch (e) { $('info').innerHTML = `<span class="bad">${escHtml(e.message)}</span>`; return; }
   folha = Math.min(folha, res.folhas.length - 1);
@@ -366,7 +369,7 @@ function render() {
   $('abas').querySelectorAll('button').forEach(b => b.onclick = () => { folha = +b.dataset.i; mostrar(true); render(); });
   mostrar(false);
   const M = res.M, I = M.idx;
-  $('info').innerHTML = `<span>${M.ala ? 'Casa em L' : M.pav === 2 ? 'Sobrado' : 'Casa'} <b>${fmt(M.W)} × ${fmt(M.D + Math.max(M.dv, -(M.yMin || 0)))} m</b></span><span>Área construída <b>${fmt(I.Aconst)} m²</b></span><span>Terreno <b>${fmt(I.Alote)} m²</b></span><span>Ocupação <b>${fmt(I.TO * 100, 1)}%</b></span>`;
+  $('info').innerHTML = `<span>${M.predio ? `Prédio · ${M.predio.aptos} aptos` : M.ala ? 'Casa em L' : M.pav === 2 ? 'Sobrado' : 'Casa'} <b>${fmt(M.W)} × ${fmt(M.D + Math.max(M.dv, -(M.yMin || 0)))} m</b></span><span>Área construída <b>${fmt(I.Aconst)} m²</b></span><span>Terreno <b>${fmt(I.Alote)} m²</b></span><span>Ocupação <b>${fmt(I.TO * 100, 1)}%</b></span>`;
   const av = $('avisos'); av.hidden = !res.avisos.length; av.innerHTML = res.avisos.map(a => `<li>${escHtml(a)}</li>`).join('');
   if (res.avisos.some(a => a.includes('largura do lote'))) {
     av.insertAdjacentHTML('beforeend', '<li class="sem-marca"><button type="button" class="pri ghost" id="btnEncaixar">Ajustar larguras ao lote</button></li>');
@@ -442,7 +445,7 @@ async function empacotar(obj) {   // mesmo formato do Foster Orça: 'z' + deflat
 }
 $('btnOrca').addEventListener('click', async () => {
   if (!window.CompressionStream) { FC.toast('Atualize o navegador para enviar ao Foster Orça.'); return; }
-  const S = lerEntrada(), M = res.M, nq = P.ambientes(M).filter(r => r.kind === 'q').length;
+  const S = lerEntrada(), M = res.M, nq = (M.predio ? M.predio.apto.rooms : P.ambientes(M)).filter(r => r.kind === 'q').length;
   const it = [];
   for (const e of res.Q) for (const i of e.itens) {
     if (e.etapa === 'Serviços preliminares' && i.desc.startsWith('Limpeza do terreno')) continue;
@@ -452,7 +455,7 @@ $('btnOrca').addEventListener('click', async () => {
     if (i.desc.startsWith('Pintura látex acrílica interna')) it.push({ n: 'Massa corrida', u: 'm²', q: i.qtd, sid: 'massa' });
   }
   const pac = {
-    v: 1, t: S.titulo || `${M.pav === 2 ? 'Sobrado' : M.ala ? 'Casa em L' : 'Casa térrea'} - ${nq} quarto${nq > 1 ? 's' : ''}`, pd: M.H,
+    v: 1, t: S.titulo || `${M.predio ? `Prédio ${M.pav} pavimentos (${M.predio.aptos} aptos)` : M.pav === 2 ? 'Sobrado' : M.ala ? 'Casa em L' : 'Casa térrea'} - ${nq} quarto${nq > 1 ? 's' : ''}`, pd: M.H,
     cli: { nome: S.proprietario || '', end: S.endereco || '' },
     com: P.ambientes(M).map(r => ({ nome: r.name.charAt(0) + r.name.slice(1).toLowerCase(), l: +(r.x1 - r.x0).toFixed(2), c: +(r.y1 - r.y0).toFixed(2) })), it,
   };
@@ -468,8 +471,8 @@ $('btnOrca').addEventListener('click', async () => {
 $('btnMemorial').addEventListener('click', async () => {
   if (!(await FC.exigirPro('gerar o memorial descritivo'))) return;
   const S = lerEntrada(), M = res.M, academico = !FC.pro;
-  const nq = P.ambientes(M).filter(r => r.kind === 'q').length;
-  const titulo = (S.titulo || `${M.pav === 2 ? 'SOBRADO' : M.ala ? 'CASA EM L' : 'CASA TÉRREA'} - ${nq} QUARTO${nq > 1 ? 'S' : ''}`).toUpperCase();
+  const nq = (M.predio ? M.predio.apto.rooms : P.ambientes(M)).filter(r => r.kind === 'q').length;
+  const titulo = (S.titulo || `${M.predio ? `PRÉDIO ${M.pav} PAVIMENTOS (${M.predio.aptos} APTOS)` : M.pav === 2 ? 'SOBRADO' : M.ala ? 'CASA EM L' : 'CASA TÉRREA'} - ${nq} QUARTO${nq > 1 ? 'S' : ''}`).toUpperCase();
   const resp = academico ? 'USO ACADÊMICO' : (S.resp || '');
   const reg = academico ? 'Não válido para ART/RRT · Foster Calc plano Estudante' : (S.registro || '');
   const dado = (r, v) => v ? `<tr><th>${r}</th><td>${escHtml(v)}</td></tr>` : '';
@@ -555,7 +558,7 @@ function encaixarNoLote() {
     : `Reduzi as larguras dos cômodos para a casa caber no lote com 1,50 m de cada lado (${fmt(e.largura)} m de frente).`;
 }
 // a cada descrição nova o programa da casa volta ao padrão; terreno, construção e carimbo continuam
-const PROGRAMA = ['pav', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'suite', 'bsw', 'cozSep', 'kw', 'serv', 'sw', 'varanda', 'dv', 'lavabo', 'lvw', 'garagem', 'gw', 'gl', 'formaL', 'wl'];
+const PROGRAMA = ['pav', 'nand', 'nq', 'qw0', 'qw1', 'qw2', 'db', 'bw', 'ds', 'suite', 'bsw', 'cozSep', 'kw', 'serv', 'sw', 'varanda', 'dv', 'lavabo', 'lvw', 'garagem', 'gw', 'gl', 'formaL', 'wl'];
 function programaPadrao() {
   const d = P.defaults(), c = {};
   for (const k of PROGRAMA) c[k] = /^qw\d$/.test(k) ? d.qw[+k[2]] : d[k];
@@ -573,7 +576,7 @@ async function montar() {
     const b = $('btnMontar'); b.disabled = true; b.textContent = 'A IA está montando…';
     try {
       const r = await chamarIA('interpretar', { texto });
-      aplicarCampos(r.campos); montar.ultimaIA = r.campos;
+      aplicarCampos(loc.campos.pav === 3 && +r.campos?.pav !== 3 ? { ...r.campos, pav: 3, nand: loc.campos.nand } : r.campos); montar.ultimaIA = r.campos;
       if (r.resumo) resumo = r.resumo;
       obs = [...new Set([...(r.observacoes || []), ...loc.observacoes])];
     } catch (e) {
@@ -583,7 +586,7 @@ async function montar() {
     dica = 'Nos planos Estudante e Pro, a IA entende descrições livres (até área total, como “casa de 60 m²”) e por voz.';
   }
   const lfDito = 'lf' in loc.campos || (montar.ultimaIA && 'lf' in montar.ultimaIA);
-  if (lfDito && res && res.avisos.some(a => a.includes('largura do lote'))) { const m = encaixarNoLote(); if (m) obs = [...obs, m]; }
+  if (lfDito && res && !res.M.predio && res.avisos.some(a => a.includes('largura do lote'))) { const m = encaixarNoLote(); if (m) obs = [...obs, m]; }
   mostrarIA(`${escHtml(resumo)} Confira e ajuste os campos abaixo.${obs.length ? `<ul>${obs.map(o => `<li>${escHtml(o)}</li>`).join('')}</ul>` : ''}${dica ? `<span class="dica">${escHtml(dica)}</span>` : ''}`);
 }
 $('btnMontar').addEventListener('click', montar);
@@ -618,8 +621,8 @@ $('btnFalar').addEventListener('click', async () => {
 // ---------- exportação ----------
 const msg = t => { $('expMsg').textContent = t; };
 function nomeArquivo(ext) {
-  const nq = P.ambientes(res.M).filter(r => r.kind === 'q').length;
-  const base = ($('titulo').value || `${res.M.pav === 2 ? 'sobrado' : res.M.ala ? 'casa-em-l' : 'casa-terrea'}-${nq}-quartos`).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+  const nq = (res.M.predio ? res.M.predio.apto.rooms : P.ambientes(res.M)).filter(r => r.kind === 'q').length;
+  const base = ($('titulo').value || `${res.M.predio ? `predio-${res.M.pav}-pav-${res.M.predio.aptos}-aptos` : res.M.pav === 2 ? 'sobrado' : res.M.ala ? 'casa-em-l' : 'casa-terrea'}-${res.M.predio ? res.M.predio.apto.rooms.filter(r => r.kind === 'q').length : nq}-quartos`).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
   return `${base}.${ext}`;
 }
 function marcaDoPlano() { return FC.pro ? null : FC.plano === 'estudante' ? 'academico' : 'estudo'; }
@@ -648,7 +651,8 @@ $('btnImprimir').addEventListener('click', () => {
 // ---------- projetos salvos ----------
 function nomeSugerido() {
   const nq = +$('nq').value, p = $('proprietario').value.trim();
-  return `Planta · casa ${nq} quarto${nq > 1 ? 's' : ''}${p ? ' · ' + p : ''}`;
+  const tipo = { 2: 'sobrado', 3: `prédio ${+$('nand').value + 1} pav.` }[$('pav').value] || 'casa';
+  return `Projeto · ${tipo} ${nq} quarto${nq > 1 ? 's' : ''}${p ? ' · ' + p : ''}`;
 }
 $('btnSalvar').addEventListener('click', async () => { const r = await FC.salvarProjeto(modulo, lerEntrada(), nomeSugerido(), projetoId); if (r) projetoId = r.id; });
 $('btnAbrir').addEventListener('click', async () => { const p = await FC.abrirProjeto(modulo); if (p) { projetoId = p.id; aplicarEntrada(p.entrada); FC.toast(`Projeto "${p.nome}" aberto.`); } });
