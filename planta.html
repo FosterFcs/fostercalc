@@ -246,6 +246,20 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
     <p class="note" style="margin:8px 0 0">Arraste para mover, use a roda do mouse ou dois dedos para o zoom. Tudo sai do mesmo modelo: mudou uma medida, as quatro folhas se refazem.</p>
   </section>
 
+  <section class="sheet" id="sec3d">
+    <h2>Maquete 3D · imagem e vídeo</h2>
+    <p class="note" style="margin:0 0 10px">Volume do projeto gerado das mesmas medidas da prancha. Gire com o dedo ou o mouse, aproxime com pinça ou rolagem. Baixe uma imagem ou grave um vídeo dando a volta na casa para mandar ao cliente.</p>
+    <div id="v3d" style="position:relative;width:100%;aspect-ratio:16/9;background:linear-gradient(#cfe3f5,#eef4f9);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none">
+      <button type="button" class="pri" id="btn3d">Abrir maquete 3D</button>
+    </div>
+    <div class="actions" style="margin-top:8px">
+      <button type="button" class="pri ghost" id="btnPng" disabled>Baixar imagem (PNG)</button>
+      <button type="button" class="pri ghost" id="btnVideo" disabled>Gravar vídeo 360°</button>
+      <button type="button" class="pri ghost" id="btnVista" disabled>Vista: frente</button>
+      <span class="note" id="msg3d" role="status"></span>
+    </div>
+  </section>
+
   <section class="sheet">
     <h2>Índices urbanísticos</h2>
     <div class="tbl"><table><thead><tr><th>Índice</th><th style="text-align:right">Projeto</th><th style="text-align:right">Limite</th><th style="text-align:right">Situação</th></tr></thead><tbody id="indices"></tbody></table></div>
@@ -300,6 +314,7 @@ td.sim{color:var(--ok);font-weight:600}td.nao{color:var(--bad);font-weight:700}
 </div>
 </div>
 
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="app.js"></script>
 <script src="planta-core.js"></script>
@@ -344,7 +359,7 @@ function conferencia(M0) {
 function render() {
   for (let i = 0; i < 3; i++) document.querySelector(`[data-q="${i}"]`).hidden = i >= +$('nq').value;
   document.querySelectorAll('[data-se]').forEach(el => { el.hidden = !$(el.dataset.se).checked; });
-  try { res = P.buildSheets(paraModelo(lerEntrada())); }
+  try { res = P.buildSheets(paraModelo(lerEntrada())); if (V3 && V3.on) { clearTimeout(V3.tm); V3.tm = setTimeout(() => atualizar3D(false), 400); } }
   catch (e) { $('info').innerHTML = `<span class="bad">${escHtml(e.message)}</span>`; return; }
   folha = Math.min(folha, res.folhas.length - 1);
   $('abas').innerHTML = res.folhas.map((f, i) => `<button type="button" role="tab" aria-selected="${i === folha}" data-i="${i}">${f.nome} · ${f.formato} 1:${f.esc}</button>`).join('');
@@ -656,6 +671,164 @@ $('data').value = new Date().toLocaleDateString('pt-BR');
 $('f').addEventListener('input', e => { if (e.target.id !== 'desc') agendar(); });
 $('f').addEventListener('change', e => { if (e.target.id !== 'desc') agendar(); });
 render();
+
+// ---------- maquete 3D (three.js carregado só quando abrir) ----------
+var V3 = { on: false };
+const COR3 = { parede: 0xf3efe6, laje: 0xd8d4cc, piso: 0xcbc5ba, vidro: 0x86b3d6, peitoril: 0xe6e1d8, porta: 0x8a5a33, pilar: 0xefebe3, concreto: 0xbcb8b0, fibro: 0xb3b8be };
+const TELHA3 = { ceramica: 0xb0522f, concreto: 0x78808a, fibrocimento: 0xa7adb3 };
+const VISTAS = [['frente', 'Vista: frente'], ['fundos', 'Vista: fundos'], ['cima', 'Vista: de cima']];
+async function abrir3D() {
+  if (V3.on) return;
+  $('msg3d').textContent = 'Carregando o 3D…';
+  let T, OrbitControls;
+  try { T = await import('three'); ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js')); }
+  catch (e) { $('msg3d').textContent = 'Não consegui carregar o 3D. Confira a conexão e tente de novo.'; return; }
+  const box = $('v3d'); box.innerHTML = '';
+  const r = new T.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap; r.outputColorSpace = T.SRGBColorSpace;
+  r.domElement.style.cssText = 'width:100%;height:100%;display:block';
+  box.appendChild(r.domElement);
+  const cena = new T.Scene(); cena.background = new T.Color(0xd6e6f4); cena.fog = new T.Fog(0xd6e6f4, 70, 180);
+  const cam = new T.PerspectiveCamera(38, 16 / 9, 0.1, 600);
+  const ctl = new OrbitControls(cam, r.domElement);
+  ctl.enableDamping = true; ctl.maxPolarAngle = Math.PI * 0.49; ctl.minDistance = 3; ctl.maxDistance = 150;
+  cena.add(new T.HemisphereLight(0xffffff, 0x7d8f62, 0.75));
+  const sol = new T.DirectionalLight(0xfff4e0, 2.8); sol.castShadow = true; sol.shadow.mapSize.set(2048, 2048); sol.shadow.bias = -0.0004;
+  cena.add(sol, sol.target);
+  Object.assign(V3, { on: true, T, r, cena, cam, ctl, sol, grupo: null, vista: 0, anima: null, posRender: null, gravando: false });
+  const tam = () => { if (V3.gravando) return; const w = box.clientWidth, h = box.clientHeight || w * 9 / 16; r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); };
+  new ResizeObserver(tam).observe(box); tam();
+  const loop = () => { requestAnimationFrame(loop); if (V3.anima) V3.anima(); else ctl.update(); r.render(cena, cam); if (V3.posRender) V3.posRender(); };
+  loop();
+  atualizar3D(true);
+  ['btnPng', 'btnVideo', 'btnVista'].forEach((id) => { $(id).disabled = false; });
+  $('msg3d').textContent = '';
+}
+function malha3D(T, arr, mat) {
+  const ge = new T.BufferGeometry();
+  ge.setAttribute('position', new T.Float32BufferAttribute(arr.p, 3));
+  ge.setAttribute('normal', new T.Float32BufferAttribute(arr.n, 3));
+  const m = new T.Mesh(ge, mat); m.castShadow = true; m.receiveShadow = true; return m;
+}
+function atualizar3D(reset) {
+  if (!V3.on || !res) return;
+  const T = V3.T, D = P.maquete3D(res.M);
+  if (V3.grupo) { V3.cena.remove(V3.grupo); V3.grupo.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.dispose) o.material.dispose(); }); }
+  const g = new T.Group(); V3.grupo = g;
+  const novoMat = (k, cor) => new T.MeshStandardMaterial({ color: cor, roughness: k === 'vidro' ? 0.1 : 0.9, metalness: k === 'vidro' ? 0.1 : 0, transparent: k === 'vidro', opacity: k === 'vidro' ? 0.6 : 1, side: T.DoubleSide });
+  const A = {};                                                    // por material: posições e normais
+  const arr = (k) => (A[k] ||= { p: [], n: [] });
+  const V = (x, y, z) => [x, z, -y];                               // lote (x, y, z) → three (x, z, −y)
+  const tri = (k, a, b, c) => {
+    const o = arr(k), pa = V(...a), pb = V(...b), pc = V(...c);
+    const u = [pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]], w = [pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2]];
+    let n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]; const L = Math.hypot(...n) || 1; n = n.map((v) => v / L);
+    o.p.push(...pa, ...pb, ...pc); o.n.push(...n, ...n, ...n);
+  };
+  const quad = (k, a, b, c, d) => { tri(k, a, b, c); tri(k, a, c, d); };
+  for (const b of D.boxes) {
+    const { x0, y0, z0, x1, y1, z1 } = b, k = b.mat;
+    quad(k, [x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]); quad(k, [x1, y1, z0], [x0, y1, z0], [x0, y1, z1], [x1, y1, z1]);
+    quad(k, [x0, y1, z0], [x0, y0, z0], [x0, y0, z1], [x0, y1, z1]); quad(k, [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]);
+    quad(k, [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]); quad(k, [x0, y1, z0], [x1, y1, z0], [x1, y0, z0], [x0, y0, z0]);
+  }
+  for (const pl of D.polys) for (let i = 1; i < pl.pts.length - 1; i++) tri(pl.mat, pl.pts[0], pl.pts[i], pl.pts[i + 1]);
+  const R = D.telhado, Z = (i, j) => R.z[i * (R.ny + 1) + j];
+  for (let i = 0; i < R.nx; i++) for (let j = 0; j < R.ny; j++) {
+    const a = Z(i, j), b = Z(i + 1, j), c = Z(i + 1, j + 1), d = Z(i, j + 1);
+    if (a == null || b == null || c == null || d == null) continue;
+    const x0 = R.x0 + i * R.hx, x1 = x0 + R.hx, y0 = R.y0 + j * R.hy, y1 = y0 + R.hy, e = R.esp;
+    quad('telha', [x0, y0, a + e], [x1, y0, b + e], [x1, y1, c + e], [x0, y1, d + e]);
+  }
+  for (const e of D.ext) quad(e.mat, [e.x0, e.y0, -0.085], [e.x1, e.y0, -0.085], [e.x1, e.y1, -0.085], [e.x0, e.y1, -0.085]);
+  for (const [k, o] of Object.entries(A)) g.add(malha3D(T, o, novoMat(k, k === 'telha' ? (TELHA3[D.telha] || TELHA3.ceramica) : COR3[k] || 0xdddddd)));
+  // lote, passeio, rua e entorno
+  const { lf, lp, calc } = D.lote;
+  const plano = (x0, y0, x1, y1, z, cor) => {
+    const m = new T.Mesh(new T.PlaneGeometry(x1 - x0, y1 - y0), new T.MeshStandardMaterial({ color: cor, roughness: 1 }));
+    m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, z, -(y0 + y1) / 2); m.receiveShadow = true; g.add(m);
+  };
+  plano(-60, -calc - 40, lf + 60, lp + 60, -0.13, 0x9fb07d);
+  plano(0, 0, lf, lp, -0.10, 0x7fa65a);
+  if (calc > 0) plano(-60, -calc, lf + 60, 0, -0.09, 0xcfcac0);
+  plano(-60, -calc - 7, lf + 60, -calc, -0.115, 0x55585c);
+  const borda = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(lf, 0.02, lp)), new T.LineBasicMaterial({ color: 0xffffff }));
+  borda.position.set(lf / 2, -0.09, -lp / 2); g.add(borda);
+  V3.cena.add(g);
+  const [cx, cy, cz] = D.centro; V3.alvo = new T.Vector3(cx, cz, -cy); V3.raio = Math.max(5, D.raio);
+  V3.sol.position.set(cx - 20, 15, -cy + 12); V3.sol.target.position.copy(V3.alvo);
+  const sc = V3.sol.shadow.camera, s = V3.raio * 2.2; Object.assign(sc, { left: -s, right: s, top: s, bottom: -s, near: 1, far: 120 }); sc.updateProjectionMatrix();
+  V3.titulo = ($('titulo').value || D.titulo).toUpperCase();
+  if (reset) posicionar3D(VISTAS[V3.vista][0]);
+}
+function posicionar3D(v) {
+  const c = V3.alvo, R = V3.raio * 2.3;
+  if (v === 'frente') V3.cam.position.set(c.x - R * 0.55, c.y + R * 0.3, c.z + R * 0.85);
+  else if (v === 'fundos') V3.cam.position.set(c.x + R * 0.55, c.y + R * 0.3, c.z - R * 0.85);
+  else V3.cam.position.set(c.x + 0.01, c.y + R * 1.25, c.z + R * 0.25);
+  V3.ctl.target.copy(c); V3.ctl.update();
+}
+function legenda3D(cx, w, h) {
+  const marca = marcaDoPlano();
+  const fs = Math.round(h / 30);
+  cx.fillStyle = 'rgba(17,17,17,.62)'; cx.fillRect(0, h - fs * 3.1, w, fs * 3.1);
+  cx.fillStyle = '#fff'; cx.font = `700 ${fs * 1.1}px Arial`; cx.textBaseline = 'middle';
+  cx.fillText(V3.titulo || 'FOSTER PROJETO', fs, h - fs * 1.95);
+  cx.font = `${fs * 0.75}px Arial`; cx.fillStyle = '#e8e8e8';
+  cx.fillText('Estudo preliminar · volumetria gerada pelo Foster Projeto · Foster Calc', fs, h - fs * 0.85);
+  if (marca) {
+    cx.save(); cx.translate(w / 2, h / 2 - fs); cx.rotate(-0.35); cx.font = `700 ${fs * 3.2}px Arial`; cx.textAlign = 'center';
+    cx.fillStyle = 'rgba(196,22,28,.22)'; cx.fillText(marca === 'academico' ? 'USO ACADÊMICO' : 'ESTUDO', 0, 0); cx.restore();
+  }
+}
+function baixarBlob(blob, nome) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }
+function emTamanho(w, h, fn) {
+  const { r, cam } = V3, box = $('v3d');
+  V3.gravando = true; r.setPixelRatio(1); r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
+  r.domElement.style.width = '100%'; r.domElement.style.height = '100%';
+  return fn(() => { V3.gravando = false; r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); const bw = box.clientWidth, bh = box.clientHeight; r.setSize(bw, bh, false); cam.aspect = bw / bh; cam.updateProjectionMatrix(); });
+}
+$('btn3d').addEventListener('click', abrir3D);
+$('btnVista').addEventListener('click', () => { V3.vista = (V3.vista + 1) % VISTAS.length; $('btnVista').textContent = VISTAS[V3.vista][1]; posicionar3D(VISTAS[V3.vista][0]); });
+$('btnPng').addEventListener('click', () => {
+  if (!V3.on) return;
+  emTamanho(1920, 1080, (volta) => {
+    V3.ctl.update(); V3.r.render(V3.cena, V3.cam);
+    const cv = document.createElement('canvas'); cv.width = 1920; cv.height = 1080; const cx = cv.getContext('2d');
+    cx.drawImage(V3.r.domElement, 0, 0, 1920, 1080); legenda3D(cx, 1920, 1080); volta();
+    cv.toBlob((bl) => { baixarBlob(bl, nomeArquivo('png').replace('.png', '-maquete.png')); $('msg3d').textContent = 'Imagem baixada (1920 × 1080).'; }, 'image/png');
+  });
+});
+$('btnVideo').addEventListener('click', async () => {
+  if (!V3.on || V3.anima) return;
+  if (!(await FC.exigirPro('gravar o vídeo da maquete'))) return;
+  const tipos = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+  const tipo = window.MediaRecorder && tipos.find((t) => MediaRecorder.isTypeSupported(t));
+  const cv = document.createElement('canvas'); cv.width = 1280; cv.height = 720;
+  if (!tipo || !cv.captureStream) { $('msg3d').textContent = 'Este navegador não grava vídeo. Use o Chrome ou o Safari atualizado.'; return; }
+  const cx = cv.getContext('2d'), partes = [];
+  const rec = new MediaRecorder(cv.captureStream(30), { mimeType: tipo, videoBitsPerSecond: 6000000 });
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
+  emTamanho(1280, 720, (volta) => {
+    const c = V3.alvo, R = V3.raio * 2.5, dur = 12000, t0 = performance.now(), a0 = Math.atan2(V3.cam.position.x - c.x, V3.cam.position.z - c.z);
+    $('btnVideo').disabled = true; $('msg3d').textContent = 'Gravando o vídeo (12 s)…';
+    V3.anima = () => {
+      const f = Math.min(1, (performance.now() - t0) / dur), a = a0 + f * Math.PI * 2;
+      V3.cam.position.set(c.x + R * Math.sin(a), c.y + R * (0.42 + 0.08 * Math.sin(f * Math.PI * 2)), c.z + R * Math.cos(a));
+      V3.cam.lookAt(c);
+      if (f >= 1 && rec.state === 'recording') rec.stop();
+    };
+    V3.posRender = () => { cx.drawImage(V3.r.domElement, 0, 0, 1280, 720); legenda3D(cx, 1280, 720); };
+    rec.onstop = () => {
+      V3.anima = null; V3.posRender = null; volta(); V3.ctl.target.copy(c); V3.ctl.update(); $('btnVideo').disabled = false;
+      const ext = tipo.startsWith('video/mp4') ? 'mp4' : 'webm';
+      baixarBlob(new Blob(partes, { type: tipo.split(';')[0] }), nomeArquivo(ext).replace('.' + ext, '-maquete.' + ext));
+      $('msg3d').textContent = `Vídeo baixado (${ext.toUpperCase()}, 1280 × 720).` + (ext === 'webm' ? ' Se o WhatsApp não aceitar WebM, envie como documento.' : '');
+    };
+    rec.start(200);
+  });
+});
 </script>
 </body>
 </html>
